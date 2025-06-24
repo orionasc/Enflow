@@ -1,4 +1,5 @@
-import Foundation
+
+        import Foundation
 
 /// Provides combined calculated + forecasted summaries.
 @MainActor
@@ -61,6 +62,7 @@ final class UnifiedEnergyModel {
             topBoosters: summary.topBoosters,
             topDrainers: summary.topDrainers,
             explainers: summary.explainers
+
         )
     }
 }
