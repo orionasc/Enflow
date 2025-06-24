@@ -205,14 +205,13 @@ struct DashboardView: View {
         let eventsToday    = await CalendarDataPipeline.shared.fetchEvents(for: today)
         let eventsTomorrow = await CalendarDataPipeline.shared.fetchEvents(for: tomorrow)
 
-        // Daily summaries (singleton engine)
-        let eng       = EnergySummaryEngine.shared
-        let tSummary  = eng.summarize(day: today,
-                                      healthEvents: healthList,
-                                      calendarEvents: eventsToday)
-        let tmSummary = eng.summarize(day: tomorrow,
-                                      healthEvents: healthList,
-                                      calendarEvents: eventsTomorrow)
+        // Daily summaries blended with forecast
+        let tSummary  = UnifiedEnergyModel.shared.summary(for: today,
+                                                          healthEvents: healthList,
+                                                          calendarEvents: eventsToday)
+        let tmSummary = UnifiedEnergyModel.shared.summary(for: tomorrow,
+                                                          healthEvents: healthList,
+                                                          calendarEvents: eventsTomorrow)
 
         let todayHealth    = healthList.first { cal.isDate($0.date, inSameDayAs: today) }
         let tomorrowHealth = healthList.first { cal.isDate($0.date, inSameDayAs: tomorrow) }
