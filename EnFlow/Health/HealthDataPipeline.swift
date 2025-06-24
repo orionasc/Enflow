@@ -63,6 +63,12 @@ final class HealthDataPipeline: ObservableObject {
             // --- Sleep metrics ————————————————
             let (eff, lat, deep, rem) = await parseSleepMetrics(start: day, end: next)
 
+            let hasData = hrvMs > 0 || restHR > 0 || steps > 0 || calories > 0 ||
+                           eff > 0 || lat > 0 || deep > 0 || rem > 0
+            if !hasData {
+                print("[HealthDataPipeline] No HealthKit samples for \(day)")
+            }
+
             out.append(
                 HealthEvent(
                     date: day,
@@ -73,7 +79,8 @@ final class HealthDataPipeline: ObservableObject {
                     deepSleep: deep,
                     remSleep: rem,
                     steps: Int(steps),
-                    calories: calories
+                    calories: calories,
+                    hasSamples: hasData
                 )
             )
         }

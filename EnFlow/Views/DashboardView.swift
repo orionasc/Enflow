@@ -34,6 +34,8 @@ struct DashboardView: View {
 
     @State private var isLoading = true
     @State private var selection  = 0         // 0 = today • 1 = tomorrow
+    @State private var missingTodayData = false
+    @State private var missingTomorrowData = false
     
     private typealias ThreePartEnergy = EnergyForecastModel.ThreePartEnergy
 
@@ -81,6 +83,11 @@ struct DashboardView: View {
 
                 header(title: greeting,
                        subtitle: "Your energy status for today:")
+                if missingTodayData {
+                    Text("No Health Data")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
 
                 // — Composite ring —
                     if let summary = todaySummary {
@@ -123,6 +130,11 @@ struct DashboardView: View {
 
                 header(title: "Tomorrow",
                        subtitle: "Tomorrow’s Forecasted Energy")
+                if missingTomorrowData {
+                    Text("No Health Data")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
 
                 // Forecast (dashed / desaturated)
                 if let score = tomorrowSummary?.overallEnergyScore {
@@ -191,6 +203,11 @@ struct DashboardView: View {
                                       healthEvents: healthList,
                                       calendarEvents: eventsTomorrow)
 
+        let todayHealth    = healthList.first { cal.isDate($0.date, inSameDayAs: today) }
+        let tomorrowHealth = healthList.first { cal.isDate($0.date, inSameDayAs: tomorrow) }
+        let noToday        = !(todayHealth?.hasSamples ?? false)
+        let noTomorrow     = !(tomorrowHealth?.hasSamples ?? false)
+
         // 3-part slices
         func slices(from wave: [Double]) -> EnergyForecastModel.ThreePartEnergy {
             func avg(_ s: ArraySlice<Double>) -> Double { s.reduce(0, +) / Double(s.count) * 100 }
@@ -246,6 +263,8 @@ struct DashboardView: View {
             todayCtx        = tCtx
             tomorrowCtx     = tmCtx
             isLoading       = false
+            missingTodayData = noToday
+            missingTomorrowData = noTomorrow
             engine.markRefreshed()                     // trigger ring-pulse animation
         }
     }

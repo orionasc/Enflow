@@ -48,6 +48,7 @@ struct HealthEvent {
     let remSleep: Double            // min
     let steps: Int
     let calories: Double            // kcal
+    let hasSamples: Bool            // true if HealthKit returned data
 }
 
 // MARK: – Energy summary engine -----------------------------------------------

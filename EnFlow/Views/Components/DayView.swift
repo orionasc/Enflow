@@ -315,18 +315,26 @@ struct DayView: View {
         let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 7)
         let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
         let model = EnergyForecastModel()
-        let forecastResult = model.forecast(
+        if let forecastResult = model.forecast(
             for: currentDate,
             health: healthList,
             events: dayEvents
-        )
-        forecast = forecastResult.values
-        overallScore = forecastResult.score
-        parts = model.threePartEnergy(
+        ) {
+            forecast = forecastResult.values
+            overallScore = forecastResult.score
+        } else {
+            forecast = []
+            overallScore = 0
+        }
+        if let partsResult = model.threePartEnergy(
             for: currentDate,
             health: healthList,
             events: dayEvents
-        )
+        ) {
+            parts = partsResult
+        } else {
+            parts = EnergyForecastModel.ThreePartEnergy(morning: 0, afternoon: 0, evening: 0)
+        }
         events = dayEvents
     }
 }

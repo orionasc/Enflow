@@ -40,10 +40,10 @@ final class EnergyForecastModel: ObservableObject {
     // MARK: Single-day forecast (24×values + daily composite)
     func forecast(for date: Date,
                   health: [HealthEvent],
-                  events: [CalendarEvent]) -> ForecastResult {
+                  events: [CalendarEvent]) -> ForecastResult? {
 
         let hSample = health.first { calendar.isDate($0.date, inSameDayAs: date) }
-        let baseWave = hourlyWaveform(baseHealth: hSample)
+        guard let baseWave = hourlyWaveform(baseHealth: hSample) else { return nil }
         let score = baseWave.reduce(0, +) / Double(baseWave.count) * 100.0
         return ForecastResult(values: baseWave, score: score)
     }
@@ -51,9 +51,9 @@ final class EnergyForecastModel: ObservableObject {
     // MARK: 3-part (morning / afternoon / evening)
     func threePartEnergy(for date: Date,
                          health: [HealthEvent],
-                         events: [CalendarEvent]) -> ThreePartEnergy {
+                         events: [CalendarEvent]) -> ThreePartEnergy? {
 
-        let wave = forecast(for: date, health: health, events: events).values
+        guard let wave = forecast(for: date, health: health, events: events)?.values else { return nil }
         func avg(_ s: ArraySlice<Double>) -> Double { s.reduce(0, +) / Double(s.count) * 100.0 }
         return ThreePartEnergy(morning:  avg(wave[0..<8]),
                                afternoon: avg(wave[8..<16]),
@@ -61,14 +61,14 @@ final class EnergyForecastModel: ObservableObject {
     }
 
     // MARK: Core waveform builder ------------------------------------------------
-    private func hourlyWaveform(baseHealth h: HealthEvent?) -> [Double] {
-        let base = computeBaseEnergy(from: h)
+    private func hourlyWaveform(baseHealth h: HealthEvent?) -> [Double]? {
+        guard let base = computeBaseEnergy(from: h) else { return nil }
         return Array(repeating: base, count: 24)          // flat until event-impact learner is added
     }
 
     // MARK: Base-energy score (0.0–1.0) -----------------------------------------
-    private func computeBaseEnergy(from h: HealthEvent?) -> Double {
-        guard let h else { return 0.5 }
+    private func computeBaseEnergy(from h: HealthEvent?) -> Double? {
+        guard let h, h.hasSamples else { return nil }
 
         // --- Normalised inputs (0–1) ------------------------------------------
         let sleepEff   = norm(h.sleepEfficiency, 60, 100)         // %
