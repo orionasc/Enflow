@@ -223,7 +223,6 @@ struct WeekCalendarView: View {
     }
 
     private func loadWeekData() async {
-        let model = EnergyForecastModel()
         var matrix = Array(
             repeating: Array(repeating: 50.0, count: hours.count),
             count: 7
@@ -253,12 +252,9 @@ struct WeekCalendarView: View {
                 let dayEvents = allEvents.filter {
                     calendar.isDate($0.startTime, inSameDayAs: day)
                 }
-                let summary = EnergySummaryEngine.shared
-                    .summarize(
-                        day: day,
-                        healthEvents: dayHealth,
-                        calendarEvents: dayEvents
-                    )
+                let summary = UnifiedEnergyModel.shared.summary(for: day,
+                                                                healthEvents: dayHealth,
+                                                                calendarEvents: dayEvents)
                 // hourlyWaveform[4…23] → 20 values
                 matrix[d] = Array(summary.hourlyWaveform[4...23])
                 events = allEvents

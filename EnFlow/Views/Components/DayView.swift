@@ -322,28 +322,23 @@ struct DayView: View {
     // MARK: ─ Data loader ───────────────────────────────────────
     private func load() async {
         let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 7)
-        let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
-        let model = EnergyForecastModel()
-        if let forecastResult = model.forecast(
-            for: currentDate,
-            health: healthList,
-            events: dayEvents
-        ) {
-            forecast = forecastResult.values
-            overallScore = forecastResult.score
-        } else {
-            forecast = []
-            overallScore = 0
+        let dayEvents  = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
+
+        let summary = UnifiedEnergyModel.shared.summary(for: currentDate,
+                                                       healthEvents: healthList,
+                                                       calendarEvents: dayEvents)
+        forecast = summary.hourlyWaveform
+        overallScore = summary.overallEnergyScore
+
+        func avg(_ slice: ArraySlice<Double>) -> Double {
+            slice.reduce(0, +) / Double(slice.count) * 100
         }
-        if let partsResult = model.threePartEnergy(
-            for: currentDate,
-            health: healthList,
-            events: dayEvents
-        ) {
-            parts = partsResult
-        } else {
-            parts = EnergyForecastModel.ThreePartEnergy(morning: 0, afternoon: 0, evening: 0)
-        }
+        parts = EnergyForecastModel.ThreePartEnergy(
+            morning:   avg(forecast[0..<8]),
+            afternoon: avg(forecast[8..<16]),
+            evening:   avg(forecast[16..<24])
+        )
+
         events = dayEvents
     }
 }
