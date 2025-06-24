@@ -247,14 +247,21 @@ Analyze correlations between the user's calendar events and their energy data. W
             }
             if let wave = fWave {
                 let score = wave.reduce(0, +) / Double(wave.count) * 100
-                forecast.append(DayEnergySummary(date: day,
-                                                overallEnergyScore: score.rounded(),
-                                                mentalEnergy: summary.mentalEnergy,
-                                                physicalEnergy: summary.physicalEnergy,
-                                                sleepEfficiency: summary.sleepEfficiency,
-                                                hourlyWaveform: wave,
-                                                topBoosters: [],
-                                                topDrainers: []))
+                forecast.append(DayEnergySummary(
+                    date: day,
+                    overallEnergyScore: score.rounded(),
+                    mentalEnergy: summary.mentalEnergy,
+                    physicalEnergy: summary.physicalEnergy,
+                    sleepEfficiency: summary.sleepEfficiency,
+                    coverageRatio: summary.coverageRatio,
+                    confidence: summary.confidence,
+                    warning: summary.warning,
+                    debugInfo: summary.debugInfo,
+                    hourlyWaveform: wave,
+                    topBoosters: [],
+                    topDrainers: []
+                ))
+
                 if day < cal.startOfDay(for: Date()) {
                     let diffs = zip(wave, summary.hourlyWaveform).map { abs($0 - $1) }
                     let acc = 1.0 - diffs.reduce(0, +) / Double(diffs.count)

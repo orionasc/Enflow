@@ -1,4 +1,5 @@
-import Foundation
+
+        import Foundation
 
 /// Provides combined calculated + forecasted summaries.
 @MainActor
@@ -53,10 +54,15 @@ final class UnifiedEnergyModel {
             mentalEnergy: summary.mentalEnergy,
             physicalEnergy: summary.physicalEnergy,
             sleepEfficiency: summary.sleepEfficiency,
+            coverageRatio: summary.coverageRatio,
+            confidence: summary.confidence,
+            warning: summary.warning,
+            debugInfo: summary.debugInfo,
             hourlyWaveform: blended,
             topBoosters: summary.topBoosters,
             topDrainers: summary.topDrainers,
             explainers: summary.explainers
+
         )
     }
 }

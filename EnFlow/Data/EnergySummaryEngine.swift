@@ -30,6 +30,15 @@ struct DayEnergySummary: Identifiable {
     let physicalEnergy: Double          // 0…100
     let sleepEfficiency: Double         // 0…100
 
+    /// Ratio of available metrics used to compute this score (0…1).
+    let coverageRatio: Double
+    /// Confidence level for the energy estimate (0…1).
+    let confidence: Double
+    /// Warning message if limited data required fallback logic.
+    let warning: String?
+    /// Debug string describing input coverage and confidence.
+    let debugInfo: String
+
     let hourlyWaveform: [Double]        // 24 values, 0.0…1.0
     let topBoosters: [String]           // event titles
     let topDrainers: [String]           // event titles
@@ -48,7 +57,12 @@ struct HealthEvent {
     let remSleep: Double            // min
     let steps: Int
     let calories: Double            // kcal
-    let hasSamples: Bool            // true if HealthKit returned data
+
+    /// Which metrics were available for this day.
+    let availableMetrics: Set<MetricType>
+
+    /// true if HealthKit returned any data
+    let hasSamples: Bool
 }
 
 // MARK: – Energy summary engine -----------------------------------------------
@@ -79,9 +93,9 @@ final class EnergySummaryEngine: ObservableObject {
         let hRows = healthEvents.filter { $0.date       >= start && $0.date < end }
         let cRows = calendarEvents.filter { $0.startTime >= start && $0.startTime < end }
 
-        // Sub-scores
-        let mental   = computeMentalEnergy(from: hRows)
-        let physical = computePhysicalEnergy(from: hRows)
+        // Sub-scores with fallback logic
+        let mental   = computeMentalEnergy(from: hRows.first)
+        let physical = computePhysicalEnergy(from: hRows.first)
         let overall  = (mental + physical) / 2.0
 
         // 24-h waveform (starts flat, apply event deltas)
@@ -98,12 +112,33 @@ final class EnergySummaryEngine: ObservableObject {
                                       physical: physical,
                                       events: cRows)
 
+        let available = hRows.first?.availableMetrics ?? []
+        let coverage = Double(available.count) / Double(MetricType.allCases.count)
+        let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
+        var warning: String? = nil
+        var confidence: Double = 0.6
+        if required.isSubset(of: available) == false {
+            confidence = 0.2
+            warning = "⚠️ Limited data used for today’s estimate. Add sleep or HRV data for higher accuracy."
+        } else if available.count == required.count {
+            confidence = 0.4
+            warning = "⚠️ Limited data used for today’s estimate. Add sleep or HRV data for higher accuracy."
+        } else if available.count >= 5 {
+            confidence = 0.8
+        }
+
+        let debug = "\(available.count)/\(MetricType.allCases.count) signals, conf \(String(format: "%.2f", confidence))"
+
         return DayEnergySummary(
             date: start,
             overallEnergyScore: overall.rounded(),
             mentalEnergy: mental.rounded(),
             physicalEnergy: physical.rounded(),
             sleepEfficiency: avg(hRows.map(\.sleepEfficiency), min: 60, max: 100) * 100,
+            coverageRatio: coverage,
+            confidence: confidence,
+            warning: warning,
+            debugInfo: debug,
             hourlyWaveform: wave,
             topBoosters: boosters,
             topDrainers: drainers,
@@ -112,20 +147,45 @@ final class EnergySummaryEngine: ObservableObject {
     }
 
     // ───────── Sub-score helpers ─────────────────────────────────
-    private func computeMentalEnergy(from rows: [HealthEvent]) -> Double {
-        guard !rows.isEmpty else { return 50 }
-        let rem     = avg(rows.map(\.remSleep),      min: 0,  max: 180)
-        let hrv     = avg(rows.map(\.hrv),           min: 20, max: 120)
-        let latency = 1 - avg(rows.map(\.sleepLatency), min: 0, max: 60)
-        return (rem + hrv + latency) / 3 * 100
+    private func computeMentalEnergy(from event: HealthEvent?) -> Double {
+        guard let h = event else { return 50 }
+        var comps: [Double] = []
+        if h.availableMetrics.contains(.remSleep) {
+            comps.append(norm(h.remSleep, 0, 180))
+        }
+        if h.availableMetrics.contains(.sleepLatency) {
+            comps.append(1 - norm(h.sleepLatency, 0, 60))
+        }
+        if h.availableMetrics.contains(.heartRateVariabilitySDNN) {
+            comps.append(norm(h.hrv, 20, 120))
+        } else if h.availableMetrics.contains(.restingHR) {
+            comps.append(1 - norm(h.restingHR, 40, 100))
+        }
+        if comps.isEmpty {
+            comps.append(activityScore(steps: h.steps))
+        }
+        return comps.reduce(0, +) / Double(comps.count) * 100
     }
 
-    private func computePhysicalEnergy(from rows: [HealthEvent]) -> Double {
-        guard !rows.isEmpty else { return 50 }
-        let deep     = avg(rows.map(\.deepSleep),      min: 0,  max: 120)
-        let restHR   = 1 - avg(rows.map(\.restingHR),  min: 40, max: 100)
-        let sleepEff = avg(rows.map(\.sleepEfficiency),min: 60, max: 100)
-        return (deep + restHR + sleepEff) / 3 * 100
+    private func computePhysicalEnergy(from event: HealthEvent?) -> Double {
+        guard let h = event else { return 50 }
+        var comps: [Double] = []
+        if h.availableMetrics.contains(.deepSleep) {
+            comps.append(norm(h.deepSleep, 0, 120))
+        }
+        if h.availableMetrics.contains(.restingHR) {
+            comps.append(1 - norm(h.restingHR, 40, 100))
+        } else if h.availableMetrics.contains(.heartRateVariabilitySDNN) {
+            comps.append(norm(h.hrv, 20, 120))
+        }
+        if h.availableMetrics.contains(.sleepEfficiency) {
+            comps.append(norm(h.sleepEfficiency, 60, 100))
+        }
+        if comps.isEmpty {
+            let activity = activityScore(steps: h.steps)
+            comps.append(activity)
+        }
+        return comps.reduce(0, +) / Double(comps.count) * 100
     }
 
     // ───────── Waveform builder ──────────────────────────────────
@@ -147,6 +207,18 @@ final class EnergySummaryEngine: ObservableObject {
         guard !valid.isEmpty else { return 0.5 }
         let mean = valid.reduce(0, +) / Double(valid.count)
         return max(0, min(1, (mean - lo) / (hi - lo)))
+    }
+
+    /// Simple min–max normalisation
+    private func norm(_ v: Double, _ lo: Double, _ hi: Double) -> Double {
+        guard hi > lo else { return 0.5 }
+        return max(0.0, min(1.0, (v - lo) / (hi - lo)))
+    }
+
+    /// Activity score peaks near personal mean step count (placeholder logic)
+    private func activityScore(steps: Int, mean: Int = 8000, sd: Int = 3000) -> Double {
+        let z = Double(steps - mean) / Double(sd)
+        return exp(-0.5 * z * z)
     }
 
     private func topEvents(from events: [CalendarEvent],
