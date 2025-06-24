@@ -202,7 +202,6 @@ struct MonthCalendarView: View {
     }
 
     private func loadEnergy() async {
-        let engine = EnergySummaryEngine.shared
         var results: [Date: Double] = [:]
 
         let allHealth = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 60)
@@ -219,7 +218,9 @@ struct MonthCalendarView: View {
         for date in monthDates where calendar.isDate(date, equalTo: displayMonth, toGranularity: .month) {
             let dayHealth = allHealth.filter { calendar.isDate($0.date, inSameDayAs: date) }
             let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
-            let summary   = engine.summarize(day: date, healthEvents: dayHealth, calendarEvents: dayEvents)
+            let summary = UnifiedEnergyModel.shared.summary(for: date,
+                                                           healthEvents: dayHealth,
+                                                           calendarEvents: dayEvents)
             results[date] = summary.overallEnergyScore
         }
 

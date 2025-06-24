@@ -42,8 +42,14 @@ final class EnergyForecastModel: ObservableObject {
                   health: [HealthEvent],
                   events: [CalendarEvent]) -> ForecastResult? {
 
+        if let cached = ForecastCache.shared.wave(for: date) {
+            let sc = cached.reduce(0, +) / Double(cached.count) * 100.0
+            return ForecastResult(values: cached, score: sc)
+        }
+
         let hSample = health.first { calendar.isDate($0.date, inSameDayAs: date) }
         guard let baseWave = hourlyWaveform(baseHealth: hSample) else { return nil }
+        ForecastCache.shared.saveWave(baseWave, for: date)
         let score = baseWave.reduce(0, +) / Double(baseWave.count) * 100.0
         return ForecastResult(values: baseWave, score: score)
     }
