@@ -103,8 +103,10 @@ struct DashboardView: View {
                                 .font(.caption2)
                                 .foregroundColor(.gray)
                         }
+                            
                     }
                     .frame(maxWidth: .infinity)
+                    
                 }
 
                 // — 24-hour line graph —
