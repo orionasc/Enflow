@@ -3,6 +3,7 @@
 
 import Foundation
 import HealthKit
+import SwiftUI
 
 // MARK: - Pipeline
 final class HealthDataPipeline: ObservableObject {
@@ -10,6 +11,9 @@ final class HealthDataPipeline: ObservableObject {
 
     private let store = HKHealthStore()
     private let calendar = Calendar.current
+    private var useSimulated: Bool {
+        UserDefaults.standard.bool(forKey: "useSimulatedHealthData")
+    }
 
     private init() {}
 
@@ -43,6 +47,10 @@ final class HealthDataPipeline: ObservableObject {
     /// Returns an array of `HealthEvent` objects (one per day) going `daysBack` into the past.
     @MainActor
     func fetchDailyHealthEvents(daysBack: Int = 7) async -> [HealthEvent] {
+        if useSimulated {
+            return SimulatedHealthLoader.loadSimulatedHealthEvents(daysBack: daysBack)
+        }
+
         let today = calendar.startOfDay(for: Date())
         let days  = (0..<daysBack).compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
 
@@ -178,6 +186,10 @@ final class HealthDataPipeline: ObservableObject {
     /// Returns today\'s step count as an integer value.
     @MainActor
     func stepsToday() async -> Int {
+        if useSimulated {
+            return SimulatedHealthLoader.loadSimulatedHealthEvents(daysBack: 1).first?.steps ?? 0
+        }
+
         let start = calendar.startOfDay(for: Date())
         let end   = calendar.date(byAdding: .day, value: 1, to: start)!
         let count = await sumQuantity(.stepCount,

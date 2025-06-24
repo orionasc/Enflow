@@ -5,9 +5,13 @@ struct DataView: View {
     @State private var healthEvents: [HealthEvent] = []
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var showCalendar = false
+    @AppStorage("useSimulatedHealthData") private var useSimulatedHealthData = false
 
     var body: some View {
         List {
+            Toggle("Use Simulated Health Data", isOn: $useSimulatedHealthData)
+                .onChange(of: useSimulatedHealthData) { _ in Task { await loadHealth() } }
+
             Section("Health Data") {
                 ForEach(healthEvents, id: \.date) { h in
                     VStack(alignment: .leading, spacing: 4) {
