@@ -255,6 +255,7 @@ Analyze correlations between the user's calendar events and their energy data. W
                                                 coverageRatio: summary.coverageRatio,
                                                 confidence: summary.confidence,
                                                 warning: summary.warning,
+                                                debugInfo: summary.debugInfo,
                                                 hourlyWaveform: wave,
                                                 topBoosters: [],
                                                 topDrainers: []))

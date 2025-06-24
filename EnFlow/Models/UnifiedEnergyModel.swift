@@ -56,6 +56,7 @@ final class UnifiedEnergyModel {
             coverageRatio: summary.coverageRatio,
             confidence: summary.confidence,
             warning: summary.warning,
+            debugInfo: summary.debugInfo,
             hourlyWaveform: blended,
             topBoosters: summary.topBoosters,
             topDrainers: summary.topDrainers,

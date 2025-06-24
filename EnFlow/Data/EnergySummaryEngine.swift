@@ -36,6 +36,8 @@ struct DayEnergySummary: Identifiable {
     let confidence: Double
     /// Warning message if limited data required fallback logic.
     let warning: String?
+    /// Debug string describing input coverage and confidence.
+    let debugInfo: String
 
     let hourlyWaveform: [Double]        // 24 values, 0.0…1.0
     let topBoosters: [String]           // event titles
@@ -125,6 +127,8 @@ final class EnergySummaryEngine: ObservableObject {
             confidence = 0.8
         }
 
+        let debug = "\(available.count)/\(MetricType.allCases.count) signals, conf \(String(format: "%.2f", confidence))"
+
         return DayEnergySummary(
             date: start,
             overallEnergyScore: overall.rounded(),
@@ -134,6 +138,7 @@ final class EnergySummaryEngine: ObservableObject {
             coverageRatio: coverage,
             confidence: confidence,
             warning: warning,
+            debugInfo: debug,
             hourlyWaveform: wave,
             topBoosters: boosters,
             topDrainers: drainers,
