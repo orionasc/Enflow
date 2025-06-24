@@ -149,4 +149,17 @@ final class HealthDataPipeline: ObservableObject {
             store.execute(q)
         }
     }
+
+    // MARK: Quick fetches
+    /// Returns today\'s step count as an integer value.
+    @MainActor
+    func stepsToday() async -> Int {
+        let start = calendar.startOfDay(for: Date())
+        let end   = calendar.date(byAdding: .day, value: 1, to: start)!
+        let count = await sumQuantity(.stepCount,
+                                      unit: .count(),
+                                      start: start,
+                                      end: end)
+        return Int(count)
+    }
 }
