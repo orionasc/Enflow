@@ -179,25 +179,37 @@ struct DayView: View {
 
     // MARK: ─ Timeline with multi-hour blocks ────────────────────
     private var timeline: some View {
-        VStack(spacing: 1) {
-            ForEach(0..<24, id: \.self) { hr in
-                HStack(spacing: 0) {
-                    Capsule()
-                        .fill(ColorPalette.color(for: forecast[hr] * 100))
-                        .frame(width: 6, height: 32)
-                        .padding(.trailing, 4)
-                    timelineRow(for: hr)
+        Group {
+            if forecast.count == 24 {
+                VStack(spacing: 1) {
+                    ForEach(0..<24, id: \.self) { hr in
+                        HStack(spacing: 0) {
+                            Capsule()
+                                .fill(ColorPalette.color(for: forecast[hr] * 100))
+                                .frame(width: 6, height: 32)
+                                .padding(.trailing, 4)
+                            timelineRow(for: hr)
+                        }
+                    }
                 }
+                .background(Color.white.opacity(0.04))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                Text("No Data")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 100)
+                    .background(Color.white.opacity(0.04))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     @ViewBuilder
     private func timelineRow(for hour: Int) -> some View {
         let label = hourLabel(hour)
-        let bg = ColorPalette.color(for: forecast[hour] * 100)
+        let energy = forecast.indices.contains(hour) ? forecast[hour] : 0
+        let bg = ColorPalette.color(for: energy * 100)
         let evs = events.filter {
             calendar.component(.hour, from: $0.startTime) == hour
         }
@@ -285,6 +297,7 @@ struct DayView: View {
     private func significantPeaksAndTroughs(
         threshold: Double = 0.2
     ) -> [(Int, Double)] {
+        guard forecast.count == 24 else { return [] }
         var result: [(Int, Double)] = []
         for hr in 1..<23 {
             let prev = forecast[hr - 1]
