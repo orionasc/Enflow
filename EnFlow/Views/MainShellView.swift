@@ -25,6 +25,9 @@ struct MainShellView: View {
 
                 NavigationView { TrendsView() }
                     .tabItem { Label("Trends", systemImage: "chart.bar.fill") }
+
+                NavigationView { DataView() }
+                    .tabItem { Label("Data", systemImage: "list.bullet.rectangle") }
             }
             .tint(accent)
             .enflowBackground()
@@ -34,6 +37,7 @@ struct MainShellView: View {
                     NavigationLink(destination: DashboardView())      { Label("Dashboard", systemImage: "waveform.path.ecg") }
                     NavigationLink(destination: EnergyCalendarView()) { Label("Calendar",  systemImage: "calendar") }
                     NavigationLink(destination: TrendsView())         { Label("Trends",    systemImage: "chart.bar.fill") }
+                    NavigationLink(destination: DataView())           { Label("Data",      systemImage: "list.bullet.rectangle") }
                 }
                 .listStyle(.sidebar)
                 .tint(accent)
