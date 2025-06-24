@@ -214,16 +214,11 @@ struct DayView: View {
                             .fill(bg.opacity(0.22))
                             .frame(height: 28)
                         ForEach(evs) { ev in
-                            let durHrs = max(
-                                1,
-                                calendar.dateComponents(
-                                    [.hour],
-                                    from: ev.startTime,
-                                    to: ev.endTime
-                                ).hour ?? 1
-                            )
+                            let startMinute = calendar.component(.minute, from: ev.startTime)
+                            let durationMinutes = ev.endTime.timeIntervalSince(ev.startTime) / 60
+                            let durationHours = durationMinutes / 60
                             let hourWidth = geo.size.width / 24
-                            let w = hourWidth * CGFloat(durHrs)
+                            let w = geo.size.width * CGFloat(durationHours) / 24
                             Text(ev.eventTitle)
                                 .font(.caption2.bold())
                                 .padding(.horizontal, 4)
@@ -231,6 +226,7 @@ struct DayView: View {
                                 .frame(width: w, alignment: .leading)
                                 .background(Color.white.opacity(0.15))
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .offset(x: hourWidth * CGFloat(startMinute) / 60)
                         }
                     }
                 }
