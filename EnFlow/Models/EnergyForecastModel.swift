@@ -63,7 +63,10 @@ final class EnergyForecastModel: ObservableObject {
     // MARK: Core waveform builder ------------------------------------------------
     private func hourlyWaveform(baseHealth h: HealthEvent?) -> [Double] {
         let base = computeBaseEnergy(from: h)
-        return Array(repeating: base, count: 24)          // flat until event-impact learner is added
+        return (0..<24).map { hr in
+            let boosted = base + circadianBoost[hr]
+            return max(0.0, min(1.0, boosted))           // clamp 0–1
+        }
     }
 
     // MARK: Base-energy score (0.0–1.0) -----------------------------------------
@@ -83,10 +86,6 @@ final class EnergyForecastModel: ObservableObject {
                 0.15*restHRInv +
                 0.15*deepREM  +
                 0.10*actBal
-
-        // --- Circadian modifier (fixed lookup) -------------------------------
-        let hr = calendar.component(.hour, from: Date())
-        e += circadianBoost[hr]
 
         return max(0.0, min(1.0, e))
     }
