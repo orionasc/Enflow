@@ -37,13 +37,8 @@ struct SuggestedPrioritiesView: View {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .frame(maxWidth: .infinity, alignment: .center)
-                
-            } else if let err = vm.errorText {
-                Text(err)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                
-            } else {
+
+            } else if !vm.priorities.isEmpty {
                 ForEach(vm.priorities) { p in
                     ZStack(alignment: .topTrailing) {
                         suggestionCard(for: p)
@@ -68,6 +63,10 @@ struct SuggestedPrioritiesView: View {
                         }
                     }
                 }
+            } else {
+                Text(vm.errorText ?? "AI suggestions unavailable.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
         .task(id: contextHash)   { await vm.refresh() }

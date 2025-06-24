@@ -160,7 +160,19 @@ final class OpenAIManager {
         req.setValue("application/json",          forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        guard let http = response as? HTTPURLResponse else {
+            throw OpenAIError.api("Invalid server response")
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            if let err = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data).error.message {
+                throw OpenAIError.api(err)
+            } else {
+                throw OpenAIError.api("Server returned status \(http.statusCode)")
+            }
+        }
+
         let decoded   = try JSONDecoder().decode(OpenAIResponse.self, from: data)
         let text      = decoded.choices.first?.message.content
                             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -183,4 +195,18 @@ private struct OpenAIResponse: Decodable {
         struct Message: Decodable { let content: String }
     }
     let choices: [Choice]
+}
+
+private struct OpenAIErrorResponse: Decodable {
+    struct Detail: Decodable { let message: String }
+    let error: Detail
+}
+
+enum OpenAIError: LocalizedError {
+    case api(String)
+    var errorDescription: String? {
+        switch self {
+        case .api(let msg): msg
+        }
+    }
 }
