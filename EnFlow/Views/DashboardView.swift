@@ -33,6 +33,7 @@ struct DashboardView: View {
     @State private var tomorrowCtx: SuggestedPriorityContext?
 
     @State private var isLoading = true
+    @State private var stepsToday = 0
     @State private var selection  = 0         // 0 = today • 1 = tomorrow
     @State private var missingTodayData = false
     @State private var missingTomorrowData = false
@@ -90,14 +91,21 @@ struct DashboardView: View {
                 }
 
                 // — Composite ring —
-                    if let summary = todaySummary {
+                if let summary = todaySummary {
+                    VStack(spacing: 4) {
                         EnergyRingView(
                           score: summary.overallEnergyScore,
                           explainers: summary.explainers,
                           summaryDate: summary.date
                         )
-                        .frame(maxWidth: .infinity)
+                        if stepsToday > 0 {
+                            Text("Steps today: \(stepsToday)")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
                     }
+                    .frame(maxWidth: .infinity)
+                }
 
                 // — 24-hour line graph —
                 if let wave = todaySummary?.hourlyWaveform {
@@ -191,6 +199,7 @@ struct DashboardView: View {
 
         // Health + calendar pulls
         let healthList     = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 2)
+        let steps          = await HealthDataPipeline.shared.stepsToday()
         let eventsToday    = await CalendarDataPipeline.shared.fetchEvents(for: today)
         let eventsTomorrow = await CalendarDataPipeline.shared.fetchEvents(for: tomorrow)
 
@@ -262,6 +271,7 @@ struct DashboardView: View {
             tomorrowParts   = tmParts
             todayCtx        = tCtx
             tomorrowCtx     = tmCtx
+            stepsToday      = steps
             isLoading       = false
             missingTodayData = noToday
             missingTomorrowData = noTomorrow
