@@ -13,6 +13,7 @@ struct TrendsView: View {
     @State private var period: TrendsPeriod = .weekly
 
     @State private var summaries: [DayEnergySummary] = []
+    @State private var forecastSummaries: [DayEnergySummary] = []
     @State private var accuracy: Double = 0.0
     @State private var insightTags: [String] = []
     @State private var insightText: String = ""
@@ -43,17 +44,21 @@ struct TrendsView: View {
                         LineMark(x: .value("Day", item.date), y: .value("Actual", item.overallEnergyScore))
                             .interpolationMethod(.catmullRom)
                             .foregroundStyle(Color.yellow)
+                    }
+                    ForEach(forecastSummaries) { item in
                         LineMark(x: .value("Day", item.date), y: .value("Forecast", item.overallEnergyScore))
                             .interpolationMethod(.catmullRom)
                             .foregroundStyle(Color.blue)
                     }
-                    if let last = summaries.last {
-                        PointMark(x: .value("Day", last.date), y: .value("Actual", last.overallEnergyScore))
+                    if let lastA = summaries.last {
+                        PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
                             .symbol(.circle)
                             .symbolSize(80)
                             .foregroundStyle(Color.yellow)
                             .shadow(radius: 8)
-                        PointMark(x: .value("Day", last.date), y: .value("Forecast", last.overallEnergyScore))
+                    }
+                    if let lastF = forecastSummaries.last {
+                        PointMark(x: .value("Day", lastF.date), y: .value("Forecast", lastF.overallEnergyScore))
                             .symbol(.circle)
                             .symbolSize(80)
                             .foregroundStyle(Color.blue)
@@ -63,6 +68,13 @@ struct TrendsView: View {
                 .chartYScale(domain: 0...100)
                 .frame(height: 200)
                 .padding(.horizontal)
+
+                if forecastSummaries.isEmpty {
+                    Text("Not enough prediction data to make accurate assessment")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal)
+                }
 
                 // Main energy toggle icon
                 HStack { Spacer()
@@ -91,6 +103,12 @@ struct TrendsView: View {
                             .foregroundColor(.yellow)
                     }
                     .padding(.horizontal)
+                }
+                if accuracy == 0 {
+                    Text("Not enough prediction data to make accurate assessment")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal)
                 }
 
                 // Energy insights
@@ -202,41 +220,63 @@ Analyze correlations between the user's calendar events and their energy data. W
             }
         }()
 
-        // 1. Fetch raw Health and Calendar data
+        let cal = Calendar.current
+        let start = cal.date(byAdding: .day, value: -(days - 1), to: cal.startOfDay(for: Date())) ?? Date()
         let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: days)
-        let allEvents  = await CalendarDataPipeline.shared.fetchUpcomingDays(days: days)
+        let allEvents = await CalendarDataPipeline.shared.fetchEvents(start: start, end: cal.date(byAdding: .day, value: days, to: start)!)
 
-        // 2. Summarize each day
-        var newSummaries: [DayEnergySummary] = []
-        for h in healthList {
-            // Filter calendar events for this exact day
-            let dayStart = Calendar.current.startOfDay(for: h.date)
-            let dayEvents = allEvents.filter {
-                Calendar.current.isDate($0.startTime, inSameDayAs: dayStart)
+        var actual: [DayEnergySummary] = []
+        var forecast: [DayEnergySummary] = []
+        var accTotal = 0.0
+        var accCount = 0
+
+        for i in 0..<days {
+            guard let day = cal.date(byAdding: .day, value: i, to: start) else { continue }
+            let h = healthList.filter { cal.isDate($0.date, inSameDayAs: day) }
+            let ev = allEvents.filter { cal.isDate($0.startTime, inSameDayAs: day) }
+
+            let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: h, calendarEvents: ev)
+            actual.append(summary)
+
+            var fWave = ForecastCache.shared.wave(for: day)
+            if fWave == nil {
+                if let res = EnergyForecastModel().forecast(for: day, health: h, events: ev)?.values {
+                    fWave = res
+                    ForecastCache.shared.saveWave(res, for: day)
+                }
             }
-
-            let summary = EnergySummaryEngine.shared.summarize(
-                day: dayStart,
-                healthEvents: [h],
-                calendarEvents: dayEvents
-            )
-            newSummaries.append(summary)
+            if let wave = fWave {
+                let score = wave.reduce(0, +) / Double(wave.count) * 100
+                forecast.append(DayEnergySummary(date: day,
+                                                overallEnergyScore: score.rounded(),
+                                                mentalEnergy: summary.mentalEnergy,
+                                                physicalEnergy: summary.physicalEnergy,
+                                                sleepEfficiency: summary.sleepEfficiency,
+                                                coverageRatio: summary.coverageRatio,
+                                                confidence: summary.confidence,
+                                                warning: summary.warning,
+                                                hourlyWaveform: wave,
+                                                topBoosters: [],
+                                                topDrainers: []))
+                if day < cal.startOfDay(for: Date()) {
+                    let diffs = zip(wave, summary.hourlyWaveform).map { abs($0 - $1) }
+                    let acc = 1.0 - diffs.reduce(0, +) / Double(diffs.count)
+                    ForecastCache.shared.saveAccuracy(acc, for: day)
+                    accTotal += acc
+                    accCount += 1
+                }
+            }
         }
 
-        // 3. Sort by date
-        newSummaries.sort { $0.date < $1.date }
+        let accuracyVal = accCount > 0 ? accTotal / Double(accCount) : 0.0
 
-        // 4. Assign to state
         await MainActor.run {
-            self.summaries = newSummaries
-            // TODO: wire up your forecast model to compute a true accuracy metric here
-            self.accuracy  = 0.0
+            summaries = actual
+            forecastSummaries = forecast
+            accuracy = accuracyVal
         }
 
-        // 5. Pulse any ring/forecast animations
-        await MainActor.run {
-            EnergySummaryEngine.shared.markRefreshed()
-        }
+        await MainActor.run { EnergySummaryEngine.shared.markRefreshed() }
     }
 
 

@@ -20,9 +20,16 @@ final class HealthDataPipeline: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
             HKObjectType.quantityType(forIdentifier: .restingHeartRate),
             HKObjectType.quantityType(forIdentifier: .appleExerciseTime),
+            HKObjectType.quantityType(forIdentifier: .vo2Max),
+            HKObjectType.quantityType(forIdentifier: .respiratoryRate),
+            HKObjectType.quantityType(forIdentifier: .walkingHeartRateAverage),
+            HKObjectType.quantityType(forIdentifier: .oxygenSaturation),
+            HKObjectType.quantityType(forIdentifier: .environmentalAudioExposure),
             HKObjectType.quantityType(forIdentifier: .stepCount),
             HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+            HKObjectType.categoryType(forIdentifier: .menstrualFlow),
+            HKObjectType.categoryType(forIdentifier: .mindfulSession)
         ].compactMap { $0 }
 
         let readTypes = Set(sampleTypes)
@@ -63,8 +70,17 @@ final class HealthDataPipeline: ObservableObject {
             // --- Sleep metrics ————————————————
             let (eff, lat, deep, rem) = await parseSleepMetrics(start: day, end: next)
 
-            let hasData = hrvMs > 0 || restHR > 0 || steps > 0 || calories > 0 ||
-                           eff > 0 || lat > 0 || deep > 0 || rem > 0
+            var metrics: Set<MetricType> = []
+            if steps > 0        { metrics.insert(.stepCount) }
+            if restHR > 0       { metrics.insert(.restingHR) }
+            if calories > 0     { metrics.insert(.activeEnergyBurned) }
+            if hrvMs > 0        { metrics.insert(.heartRateVariabilitySDNN) }
+            if eff > 0          { metrics.insert(.sleepEfficiency) }
+            if lat > 0          { metrics.insert(.sleepLatency) }
+            if deep > 0         { metrics.insert(.deepSleep) }
+            if rem > 0          { metrics.insert(.remSleep) }
+
+            let hasData = !metrics.isEmpty
             if !hasData {
                 print("[HealthDataPipeline] No HealthKit samples for \(day)")
             }
@@ -80,6 +96,7 @@ final class HealthDataPipeline: ObservableObject {
                     remSleep: rem,
                     steps: Int(steps),
                     calories: calories,
+                    availableMetrics: metrics,
                     hasSamples: hasData
                 )
             )
