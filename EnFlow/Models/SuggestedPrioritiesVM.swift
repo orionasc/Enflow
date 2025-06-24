@@ -48,7 +48,7 @@ final class SuggestedPrioritiesVM: ObservableObject {
             priorities = sortAndFilter(merged)
             save()
         } catch {
-            errorText = "Couldn’t fetch priorities."
+            errorText = error.localizedDescription
         }
         isLoading = false
     }
