@@ -9,35 +9,49 @@ struct EnergyLineChartView: View {
             let width = proxy.size.width
             let height = proxy.size.height
 
-            // Build the entire waveform path
-            let waveform = Path { p in
-                for i in 0..<count {
-                    let x = width * CGFloat(i) / CGFloat(count - 1)
-                    let y = height * (1 - CGFloat(values[i]))
-                    if i == 0 {
-                        p.move(to: CGPoint(x: x, y: y))
-                    } else {
-                        p.addLine(to: CGPoint(x: x, y: y))
-                    }
-                }
+            // Convert values to points
+            let points = (0..<count).map { i -> CGPoint in
+                let x = width * CGFloat(i) / CGFloat(count - 1)
+                let y = height * (1 - CGFloat(values[i]))
+                return CGPoint(x: x, y: y)
             }
 
-            // Gradient: blue → green → yellow
-            let gradient = ColorPalette.gradient(for: average(values) * 100)
+            // Smoothed waveform path
+            let waveform = smoothPath(points)
+            let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
 
-            // Mask the gradient with the stroke of the path
-            gradient
-                .mask(
-                    waveform
-                        .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            // Vertical heatmap masked by waveform
+            ColorPalette.verticalEnergyGradient
+                .mask(waveform.stroke(style: stroke))
+                .overlay(
+                    // Subtle left→right tint based on average score
+                    ColorPalette.gradient(for: average(values) * 100)
+                        .mask(waveform.stroke(style: stroke))
+                        .blendMode(.overlay)
                 )
         }
         .frame(height: 60)
     }
-    
+
     private func average(_ values: [Double]) -> Double {
         guard !values.isEmpty else { return 0.5 }
         return values.reduce(0, +) / Double(values.count)
+    }
+
+    // MARK: - Path smoothing
+    private func smoothPath(_ pts: [CGPoint]) -> Path {
+        var path = Path()
+        guard pts.count > 1 else { return path }
+        path.move(to: pts[0])
+        for i in 1..<pts.count {
+            let prev = pts[i-1]
+            let curr = pts[i]
+            let dx = curr.x - prev.x
+            let c1 = CGPoint(x: prev.x + dx * 0.6, y: prev.y)
+            let c2 = CGPoint(x: curr.x - dx * 0.6, y: curr.y)
+            path.addCurve(to: curr, control1: c1, control2: c2)
+        }
+        return path
     }
 
 }

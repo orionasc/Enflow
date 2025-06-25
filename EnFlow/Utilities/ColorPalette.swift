@@ -53,6 +53,17 @@ enum ColorPalette {
             endPoint: .bottomTrailing
         )
     }
+
+    /// Full vertical gradient from low (blue) to high (yellow).
+    static var verticalEnergyGradient: LinearGradient {
+        let sorted = stops.keys.sorted()
+        let colors = sorted.compactMap { stops[$0] }
+        return LinearGradient(
+            gradient: Gradient(colors: colors),
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
 }
 
 // --------------------------------------------------------------------
