@@ -23,7 +23,7 @@ enum WeeklySummaryFormatter {
 
         var lines: [String] = []
         for section in summary.sections {
-            lines.append("\u2022 \(section.title): \(section.content)")
+            lines.append("\u{2022} \(section.title): \(section.content)")
         }
 
         if !summary.events.isEmpty {
