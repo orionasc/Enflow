@@ -22,7 +22,8 @@ struct TrendsView: View {
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
-    private let forecastColor = Color(red: 0.0, green: 0.6, blue: 0.9)
+    // Use a vivid blue so the forecast line is clearly distinguished
+    private let forecastColor = Color.blue
 
     private var forecastAvailable: Bool {
         !forecastSummaries.isEmpty && forecastSummaries.count == summaries.count
@@ -339,7 +340,6 @@ Analyze correlations between the user's calendar events and their energy data. W
             shadeMarks
             actualLineMarks
             forecastLineMarks
-            trendLineMarks
             endPointMarks
         }
         .chartXAxis(.hidden)
@@ -396,16 +396,6 @@ Analyze correlations between the user's calendar events and their energy data. W
     }
 
     @ChartContentBuilder
-    private var trendLineMarks: some ChartContent {
-        ForEach(trendPoints) { p in
-            LineMark(x: .value("Day", p.date), y: .value("Trend", p.value))
-                .interpolationMethod(.linear)
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [5,3]))
-                .foregroundStyle(forecastColor)
-        }
-    }
-
-    @ChartContentBuilder
     private var endPointMarks: some ChartContent {
         if let lastA = summaries.last {
             PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
@@ -450,23 +440,6 @@ Analyze correlations between the user's calendar events and their energy data. W
         return sections
     }
 
-    private var trendPoints: [TrendPoint] {
-        guard let last = summaries.last else { return [] }
-        let cal = Calendar.current
-        let extra = Int(Double(summaries.count) * 0.25)
-        guard let end = cal.date(byAdding: .day, value: extra, to: last.date) else { return [] }
-        let lastTwo = summaries.suffix(2)
-        let slope: Double
-        if lastTwo.count == 2 {
-            slope = lastTwo.last!.overallEnergyScore - lastTwo.first!.overallEnergyScore
-        } else {
-            slope = 0
-        }
-        let forecastEnd = last.overallEnergyScore + slope
-        return [TrendPoint(date: last.date, value: last.overallEnergyScore),
-                TrendPoint(date: end, value: forecastEnd)]
-    }
-
     private struct ShadePoint: Identifiable {
         let id = UUID()
         let date: Date
@@ -480,11 +453,6 @@ Analyze correlations between the user's calendar events and their energy data. W
         let color: Color
     }
 
-    private struct TrendPoint: Identifiable {
-        let id = UUID()
-        let date: Date
-        let value: Double
-    }
 }
 
 
