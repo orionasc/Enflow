@@ -136,10 +136,7 @@ struct OnboardingAndSettingsView: View {
         calendarGranted =
             EKEventStore.authorizationStatus(for: .event) == .authorized
 
-        if let t = HKObjectType.quantityType(forIdentifier: .stepCount) {
-            healthGranted =
-                HKHealthStore().authorizationStatus(for: t) == .sharingAuthorized
-        }
+        updateHealthGranted()
     }
 
     // Toggle callbacks
@@ -151,7 +148,10 @@ struct OnboardingAndSettingsView: View {
 
     private func healthToggleChanged(_ newValue: Bool) {
         if newValue {
-            HealthDataPipeline.shared.requestAuthorization { healthGranted = $0 }
+            HealthDataPipeline.shared.requestAuthorization {
+                healthGranted = $0
+                updateHealthGranted()
+            }
         } else { showSettingsAlert = true }
     }
 
