@@ -10,7 +10,7 @@ struct SimulatedHealthLoader {
         guard let url = bundleURL ?? docsURL,
               let csv = try? String(contentsOf: url) else { return [] }
 
-        let lines = csv.split(whereSeparator: \n.isNewline)
+        let lines = csv.split(whereSeparator: { $0.isNewline })
         guard lines.count > 1 else { return [] }
 
         let dateFmt = DateFormatter()
