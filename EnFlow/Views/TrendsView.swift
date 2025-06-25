@@ -20,6 +20,11 @@ struct TrendsView: View {
     @State private var insightText: String = ""
     @State private var gptSummary: String = ""
     @State private var selectedEventDate: Date? = nil
+    @State private var animatePulse = false
+
+    private var forecastAvailable: Bool {
+        !forecastSummaries.isEmpty && forecastSummaries.count == summaries.count
+    }
 
     var body: some View {
         ScrollView {
@@ -41,21 +46,45 @@ struct TrendsView: View {
 
                 // Dual-line chart (Actual = yellow, Forecast = blue)
                 Chart {
+                    ForEach(shadeSections) { section in
+                        ForEach(section.points) { p in
+                            AreaMark(
+                                x: .value("Day", p.date),
+                                yStart: .value("Low", p.low),
+                                yEnd: .value("High", p.high)
+                            )
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(section.color)
+                        }
+                    }
+
                     ForEach(summaries) { item in
                         LineMark(x: .value("Day", item.date), y: .value("Actual", item.overallEnergyScore))
                             .interpolationMethod(.catmullRom)
                             .foregroundStyle(Color.yellow)
+                            .shadow(color: .yellow.opacity(0.6), radius: 4)
                     }
+
                     ForEach(forecastSummaries) { item in
                         LineMark(x: .value("Day", item.date), y: .value("Forecast", item.overallEnergyScore))
                             .interpolationMethod(.catmullRom)
                             .foregroundStyle(Color.blue)
+                            .shadow(color: .blue.opacity(0.6), radius: 4)
                     }
+
+                    ForEach(trendPoints) { p in
+                        LineMark(x: .value("Day", p.date), y: .value("Trend", p.value))
+                            .interpolationMethod(.linear)
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [5,3]))
+                            .foregroundStyle(Color.blue)
+                    }
+
                     if let lastA = summaries.last {
                         PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
                             .symbol(.circle)
                             .symbolSize(80)
                             .foregroundStyle(Color.yellow)
+                            .scaleEffect(animatePulse ? 1.2 : 0.8)
                             .shadow(radius: 8)
                     }
                     if let lastF = forecastSummaries.last {
@@ -63,16 +92,45 @@ struct TrendsView: View {
                             .symbol(.circle)
                             .symbolSize(80)
                             .foregroundStyle(Color.blue)
+                            .scaleEffect(animatePulse ? 1.2 : 0.8)
                             .shadow(radius: 8)
                     }
                 }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
                 .chartYScale(domain: 0...100)
                 .frame(height: 200)
                 .padding(.horizontal)
+                .overlay(
+                    VStack {
+                        Text("High").font(.caption).foregroundColor(.gray)
+                        Spacer()
+                        Text("Low").font(.caption).foregroundColor(.gray)
+                    }
+                    .padding(.leading, 4), alignment: .leading
+                )
+                .onAppear { animatePulse = true }
 
-                if forecastSummaries.isEmpty {
-                    Text("Not enough prediction data to make accurate assessment")
-                        .font(.caption)
+                HStack(spacing: 16) {
+                    HStack(spacing: 4) {
+                        Path { p in p.move(to: .zero); p.addLine(to: CGPoint(x: 24, y: 0)) }
+                            .stroke(Color.blue, style: StrokeStyle(lineWidth: 2, dash: forecastAvailable ? [] : [5,3]))
+                            .frame(height: 2)
+                        Text("Forecasted").foregroundColor(.blue)
+                    }
+                    HStack(spacing: 4) {
+                        Path { p in p.move(to: .zero); p.addLine(to: CGPoint(x: 24, y: 0)) }
+                            .stroke(Color.yellow, lineWidth: 2)
+                            .frame(height: 2)
+                        Text("Calculated").foregroundColor(.yellow)
+                    }
+                }
+                .font(.caption)
+                .padding(.horizontal)
+
+                if !forecastAvailable {
+                    Text("You haven't used the app for long enough for this feature")
+                        .font(.caption.italic())
                         .foregroundColor(.orange)
                         .padding(.horizontal)
                 }
@@ -299,6 +357,69 @@ Analyze correlations between the user's calendar events and their energy data. W
             let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
             selectedEventDate = fmt.date(from: d)
         }
+    }
+
+    // MARK: Derived Data --------------------------------------------------
+
+    private var shadeSections: [ShadeSection] {
+        guard summaries.count == forecastSummaries.count else { return [] }
+        var sections: [ShadeSection] = []
+        var currentColor: Color? = nil
+        var currentPoints: [ShadePoint] = []
+        for (a, f) in zip(summaries, forecastSummaries) {
+            let color: Color = a.overallEnergyScore >= f.overallEnergyScore ? Color.yellow.opacity(0.2) : Color.blue.opacity(0.2)
+            let point = ShadePoint(date: a.date,
+                                   low: min(a.overallEnergyScore, f.overallEnergyScore),
+                                   high: max(a.overallEnergyScore, f.overallEnergyScore))
+            if currentColor == nil || color != currentColor {
+                if let c = currentColor, !currentPoints.isEmpty {
+                    sections.append(ShadeSection(points: currentPoints, color: c))
+                    currentPoints.removeAll()
+                }
+                currentColor = color
+            }
+            currentPoints.append(point)
+        }
+        if let c = currentColor, !currentPoints.isEmpty {
+            sections.append(ShadeSection(points: currentPoints, color: c))
+        }
+        return sections
+    }
+
+    private var trendPoints: [TrendPoint] {
+        guard let last = summaries.last else { return [] }
+        let cal = Calendar.current
+        let extra = Int(Double(summaries.count) * 0.25)
+        guard let end = cal.date(byAdding: .day, value: extra, to: last.date) else { return [] }
+        let lastTwo = summaries.suffix(2)
+        let slope: Double
+        if lastTwo.count == 2 {
+            slope = lastTwo.last!.overallEnergyScore - lastTwo.first!.overallEnergyScore
+        } else {
+            slope = 0
+        }
+        let forecastEnd = last.overallEnergyScore + slope
+        return [TrendPoint(date: last.date, value: last.overallEnergyScore),
+                TrendPoint(date: end, value: forecastEnd)]
+    }
+
+    private struct ShadePoint: Identifiable {
+        let id = UUID()
+        let date: Date
+        let low: Double
+        let high: Double
+    }
+
+    private struct ShadeSection: Identifiable {
+        let id = UUID()
+        let points: [ShadePoint]
+        let color: Color
+    }
+
+    private struct TrendPoint: Identifiable {
+        let id = UUID()
+        let date: Date
+        let value: Double
     }
 }
 
