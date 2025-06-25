@@ -127,7 +127,7 @@ struct TrendsView: View {
                 }
 
                 // Energy insights
-                EnergyInsightsCard(tags: insightTags, text: insightText)
+                EnergyInsightsCard(tags: insightTags, text: insightText, forecastColor: forecastColor)
                     .padding(.horizontal)
 
                 // GPT Weekly Summary with separate reload
@@ -471,6 +471,7 @@ Analyze correlations between the user's calendar events and their energy data. W
 struct EnergyInsightsCard: View {
     let tags: [String]
     let text: String
+    let forecastColor: Color
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
