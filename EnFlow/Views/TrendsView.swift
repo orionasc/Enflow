@@ -19,6 +19,7 @@ struct TrendsView: View {
     @State private var insightTags: [String] = []
     @State private var insightText: String = ""
     @State private var gptSummary: String = ""
+    @State private var calendarEvents: [CalendarEvent] = []
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
     private let forecastColor = Color(red: 0.0, green: 0.6, blue: 0.9)
@@ -174,6 +175,7 @@ struct TrendsView: View {
     /// Full data reload (chart + summary)
     private func loadData() async {
         await loadChartData()
+        await loadEnergyInsight()
         await loadGPTSummary()
     }
 
@@ -202,6 +204,40 @@ Analyze correlations between the user's calendar events and their energy data. W
             }
         } catch {
             gptSummary = "{ \"error\": \"Unable to load summary\" }"
+        }
+    }
+
+    /// Generate a brief personalized energy tip between the accuracy bar and weekly summary.
+    private func loadEnergyInsight() async {
+        guard !summaries.isEmpty else { return }
+
+        let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"
+        let scoreParts = summaries.map { "\(df.string(from: $0.date)): \(Int($0.overallEnergyScore))" }
+        let eventParts = calendarEvents.prefix(10).map { "\(df.string(from: $0.startTime)): \($0.eventTitle)" }
+
+        let prompt = """
+        Based on these energy scores: \(scoreParts.joined(separator: ", ")) and recent events: \(eventParts.joined(separator: ", ")).
+        Respond with one line of up to three short tags separated by commas, then a newline and one personalized sentence on how the user could improve their score. If data seems insufficient, offer a lesser-known energy or biohacking tip.
+        """
+
+        do {
+            let raw = try await OpenAIManager.shared.generateInsight(
+                prompt: prompt,
+                cacheId: "EnergyTip.\(period.rawValue)"
+            )
+            let parts = raw.components(separatedBy: "\n")
+            let tagsLine = parts.first ?? ""
+            let textLine = parts.dropFirst().joined(separator: " ")
+            let tags = tagsLine.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            await MainActor.run {
+                insightTags = tags
+                insightText = textLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        } catch {
+            await MainActor.run {
+                insightTags = []
+                insightText = "Energy tip unavailable."
+            }
         }
     }
 
@@ -279,6 +315,7 @@ Analyze correlations between the user's calendar events and their energy data. W
             summaries = actual
             forecastSummaries = forecast
             accuracy = accuracyVal
+            calendarEvents = allEvents
         }
 
         await MainActor.run { EnergySummaryEngine.shared.markRefreshed() }
