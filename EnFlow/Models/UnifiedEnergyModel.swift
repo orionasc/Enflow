@@ -16,7 +16,8 @@ final class UnifiedEnergyModel {
     /// forecasted future energy when appropriate.
     func summary(for date: Date,
                  healthEvents: [HealthEvent],
-                 calendarEvents: [CalendarEvent]) -> DayEnergySummary {
+                 calendarEvents: [CalendarEvent],
+                 profile: UserProfile? = nil) -> DayEnergySummary {
 
         let summary = summaryEngine.summarize(day: date,
                                               healthEvents: healthEvents,
@@ -24,7 +25,8 @@ final class UnifiedEnergyModel {
 
         guard let forecast = forecastModel.forecast(for: date,
                                                     health: healthEvents,
-                                                    events: calendarEvents) else {
+                                                    events: calendarEvents,
+                                                    profile: profile) else {
             return summary
         }
         cache.saveForecast(forecast)

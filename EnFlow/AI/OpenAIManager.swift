@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // ──────────────────────────────────────────────────────────────
 // MARK: – In-memory + persisted cache (1 h TTL)
@@ -50,6 +51,9 @@ final class OpenAIManager {
     private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
     private let model    = "gpt-4o-mini"
     private lazy var apiKey: String = (try? KeychainHelper.read()) ?? ""
+
+    // cached user profile context
+    private var cachedProfile: (Date, String)? = nil
 
     // ───── PUBLIC API ──────────────────────────────────────────
 
@@ -124,6 +128,48 @@ final class OpenAIManager {
         }
     }
 
+    // MARK: User context for prompts
+    private func userDataContext() async -> String {
+        if let cached = cachedProfile, Date().timeIntervalSince(cached.0) < 3_600 {
+            return cached.1
+        }
+
+        let profile = UserProfileStore.load()
+        let cal = Calendar.current
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+
+        var parts: [String] = []
+        parts.append("wake \(fmt.string(from: profile.typicalWakeTime))")
+        parts.append("sleep \(fmt.string(from: profile.typicalSleepTime))")
+        parts.append("chronotype \(profile.chronotype.rawValue)")
+        parts.append("exercise \(profile.exerciseFrequency)/week")
+        parts.append("caffeine \(profile.caffeineMgPerDay)mg")
+        let times = [
+            profile.caffeineMorning ? "morning" : nil,
+            profile.caffeineAfternoon ? "afternoon" : nil,
+            profile.caffeineEvening ? "evening" : nil
+        ].compactMap { $0 }.joined(separator: ",")
+        if !times.isEmpty { parts.append("caffeine times: \(times)") }
+        if profile.usesSleepAid { parts.append("sleep aid") }
+        if !profile.screensBeforeBed { parts.append("no screens before bed") }
+        if !profile.mealsRegular { parts.append("irregular meals") }
+        if let notes = profile.notes, !notes.isEmpty { parts.append("notes: \(notes)") }
+
+        let health = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 14)
+        let healthParts = health.map { "\(fmt.string(from: $0.date)): steps \($0.steps)" }
+
+        let startPast = cal.date(byAdding: .day, value: -14, to: Date()) ?? Date()
+        let pastEvents = await CalendarDataPipeline.shared.fetchEvents(start: startPast, end: Date())
+        let pastStr = pastEvents.map { "\(fmt.string(from: $0.startTime)): \($0.eventTitle)" }
+
+        let upcoming = await CalendarDataPipeline.shared.fetchUpcomingDays(days: 7)
+        let upcomingStr = upcoming.map { "\(fmt.string(from: $0.startTime)): \($0.eventTitle)" }
+
+        let result = "Profile: \(parts.joined(separator: "; ")). Recent health: \(healthParts.joined(separator: ", ")). Recent events: \(pastStr.joined(separator: ", ")). Upcoming events: \(upcomingStr.joined(separator: ", "))."
+        cachedProfile = (Date(), result)
+        return result
+    }
+
 
     
 
@@ -134,7 +180,10 @@ final class OpenAIManager {
                                 maxTokens: Int,
                                 temperature: Double) async throws -> String {
 
-        let key = cacheId ?? promptHash(system: system, user: user)
+        let context = await userDataContext()
+        let userPrompt = context + "\n\n" + user
+
+        let key = cacheId ?? promptHash(system: system, user: userPrompt)
 
         // return cached if still fresh
         if let hit = gptCache[key],
@@ -145,7 +194,7 @@ final class OpenAIManager {
         // build request
         var messages: [[String: String]] = []
         if let sys = system { messages.append(["role": "system", "content": sys]) }
-        messages.append(["role": "user", "content": user])
+        messages.append(["role": "user", "content": userPrompt])
 
         let body: [String: Any] = [
             "model": model,

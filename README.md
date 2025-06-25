@@ -27,6 +27,12 @@ EnFlow uses your calendar and Health data:
 
 You can grant permissions during onboarding or later from the Settings screen.
 
+## Editing Your User Profile
+
+From the **User** tab you can view your saved habits and tap **Edit Profile** to update them. The quiz collects sleep, caffeine and activity routines. Your answers are stored locally in `UserProfile.json` and influence energy forecasts. Revisit the quiz anytime to keep recommendations fresh.
+
+The profile records your daily caffeine intake in milligrams. As a reminder, a cup of coffee is roughly 95&nbsp;mg of caffeine while an iced tea is around 45&nbsp;mg. Use the toggles to indicate if you typically consume caffeine in the morning, afternoon or evening. You can also open the **Data** page from the User tab to browse your recent HealthKit samples and calendar events. A switch on that screen lets you use simulated health data for testing.
+
 ## Testing & Troubleshooting
 
 - Run unit and UI tests from Xcode with **⌘U** or via `xcodebuild test`.
