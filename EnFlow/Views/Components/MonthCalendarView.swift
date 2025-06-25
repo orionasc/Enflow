@@ -234,13 +234,15 @@ struct MonthCalendarView: View {
 
         let today = calendar.startOfDay(for: Date())
 
-        for date in monthDates where calendar.isDate(date, equalTo: displayMonth, toGranularity: .month) {
-            if date > today { continue }
-            let dayHealth = allHealth.filter { calendar.isDate($0.date, inSameDayAs: date) }
-            let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
+       for date in monthDates where calendar.isDate(date, equalTo: displayMonth, toGranularity: .month) {
+           if date > today { continue }
+           let dayHealth = allHealth.filter { calendar.isDate($0.date, inSameDayAs: date) }
+           let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
+            let profile = UserProfileStore.load()
             let summary = UnifiedEnergyModel.shared.summary(for: date,
                                                            healthEvents: dayHealth,
-                                                           calendarEvents: dayEvents)
+                                                           calendarEvents: dayEvents,
+                                                           profile: profile)
             if summary.coverageRatio >= 0.3 {
                 results[date] = summary.overallEnergyScore
             }

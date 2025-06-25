@@ -27,6 +27,10 @@ EnFlow uses your calendar and Health data:
 
 You can grant permissions during onboarding or later from the Settings screen.
 
+## Editing Your User Profile
+
+From the **User** tab you can view your saved habits and tap **Edit Profile** to update them. The quiz collects sleep, caffeine and activity routines. Your answers are stored locally in `UserProfile.json` and influence energy forecasts. Revisit the quiz anytime to keep recommendations fresh.
+
 ## Testing & Troubleshooting
 
 - Run unit and UI tests from Xcode with **⌘U** or via `xcodebuild test`.
