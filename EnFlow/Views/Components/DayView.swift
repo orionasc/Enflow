@@ -14,7 +14,7 @@ struct DayView: View {
   @State private var events: [CalendarEvent] = []
   @State private var forecast: [Double] = Array(repeating: 0.5, count: 24)
   @State private var parts = EnergyForecastModel.EnergyParts(morning: 0, afternoon: 0, evening: 0)
-  @State private var overallScore: Double = 0
+  @State private var overallScore: Double? = nil
   @State private var page = 0  // 0 = schedule, 1 = overview
 
   private let calendar = Calendar.current
@@ -112,7 +112,7 @@ struct DayView: View {
     ScrollView {
       VStack(spacing: 24) {
         HStack(alignment: .center, spacing: 70) {
-          EnergyRingView(score: overallScore)
+          EnergyRingView(score: overallScore, summaryDate: currentDate)
             .frame(width: 100, height: 100)
           VStack(alignment: .center, spacing: 12) {
             labeledMiniRing(title: "Morning", value: parts.morning)
@@ -133,7 +133,7 @@ struct DayView: View {
     ScrollView {
       VStack(spacing: 85) {
 
-        EnergyRingView(score: overallScore)
+        EnergyRingView(score: overallScore, summaryDate: currentDate)
           .frame(width: 100, height: 100)
 
         ThreePartForecastView(parts: parts)
@@ -331,7 +331,12 @@ struct DayView: View {
       healthEvents: healthList,
       calendarEvents: dayEvents)
     forecast = summary.hourlyWaveform
-    overallScore = summary.overallEnergyScore
+    let today = calendar.startOfDay(for: Date())
+    if currentDate > today || summary.coverageRatio < 0.3 {
+      overallScore = nil
+    } else {
+      overallScore = summary.overallEnergyScore
+    }
 
     func avg(_ slice: ArraySlice<Double>) -> Double {
       slice.reduce(0, +) / Double(slice.count) * 100

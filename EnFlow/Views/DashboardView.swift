@@ -97,7 +97,7 @@ struct DashboardView: View {
         if let summary = todaySummary {
           VStack(spacing: 4) {
             EnergyRingView(
-              score: summary.overallEnergyScore,
+              score: missingTodayData ? nil : summary.overallEnergyScore,
               explainers: summary.explainers,
               summaryDate: summary.date
             )
@@ -150,26 +150,15 @@ struct DashboardView: View {
             .foregroundColor(.orange)
         }
 
-        // Forecast (dashed / desaturated)
-        if let score = tomorrowSummary?.overallEnergyScore {
-          EnergyRingView(
-            score: score,
-            dashed: true,
-            desaturate: true
-          )
-          .help("Forecast accuracy lower than today’s")
-          .frame(maxWidth: .infinity)
-        }
+        // No forecast for future days – show placeholder
+        EnergyRingView(
+          score: nil,
+          dashed: true,
+          desaturate: true
+        )
+        .frame(maxWidth: .infinity)
 
-        if let wave = tomorrowSummary?.hourlyWaveform {
-          VStack(alignment: .leading, spacing: 8) {
-            Text("24-Hour Energy Forecast")
-              .font(.headline)
-              .saturation(0.7)
-            EnergyLineChartView(values: wave)
-              .saturation(0.7)
-          }
-        }
+        // No hourly forecast shown
 
         if tomorrowConfidence > 0 && tomorrowConfidence < 0.4 {
           Text("⚠️ Forecast based on limited history – add more days of data for accuracy")
@@ -177,14 +166,7 @@ struct DashboardView: View {
             .foregroundColor(.orange)
         }
 
-        ThreePartForecastView(
-          parts: tomorrowParts,
-          dashed: true,
-          desaturate: true)
 
-        if let ctx = tomorrowCtx {
-          SuggestedPrioritiesView(context: ctx)
-        }
 
         Spacer(minLength: 60)
       }
@@ -292,11 +274,11 @@ struct DashboardView: View {
 
     await MainActor.run {
       todaySummary = tSummary
-      tomorrowSummary = tmSummary
+      tomorrowSummary = nil
       todayParts = tParts
-      tomorrowParts = tmParts
+      tomorrowParts = EnergyParts(morning: 0, afternoon: 0, evening: 0)
       todayCtx = tCtx
-      tomorrowCtx = tmCtx
+      tomorrowCtx = nil
       stepsToday = steps
       isLoading = false
       missingTodayData = noToday

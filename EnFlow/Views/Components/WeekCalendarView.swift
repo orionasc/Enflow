@@ -5,8 +5,8 @@ import SwiftUI
 
 struct WeekCalendarView: View {
     @State private var startOfWeek: Date = Calendar.current.startOfWeek(for: Date())
-    @State private var energyMatrix: [[Double]] = Array(
-        repeating: Array(repeating: 50.0, count: 20),
+    @State private var energyMatrix: [[Double?]] = Array(
+        repeating: Array(repeating: nil, count: 20),
         count: 7
     )
     @State private var events: [CalendarEvent] = []
@@ -67,10 +67,8 @@ struct WeekCalendarView: View {
                                         .font(.subheadline.bold())
                                         .foregroundColor(.white)
                                     // show correct 0–100 score, not 0
-                                    energyChip(
-                                        score: energyMatrix[day]
-                                            .average() * 100
-                                    )
+                                    let avgScore = energyMatrix[day].average()
+                                    energyChip(score: avgScore != nil ? avgScore! * 100 : nil)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(6)
@@ -88,22 +86,26 @@ struct WeekCalendarView: View {
                                     .frame(width: 46, alignment: .trailing)
 
                                 ForEach(0..<7, id: \.self) { day in
-                                    let energyPct     = energyMatrix[day][hIndex] * 100
+                                    let energyPct     = (energyMatrix[day][hIndex] ?? 0) * 100
                                     let nextEnergyPct = (hIndex + 1 < hours.count
-                                                         ? energyMatrix[day][hIndex + 1] * 100
+                                                         ? (energyMatrix[day][hIndex + 1] ?? 0) * 100
                                                          : energyPct)
                                     let date          = calendar.date(byAdding: .day, value: day, to: startOfWeek)!
 
                                     ZStack(alignment: .topLeading) {
-                                        // Smooth vertical blend from this hour → next hour
-                                        LinearGradient(
-                                            gradient: Gradient(stops: [
-                                                .init(color: ColorPalette.color(for: energyPct).opacity(0.2), location: 0),
-                                                .init(color: ColorPalette.color(for: nextEnergyPct).opacity(0.2), location: 1)
-                                            ]),
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
+                                        // Smooth vertical blend when we have data
+                                        if energyMatrix[day][hIndex] != nil {
+                                            LinearGradient(
+                                                gradient: Gradient(stops: [
+                                                    .init(color: ColorPalette.color(for: energyPct).opacity(0.2), location: 0),
+                                                    .init(color: ColorPalette.color(for: nextEnergyPct).opacity(0.2), location: 1)
+                                                ]),
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        } else {
+                                            Color.clear
+                                        }
 
                                         ForEach(eventsForHour(date: date, hour: hours[hIndex]), id: \.id) { ev in
                                             // compute minute‐fraction offset
@@ -201,12 +203,12 @@ struct WeekCalendarView: View {
             ?? "\(hour)h"
     }
 
-    private func energyChip(score: Double) -> some View {
-        Text("\(Int(score))")
+    private func energyChip(score: Double?) -> some View {
+        Text(score != nil ? "\(Int(score!))" : "--")
             .font(.caption2.bold())
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(ColorPalette.gradient(for: score))
+            .background(score != nil ? ColorPalette.gradient(for: score!) : Color.gray.opacity(0.3))
             .clipShape(Capsule())
     }
 
@@ -224,7 +226,7 @@ struct WeekCalendarView: View {
 
     private func loadWeekData() async {
         var matrix = Array(
-            repeating: Array(repeating: 50.0, count: hours.count),
+            repeating: Array(repeating: Double?.none, count: hours.count),
             count: 7
         )
 
@@ -240,24 +242,25 @@ struct WeekCalendarView: View {
                 ) ?? startOfWeek
             )
 
+        let today = calendar.startOfDay(for: Date())
+
         for d in 0..<7 {
-            if let day = calendar.date(
-                byAdding: .day,
-                value: d,
-                to: startOfWeek
-            ) {
-                let dayHealth = health.filter {
-                    calendar.isDate($0.date, inSameDayAs: day)
+            if let day = calendar.date(byAdding: .day, value: d, to: startOfWeek) {
+                if day > today {
+                    matrix[d] = Array(repeating: nil, count: hours.count)
+                } else {
+                    let dayHealth = health.filter { calendar.isDate($0.date, inSameDayAs: day) }
+                    let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: day) }
+                    let summary = UnifiedEnergyModel.shared.summary(for: day,
+                                                                  healthEvents: dayHealth,
+                                                                  calendarEvents: dayEvents)
+                    if summary.coverageRatio < 0.3 {
+                        matrix[d] = Array(repeating: nil, count: hours.count)
+                    } else {
+                        matrix[d] = Array(summary.hourlyWaveform[4...23])
+                    }
+                    events = allEvents
                 }
-                let dayEvents = allEvents.filter {
-                    calendar.isDate($0.startTime, inSameDayAs: day)
-                }
-                let summary = UnifiedEnergyModel.shared.summary(for: day,
-                                                                healthEvents: dayHealth,
-                                                                calendarEvents: dayEvents)
-                // hourlyWaveform[4…23] → 20 values
-                matrix[d] = Array(summary.hourlyWaveform[4...23])
-                events = allEvents
             }
         }
 
@@ -272,6 +275,14 @@ private extension Array where Element == Double {
     func average() -> Double {
         guard !isEmpty else { return 0.0 }
         return reduce(0, +) / Double(count)
+    }
+}
+
+private extension Array where Element == Double? {
+    func average() -> Double? {
+        let vals = compactMap { $0 }
+        guard !vals.isEmpty else { return nil }
+        return vals.reduce(0, +) / Double(vals.count)
     }
 }
 
