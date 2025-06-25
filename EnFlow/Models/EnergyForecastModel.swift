@@ -67,7 +67,6 @@ final class EnergyForecastModel: ObservableObject {
     var adjustedBase = base
     if let p = profile {
       adjustedBase += Double(p.exerciseFrequency - 3) * 0.01
-      adjustedBase -= Double(p.stressLevel - 3) * 0.02
       if !p.mealsRegular { adjustedBase -= 0.03 }
       adjustedBase = min(max(adjustedBase, 0), 1)
     }
@@ -81,9 +80,15 @@ final class EnergyForecastModel: ObservableObject {
       }
     }
 
-    if let p = profile, p.caffeineIntakePerDay > 2 {
-      let dipHr = (calendar.component(.hour, from: p.caffeineTimeLastUsed) + 3) % 24
-      wave[dipHr] = max(0, wave[dipHr] - 0.1)
+    if let p = profile, p.caffeineMgPerDay > 300 {
+      var dipHours: [Int] = []
+      if p.caffeineMorning     { dipHours.append(11) }
+      if p.caffeineAfternoon   { dipHours.append(18) }
+      if p.caffeineEvening     { dipHours.append(23) }
+      for h in dipHours {
+        let idx = h % 24
+        wave[idx] = max(0, wave[idx] - 0.1)
+      }
     }
 
     let score = wave.reduce(0, +) / Double(wave.count) * 100.0

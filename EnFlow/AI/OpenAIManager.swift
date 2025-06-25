@@ -51,6 +51,36 @@ final class OpenAIManager {
     private let model    = "gpt-4o-mini"
     private lazy var apiKey: String = (try? KeychainHelper.read()) ?? ""
 
+    // User context summary for all prompts
+    private func userProfileSection() async -> String {
+        let profile = UserProfileStore.load()
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+
+        var parts: [String] = []
+        parts.append("wake \(fmt.string(from: profile.typicalWakeTime))")
+        parts.append("sleep \(fmt.string(from: profile.typicalSleepTime))")
+        parts.append("chronotype \(profile.chronotype.rawValue)")
+        parts.append("caffeine \(profile.caffeineMgPerDay)mg M:\(profile.caffeineMorning) A:\(profile.caffeineAfternoon) E:\(profile.caffeineEvening)")
+        parts.append("exercise \(profile.exerciseFrequency)/wk")
+        if let notes = profile.notes, !notes.isEmpty { parts.append("notes: \(notes)") }
+
+        let cal = Calendar.current
+        let health = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 14)
+        let hSummary = health.map { "\(fmt.string(from: $0.date)): steps \($0.steps)" }.joined(separator: "; ")
+        if !hSummary.isEmpty { parts.append("health: \(hSummary)") }
+
+        let pastStart = cal.date(byAdding: .day, value: -14, to: Date()) ?? Date()
+        let pastEvents = await CalendarDataPipeline.shared.fetchEvents(start: pastStart, end: Date())
+        let eSummary = pastEvents.map { "\(fmt.string(from: $0.startTime)): \($0.eventTitle)" }.joined(separator: "; ")
+        if !eSummary.isEmpty { parts.append("events: \(eSummary)") }
+
+        let upcoming = await CalendarDataPipeline.shared.fetchUpcomingDays(days: 7)
+        let upSummary = upcoming.map { "\(fmt.string(from: $0.startTime)): \($0.eventTitle)" }.joined(separator: "; ")
+        if !upSummary.isEmpty { parts.append("upcoming: \(upSummary)") }
+
+        return parts.joined(separator: " | ")
+    }
+
     // ───── PUBLIC API ──────────────────────────────────────────
 
     /// First-run or *Settings* sheet calls this once.
@@ -144,7 +174,12 @@ final class OpenAIManager {
 
         // build request
         var messages: [[String: String]] = []
-        if let sys = system { messages.append(["role": "system", "content": sys]) }
+        let profileInfo = await userProfileSection()
+        if let sys = system {
+            messages.append(["role": "system", "content": sys + "\nUser: " + profileInfo])
+        } else {
+            messages.append(["role": "system", "content": profileInfo])
+        }
         messages.append(["role": "user", "content": user])
 
         let body: [String: Any] = [

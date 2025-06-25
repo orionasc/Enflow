@@ -8,15 +8,16 @@ struct UserProfile: Codable, Equatable {
         var id: String { rawValue }
     }
 
-    var caffeineIntakePerDay: Int
-    var caffeineTimeLastUsed: Date
+    var caffeineMgPerDay: Int
+    var caffeineMorning: Bool
+    var caffeineAfternoon: Bool
+    var caffeineEvening: Bool
     var exerciseFrequency: Int
     var typicalWakeTime: Date
     var typicalSleepTime: Date
     var usesSleepAid: Bool
     var screensBeforeBed: Bool
     var mealsRegular: Bool
-    var stressLevel: Int
     var chronotype: Chronotype
     var lastUpdated: Date
     var notes: String?
@@ -28,15 +29,16 @@ extension UserProfile {
         let wake = cal.date(bySettingHour: 7, minute: 0, second: 0, of: Date())!
         let sleep = cal.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
         return UserProfile(
-            caffeineIntakePerDay: 0,
-            caffeineTimeLastUsed: wake,
+            caffeineMgPerDay: 0,
+            caffeineMorning: false,
+            caffeineAfternoon: false,
+            caffeineEvening: false,
             exerciseFrequency: 3,
             typicalWakeTime: wake,
             typicalSleepTime: sleep,
             usesSleepAid: false,
             screensBeforeBed: true,
             mealsRegular: true,
-            stressLevel: 3,
             chronotype: .intermediate,
             lastUpdated: Date(),
             notes: nil
@@ -46,8 +48,8 @@ extension UserProfile {
     func debugSummary() -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "h:mm a"
-        return "Caffeine: \(caffeineIntakePerDay)/day, last at \(fmt.string(from: caffeineTimeLastUsed)). " +
+        return "Caffeine: \(caffeineMgPerDay)mg/day (M:\(caffeineMorning), A:\(caffeineAfternoon), E:\(caffeineEvening)). " +
         "Wake \(fmt.string(from: typicalWakeTime)), Sleep \(fmt.string(from: typicalSleepTime)), " +
-        "Exercise \(exerciseFrequency)x/week, Stress \(stressLevel)/5, Chronotype \(chronotype.rawValue)."
+        "Exercise \(exerciseFrequency)x/week, Chronotype \(chronotype.rawValue)."
     }
 }
