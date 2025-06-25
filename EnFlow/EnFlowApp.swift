@@ -16,10 +16,12 @@ struct EnFlowApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if onboarded {
-                MainShellView()
-            } else {
-                OnboardingAndSettingsView()
+            Group {
+                if onboarded {
+                    MainShellView()
+                } else {
+                    OnboardingAndSettingsView()
+                }
             }
             .preferredColorScheme(.dark)
         }
