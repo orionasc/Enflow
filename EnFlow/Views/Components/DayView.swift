@@ -18,6 +18,7 @@ struct DayView: View {
   @State private var page = 0  // 0 = schedule, 1 = overview
 
   private let calendar = Calendar.current
+  private let rowHeight: CGFloat = 32
 
   // ───────── Init ───────────────────────────────────────────
   init(date: Date, showBackButton: Bool = false) {
@@ -216,37 +217,41 @@ struct DayView: View {
       calendar.component(.hour, from: $0.startTime) == hour
     }
     ZStack(alignment: .leading) {
-      bg.opacity(0.12).frame(height: 32)
+      bg.opacity(0.12).frame(height: rowHeight)
       HStack(spacing: 6) {
         Text(label)
           .font(.caption2)
           .frame(width: 46, alignment: .trailing)
           .foregroundColor(.secondary)
-        GeometryReader { geo in
-          ZStack(alignment: .leading) {
-            Rectangle()
-              .fill(bg.opacity(0.22))
-              .frame(height: 28)
-            ForEach(evs) { ev in
-              let startMinute = calendar.component(.minute, from: ev.startTime)
-              let durationMinutes = ev.endTime.timeIntervalSince(ev.startTime) / 60
-              let durationHours = durationMinutes / 60
-              let hourWidth = geo.size.width / 24
-              let w = geo.size.width * CGFloat(durationHours) / 24
-              Text(ev.eventTitle)
-                .font(.caption2.bold())
-                .padding(.horizontal, 4)
-                .lineLimit(1)
-                .frame(width: w, alignment: .leading)
-                .background(Color.white.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .offset(x: hourWidth * CGFloat(startMinute) / 60)
-            }
+        ZStack(alignment: .topLeading) {
+          Rectangle()
+            .fill(bg.opacity(0.22))
+          ForEach(evs) { ev in
+            let startMinute = calendar.component(.minute, from: ev.startTime)
+            let minuteOffset = rowHeight * CGFloat(startMinute) / 60
+            RoundedRectangle(cornerRadius: 6)
+              .fill(.ultraThinMaterial)
+              .frame(height: eventHeight(from: ev))
+              .overlay(
+                Text(ev.eventTitle)
+                  .font(.caption2.bold())
+                  .padding(4)
+                  .multilineTextAlignment(.leading)
+                  .frame(maxWidth: .infinity, alignment: .leading),
+                alignment: .topLeading
+              )
+              .offset(y: minuteOffset)
           }
         }
+        .frame(maxHeight: .infinity)
       }
-      .frame(height: 32)
+      .frame(height: rowHeight)
     }
+  }
+
+  private func eventHeight(from ev: CalendarEvent) -> CGFloat {
+    let hours = ev.endTime.timeIntervalSince(ev.startTime) / 3600
+    return max(rowHeight, rowHeight * CGFloat(hours))
   }
 
   @ViewBuilder

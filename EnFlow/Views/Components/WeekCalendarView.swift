@@ -135,6 +135,7 @@ struct WeekCalendarView: View {
                         }
                     }
                     .padding(.horizontal, 4)
+                    .padding(.bottom, 40)
                 }
                 // tap on a day header drills into DayView
                 .navigationDestination(
