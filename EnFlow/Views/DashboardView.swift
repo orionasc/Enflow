@@ -217,20 +217,25 @@ struct DashboardView: View {
     let eventsToday = await CalendarDataPipeline.shared.fetchEvents(for: today)
     let eventsTomorrow = await CalendarDataPipeline.shared.fetchEvents(for: tomorrow)
 
+    let profile = UserProfileStore.load()
+
     // Daily summaries blended with forecast
     let tSummary = UnifiedEnergyModel.shared.summary(
       for: today,
       healthEvents: healthList,
-      calendarEvents: eventsToday)
+      calendarEvents: eventsToday,
+      profile: profile)
     let tmSummary = UnifiedEnergyModel.shared.summary(
       for: tomorrow,
       healthEvents: healthList,
-      calendarEvents: eventsTomorrow)
+      calendarEvents: eventsTomorrow,
+      profile: profile)
     let forecastConf =
       EnergyForecastModel().forecast(
         for: tomorrow,
         health: healthList,
-        events: eventsTomorrow)?.confidenceScore ?? 0
+        events: eventsTomorrow,
+        profile: profile)?.confidenceScore ?? 0
 
     let todayHealth = healthList.first { cal.isDate($0.date, inSameDayAs: today) }
     let tomorrowHealth = healthList.first { cal.isDate($0.date, inSameDayAs: tomorrow) }

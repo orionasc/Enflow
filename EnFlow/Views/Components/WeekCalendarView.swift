@@ -272,10 +272,12 @@ struct WeekCalendarView: View {
                     matrix[d] = Array(repeating: nil, count: hours.count)
                 } else {
                     let dayHealth = health.filter { calendar.isDate($0.date, inSameDayAs: day) }
-                    let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: day) }
+                   let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: day) }
+                    let profile = UserProfileStore.load()
                     let summary = UnifiedEnergyModel.shared.summary(for: day,
                                                                   healthEvents: dayHealth,
-                                                                  calendarEvents: dayEvents)
+                                                                  calendarEvents: dayEvents,
+                                                                  profile: profile)
                     if summary.coverageRatio < 0.3 {
                         matrix[d] = Array(repeating: nil, count: hours.count)
                     } else {

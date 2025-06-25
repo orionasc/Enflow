@@ -278,12 +278,13 @@ Analyze correlations between the user's calendar events and their energy data. W
             let h = healthList.filter { cal.isDate($0.date, inSameDayAs: day) }
             let ev = allEvents.filter { cal.isDate($0.startTime, inSameDayAs: day) }
 
-            let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: h, calendarEvents: ev)
+            let profile = UserProfileStore.load()
+            let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: h, calendarEvents: ev, profile: profile)
             actual.append(summary)
 
             var fWave = ForecastCache.shared.forecast(for: day)?.values
             if fWave == nil {
-                if let res = EnergyForecastModel().forecast(for: day, health: h, events: ev)?.values {
+                if let res = EnergyForecastModel().forecast(for: day, health: h, events: ev, profile: profile)?.values {
                     fWave = res
                     ForecastCache.shared.saveForecast(DayEnergyForecast(date: day,
                                                                      values: res,
