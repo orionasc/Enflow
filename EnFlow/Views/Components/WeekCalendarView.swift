@@ -75,6 +75,10 @@ struct WeekCalendarView: View {
                                 .background(Color.black.opacity(0.05))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
                                         .stroke(
                                             calendar.isDateInToday(date) ? .orange : .clear,
                                             lineWidth: 2
@@ -132,11 +136,15 @@ struct WeekCalendarView: View {
                                               )
                                               // shift down by the start‐minute fraction
                                               .offset(x: 2, y: minuteOffset)
-                                              .zIndex(1)
-                                    
+                                            .zIndex(1)
+
                                         }
                                     }
                                     .frame(height: rowHeight)
+                                    .overlay(
+                                        Rectangle()
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                                    )
                                 }
                             }
                         }
