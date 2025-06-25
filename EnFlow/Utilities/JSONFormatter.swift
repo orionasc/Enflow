@@ -12,8 +12,8 @@ enum JSONFormatter {
 
         // Normalize curly quotes that GPT might emit
         cleaned = cleaned
-            .replacingOccurrences(of: "\u201c", with: "\"")
-            .replacingOccurrences(of: "\u201d", with: "\"")
+            .replacingOccurrences(of: "\u{201C}", with: "\"")
+            .replacingOccurrences(of: "\u{201D}", with: "\"")
 
         guard let data = cleaned.data(using: .utf8),
               let obj = try? JSONSerialization.jsonObject(with: data, options: []),
