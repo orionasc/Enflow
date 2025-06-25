@@ -21,6 +21,7 @@ struct TrendsView: View {
     @State private var gptSummary: String = ""
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
+    private let forecastColor = Color(red: 0.0, green: 0.6, blue: 0.9)
 
     private var forecastAvailable: Bool {
         !forecastSummaries.isEmpty && forecastSummaries.count == summaries.count
@@ -50,9 +51,9 @@ struct TrendsView: View {
                 HStack(spacing: 16) {
                     HStack(spacing: 4) {
                         Path { p in p.move(to: .zero); p.addLine(to: CGPoint(x: 24, y: 0)) }
-                            .stroke(Color.blue, style: StrokeStyle(lineWidth: 2, dash: forecastAvailable ? [] : [5,3]))
+                            .stroke(forecastColor, style: StrokeStyle(lineWidth: 2, dash: forecastAvailable ? [] : [5,3]))
                             .frame(height: 2)
-                        Text("Forecasted").foregroundColor(.blue)
+                        Text("Forecasted").foregroundColor(forecastColor)
                     }
                     HStack(spacing: 4) {
                         Path { p in p.move(to: .zero); p.addLine(to: CGPoint(x: 24, y: 0)) }
@@ -352,8 +353,8 @@ Analyze correlations between the user's calendar events and their energy data. W
         ForEach(forecastSummaries) { item in
             LineMark(x: .value("Day", item.date), y: .value("Forecast", item.overallEnergyScore))
                 .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.blue)
-                .shadow(color: .blue.opacity(0.6), radius: 4)
+                .foregroundStyle(forecastColor)
+                .shadow(color: forecastColor.opacity(0.6), radius: 4)
         }
     }
 
@@ -363,7 +364,7 @@ Analyze correlations between the user's calendar events and their energy data. W
             LineMark(x: .value("Day", p.date), y: .value("Trend", p.value))
                 .interpolationMethod(.linear)
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [5,3]))
-                .foregroundStyle(Color.blue)
+                .foregroundStyle(forecastColor)
         }
     }
 
@@ -380,7 +381,7 @@ Analyze correlations between the user's calendar events and their energy data. W
             PointMark(x: .value("Day", lastF.date), y: .value("Forecast", lastF.overallEnergyScore))
                 .symbol(.circle)
                 .symbolSize(animatePulse ? 96 : 64)
-                .foregroundStyle(Color.blue)
+                .foregroundStyle(forecastColor)
                 .shadow(radius: 8)
         }
     }
@@ -393,7 +394,7 @@ Analyze correlations between the user's calendar events and their energy data. W
         var currentColor: Color? = nil
         var currentPoints: [ShadePoint] = []
         for (a, f) in zip(summaries, forecastSummaries) {
-            let color: Color = a.overallEnergyScore >= f.overallEnergyScore ? Color.yellow.opacity(0.2) : Color.blue.opacity(0.2)
+            let color: Color = a.overallEnergyScore >= f.overallEnergyScore ? Color.yellow.opacity(0.2) : forecastColor.opacity(0.2)
             let point = ShadePoint(date: a.date,
                                    low: min(a.overallEnergyScore, f.overallEnergyScore),
                                    high: max(a.overallEnergyScore, f.overallEnergyScore))
@@ -465,8 +466,8 @@ struct EnergyInsightsCard: View {
                         ForEach(tags, id: \.self) { tag in
                             Text(tag).font(.caption2.bold())
                                 .padding(.vertical, 4).padding(.horizontal, 8)
-                                .background(Capsule().fill(Color.blue.opacity(0.1)))
-                                .foregroundColor(.blue)
+                                .background(Capsule().fill(forecastColor.opacity(0.1)))
+                                .foregroundColor(forecastColor)
                         }
                     }
                 }
