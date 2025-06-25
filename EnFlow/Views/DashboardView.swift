@@ -117,7 +117,7 @@ struct DashboardView: View {
           let slice = Array(wave[7...19])
           VStack(alignment: .leading, spacing: 8) {
             Text("Daily Energy Forecast")
-              .font(.headline)
+                  .font(.system(size: 5))
             DailyEnergyForecastView(values: slice)
           }
         }
