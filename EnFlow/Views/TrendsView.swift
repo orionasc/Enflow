@@ -218,7 +218,7 @@ Analyze correlations between the user's calendar events and their energy data. W
 
         let prompt = """
         Based on these energy scores: \(scoreParts.joined(separator: ", ")) and recent events: \(eventParts.joined(separator: ", ")).
-        Respond with one line of up to three short tags separated by commas, then a newline and one personalized sentence on how the user could improve their score. If data seems insufficient, offer a lesser-known energy or biohacking tip.
+        Respond with one line of up to three short tags separated by commas, then a newline and one personalized sentence on how the user could improve their score. If there is not plentiful data, offer a lesser-known energy or biohacking tip instead, and cite a reputable study if needed.
         """
 
         do {
