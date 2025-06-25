@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import Foundation
 
 enum TrendsPeriod: String, CaseIterable, Identifiable {
     case weekly = "Weekly"
@@ -238,11 +239,16 @@ Analyze correlations between the user's calendar events and their energy data. W
             let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: h, calendarEvents: ev)
             actual.append(summary)
 
-            var fWave = ForecastCache.shared.wave(for: day)
+            var fWave = ForecastCache.shared.forecast(for: day)?.values
             if fWave == nil {
                 if let res = EnergyForecastModel().forecast(for: day, health: h, events: ev)?.values {
                     fWave = res
-                    ForecastCache.shared.saveWave(res, for: day)
+                    ForecastCache.shared.saveForecast(DayEnergyForecast(date: day,
+                                                                     values: res,
+                                                                     score: res.reduce(0, +) / Double(res.count) * 100,
+                                                                     confidenceScore: 0.2,
+                                                                     missingMetrics: [],
+                                                                     sourceType: .historicalModel))
                 }
             }
             if let wave = fWave {

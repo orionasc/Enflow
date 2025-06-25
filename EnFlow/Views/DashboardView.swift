@@ -37,6 +37,8 @@ struct DashboardView: View {
     @State private var selection  = 0         // 0 = today • 1 = tomorrow
     @State private var missingTodayData = false
     @State private var missingTomorrowData = false
+    @State private var tomorrowConfidence: Double = 0
+
     
     private typealias ThreePartEnergy = EnergyForecastModel.ThreePartEnergy
 
@@ -165,6 +167,12 @@ struct DashboardView: View {
                     }
                 }
 
+                if tomorrowConfidence > 0 && tomorrowConfidence < 0.4 {
+                    Text("⚠️ Forecast based on limited history – add more days of data for accuracy")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+
                 ThreePartForecastView(parts: tomorrowParts,
                                       dashed: true,
                                       desaturate: true)
@@ -212,6 +220,9 @@ struct DashboardView: View {
         let tmSummary = UnifiedEnergyModel.shared.summary(for: tomorrow,
                                                           healthEvents: healthList,
                                                           calendarEvents: eventsTomorrow)
+        let forecastConf = EnergyForecastModel().forecast(for: tomorrow,
+                                                         health: healthList,
+                                                         events: eventsTomorrow)?.confidenceScore ?? 0
 
         let todayHealth    = healthList.first { cal.isDate($0.date, inSameDayAs: today) }
         let tomorrowHealth = healthList.first { cal.isDate($0.date, inSameDayAs: tomorrow) }
@@ -276,6 +287,7 @@ struct DashboardView: View {
             isLoading       = false
             missingTodayData = noToday
             missingTomorrowData = noTomorrow
+            tomorrowConfidence = forecastConf
             engine.markRefreshed()                     // trigger ring-pulse animation
         }
     }

@@ -9,9 +9,11 @@ final class ForecastCache {
 
     private let waveKey = "ForecastCache.Waves"
     private let accKey  = "ForecastCache.Accuracy"
+    private let forecastKey = "ForecastCache.Forecasts"
 
     private var waves: [String:[Double]] = [:]
     private var accuracy: [String:Double] = [:]
+    private var forecasts: [String:DayEnergyForecast] = [:]
 
     private func load() {
         let d = UserDefaults.standard
@@ -23,6 +25,10 @@ final class ForecastCache {
            let obj = try? JSONDecoder().decode([String:Double].self, from: aData) {
             accuracy = obj
         }
+        if let fData = d.data(forKey: forecastKey),
+           let obj = try? JSONDecoder().decode([String:DayEnergyForecast].self, from: fData) {
+            forecasts = obj
+        }
     }
 
     private func persist() {
@@ -32,6 +38,9 @@ final class ForecastCache {
         }
         if let data = try? JSONEncoder().encode(accuracy) {
             d.set(data, forKey: accKey)
+        }
+        if let data = try? JSONEncoder().encode(forecasts) {
+            d.set(data, forKey: forecastKey)
         }
     }
 
@@ -55,6 +64,15 @@ final class ForecastCache {
 
     func accuracy(for date: Date) -> Double? {
         accuracy[key(for: date)]
+    }
+
+    func forecast(for date: Date) -> DayEnergyForecast? {
+        forecasts[key(for: date)]
+    }
+
+    func saveForecast(_ forecast: DayEnergyForecast) {
+        forecasts[key(for: forecast.date)] = forecast
+        persist()
     }
 
     /// Average accuracy over the last N days if available.
