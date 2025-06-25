@@ -101,7 +101,7 @@ struct DashboardView: View {
               explainers: summary.explainers,
               summaryDate: summary.date
             )
-            if stepsToday > 0 {
+            if stepsToday > 1000000 {
               Text("Steps today: \(stepsToday)")
                 .font(.caption2)
                 .foregroundColor(.gray)
