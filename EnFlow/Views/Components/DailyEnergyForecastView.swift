@@ -34,7 +34,7 @@ struct DailyEnergyForecastView: View {
             ForEach(0..<count, id: \.self) { idx in
                 let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
                 Text(hourLabel(startHour + idx))
-                    .font(.caption2)
+                    .font(.system(size: 8))
                     .foregroundColor(.secondary)
                     .position(x: x, y: height + 10)
             }
@@ -74,7 +74,7 @@ struct DailyEnergyForecastView: View {
             .formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated))) ?? "\(hour)h"
     }
 
-    private func significantPeaksAndTroughs(threshold: Double = 0.2) -> [Int] {
+    private func significantPeaksAndTroughs(threshold: Double = 0.15) -> [Int] {
         guard values.count > 2 else { return [] }
         var result: [Int] = []
         for i in 1..<(values.count - 1) {

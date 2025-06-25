@@ -301,7 +301,7 @@ struct DayView: View {
 
   // MARK: ─ Peak/trough markers ───────────────────────────────
   private func significantPeaksAndTroughs(
-    threshold: Double = 0.2
+    threshold: Double = 0.15
   ) -> [(Int, Double)] {
     guard forecast.count == 24 else { return [] }
     var result: [(Int, Double)] = []
