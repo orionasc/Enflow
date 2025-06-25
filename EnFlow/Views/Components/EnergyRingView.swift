@@ -26,10 +26,14 @@ struct EnergyRingView: View {
     private var status: String {
         guard let score else { return "N/A" }
         switch score {
-        case 0..<50  : "LOW"
-        case 50..<80 : "MODERATE"
-        case 90..<100: "SUPERCHARGED"
-        default      : "HIGH"
+        case 0..<50:
+            return "LOW"
+        case 50..<80:
+            return "MODERATE"
+        case 90..<100:
+            return "SUPERCHARGED"
+        default:
+            return "HIGH"
         }
     }
     private var glowStrength: Double { isForecast ? 0 : (score ?? 0) / 100 }
