@@ -62,7 +62,16 @@ final class EnergyForecastModel: ObservableObject {
     }
 
     guard let base = computeHistoricalBase(from: history) else { return nil }
-    let wave = Array(repeating: base, count: 24)
+
+    var wave = circadianBoost.map { max(0, min(1, base + $0)) }
+    for ev in events {
+      guard let delta = ev.energyDelta else { continue }
+      let hr = calendar.component(.hour, from: ev.startTime)
+      if hr >= 0 && hr < 24 {
+        wave[hr] = max(0, min(1, wave[hr] + delta))
+      }
+    }
+
     let score = wave.reduce(0, +) / Double(wave.count) * 100.0
 
     let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
@@ -96,11 +105,6 @@ final class EnergyForecastModel: ObservableObject {
       evening: avg(wave[16..<24]))
   }
 
-  // MARK: Core waveform builder ------------------------------------------------
-  private func hourlyWaveform(baseHealth h: HealthEvent?) -> [Double]? {
-    guard let base = computeBaseEnergy(from: h) else { return nil }
-    return Array(repeating: base, count: 24)  // flat until event-impact learner is added
-  }
 
   // MARK: Base-energy score (0.0–1.0) -----------------------------------------
   private func computeBaseEnergy(from h: HealthEvent?) -> Double? {
@@ -115,10 +119,6 @@ final class EnergyForecastModel: ObservableObject {
 
     // --- Weighted composite (literature-based) ----------------------------
     var e = 0.35 * sleepEff + 0.25 * hrvScore + 0.15 * restHRInv + 0.15 * deepREM + 0.10 * actBal
-
-    // --- Circadian modifier (fixed lookup) -------------------------------
-    let hr = calendar.component(.hour, from: Date())
-    e += circadianBoost[hr]
 
     return max(0.0, min(1.0, e))
   }

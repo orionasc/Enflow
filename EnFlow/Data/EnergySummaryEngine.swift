@@ -74,6 +74,14 @@ final class EnergySummaryEngine: ObservableObject {
     private init() {}
 
     private let calendar = Calendar.current
+    /// Fixed circadian energy curve used to weight hourly scores.
+    private let circadianBoost: [Double] = [
+        -0.05, -0.05, -0.05, -0.04, -0.02,
+        0.02, 0.06, 0.10, 0.12, 0.10,
+        0.08, 0.05, 0.03, 0.00, -0.02,
+        -0.04, -0.03, 0.00, 0.08, 0.12,
+        0.10, 0.05, 0.00, -0.04,
+    ]
 
     @MainActor @Published private(set) var refreshVersion = 0   // ring-pulse
 
@@ -191,11 +199,13 @@ final class EnergySummaryEngine: ObservableObject {
     // ───────── Waveform builder ──────────────────────────────────
     private func hourlyWaveform(base: Double,
                                 events: [CalendarEvent]) -> [Double] {
-        var wave = Array(repeating: base, count: 24)
+        var wave = circadianBoost.map { max(0, min(1, base + $0)) }
         for ev in events {
             guard let delta = ev.energyDelta else { continue }
             let hr = calendar.component(.hour, from: ev.startTime)
-            wave[hr] = max(0, min(1, wave[hr] + delta))
+            if hr >= 0 && hr < 24 {
+                wave[hr] = max(0, min(1, wave[hr] + delta))
+            }
         }
         return wave
     }
