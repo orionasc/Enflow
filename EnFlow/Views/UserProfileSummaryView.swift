@@ -26,8 +26,11 @@ struct UserProfileSummaryView: View {
                 Section("Notes") { Text(notes) }
             }
             Section {
-                NavigationLink("Data") {
-                    DataView()
+                NavigationLink("Data") { DataView() }
+                NavigationLink {
+                    MeetSolView()
+                } label: {
+                    Label("Meet Sol", systemImage: "sun.max.fill")
                 }
             }
             Section("Debug") { Text(profile.debugSummary()) }
