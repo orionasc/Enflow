@@ -149,22 +149,33 @@ struct MonthCalendarView: View {
     @ViewBuilder
     private func tile(for date: Date) -> some View {
         let isCurrent = calendar.isDate(date, equalTo: displayMonth, toGranularity: .month)
-        let energy    = energyMap[date] ?? -1
+        let energy    = energyMap[date]
 
         ZStack {
             if isCurrent {
-                ColorPalette.color(for: energy)
-                    .opacity(0.25)
-                    .overlay(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.white.opacity(0.08),
-                                Color.black.opacity(0.15)
-                            ]),
-                            startPoint: .topTrailing,
-                            endPoint: .bottomLeading
+                if let energy {
+                    ColorPalette.color(for: energy)
+                        .opacity(0.25)
+                        .overlay(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.08),
+                                    Color.black.opacity(0.15)
+                                ]),
+                                startPoint: .topTrailing,
+                                endPoint: .bottomLeading
+                            )
                         )
+                } else {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.white.opacity(0.04),
+                            Color.black.opacity(0.10)
+                        ]),
+                        startPoint: .topTrailing,
+                        endPoint: .bottomLeading
                     )
+                }
             } else {
                 LinearGradient(
                     gradient: Gradient(colors: [
@@ -181,10 +192,16 @@ struct MonthCalendarView: View {
                     .font(.caption.weight(.medium))
                     .foregroundColor(isCurrent ? .white : .gray)
 
-                if isCurrent, energy >= 0 {
-                    Capsule()
-                        .fill(ColorPalette.gradient(for: energy))
-                        .frame(width: 20, height: 4)
+                if isCurrent {
+                    if let e = energy {
+                        Capsule()
+                            .fill(ColorPalette.gradient(for: e))
+                            .frame(width: 20, height: 4)
+                    } else {
+                        Capsule()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 20, height: 4)
+                    }
                 }
             }
             .padding(6)
@@ -215,13 +232,18 @@ struct MonthCalendarView: View {
             end: calendar.date(byAdding: .month, value: 1, to: displayMonth)!
         )
 
+        let today = calendar.startOfDay(for: Date())
+
         for date in monthDates where calendar.isDate(date, equalTo: displayMonth, toGranularity: .month) {
+            if date > today { continue }
             let dayHealth = allHealth.filter { calendar.isDate($0.date, inSameDayAs: date) }
             let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
             let summary = UnifiedEnergyModel.shared.summary(for: date,
                                                            healthEvents: dayHealth,
                                                            calendarEvents: dayEvents)
-            results[date] = summary.overallEnergyScore
+            if summary.coverageRatio >= 0.3 {
+                results[date] = summary.overallEnergyScore
+            }
         }
 
         await MainActor.run { energyMap = results }

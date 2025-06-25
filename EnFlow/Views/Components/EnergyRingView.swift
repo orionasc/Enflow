@@ -8,7 +8,8 @@ import Combine
 struct EnergyRingView: View {
 
     // ───────── Inputs ──────────────────────────────────────────────
-    let score: Double              // 0 … 100
+    /// Optional score. `nil` renders a placeholder with "--" and a grey ring.
+    let score: Double?
     var dashed: Bool     = false   // forecast style?
     var desaturate: Bool = false   // forecast style?
     /// Supply the “why” bullets from your parent (e.g. summary.explainers)
@@ -23,6 +24,7 @@ struct EnergyRingView: View {
 
     // ───────── Derived ──────────────────────────────────────────────
     private var status: String {
+        guard let score else { return "N/A" }
         switch score {
         case 0..<50  : "LOW"
         case 50..<80 : "MODERATE"
@@ -30,46 +32,64 @@ struct EnergyRingView: View {
         default      : "HIGH"
         }
     }
-    private var glowStrength: Double { isForecast ? 0 : score / 100 }
-    private var isSupercharged: Bool { !isForecast && score >= 90 }
+    private var glowStrength: Double { isForecast ? 0 : (score ?? 0) / 100 }
+    private var isSupercharged: Bool {
+        guard let score else { return false }
+        return !isForecast && score >= 90
+    }
     private var isForecast: Bool { desaturate || dashed }
 
     // MARK: Body
     var body: some View {
         ZStack {
-            // — Soft glow halo —
-            Circle()
-                .fill(ColorPalette.color(for: score))
-                .blur(radius: glowStrength * 40)
-                .opacity(glowStrength * 0.55)
-                .frame(width: 220, height: 220)
+            if let sc = score {
+                // — Soft glow halo —
+                Circle()
+                    .fill(ColorPalette.color(for: sc))
+                    .blur(radius: glowStrength * 40)
+                    .opacity(glowStrength * 0.55)
+                    .frame(width: 220, height: 220)
 
-            // — Background track —
-            Circle()
-                .stroke(ColorPalette.color(for: score).opacity(0.15),
-                        style: StrokeStyle(lineWidth: 20,
-                                           lineCap: .round,
-                                           dash: dashed ? [4, 2] : []))
+                // — Background track —
+                Circle()
+                    .stroke(ColorPalette.color(for: sc).opacity(0.15),
+                            style: StrokeStyle(lineWidth: 20,
+                                               lineCap: .round,
+                                               dash: dashed ? [4, 2] : []))
 
-            // — Progress arc —
-            Circle()
-                .trim(from: 0, to: CGFloat(score / 100))
-                .stroke(ColorPalette.gradient(for: score),
-                        style: StrokeStyle(lineWidth: 20,
-                                           lineCap: .round,
-                                           dash: dashed ? [4, 2] : []))
-                .rotationEffect(.degrees(-90))
-                .animation(.easeOut(duration: 0.8), value: score)
+                // — Progress arc —
+                Circle()
+                    .trim(from: 0, to: CGFloat(sc / 100))
+                    .stroke(ColorPalette.gradient(for: sc),
+                            style: StrokeStyle(lineWidth: 20,
+                                               lineCap: .round,
+                                               dash: dashed ? [4, 2] : []))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeOut(duration: 0.8), value: sc)
 
-            // — Label —
-            VStack(spacing: 4) {
-                Text("\(Int(score))")
-                    .font(.system(size: 36, weight: .bold))
-                    .foregroundColor(.white)
-                Text(status)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white.opacity(0.7))
+                // — Label —
+                VStack(spacing: 4) {
+                    Text("\(Int(sc))")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(.white)
+                    Text(status)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            } else {
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+
+                VStack(spacing: 4) {
+                    Text("--")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text(status)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white.opacity(0.6))
+                }
             }
 
             // — Supercharged bolt & orange ring —
@@ -114,7 +134,7 @@ struct EnergyRingView: View {
         }
         .sheet(isPresented: $showExplanation) {
             ExplainSheetView(
-                header: "Your Energy Score: \(Int(score))",
+                header: score != nil ? "Your Energy Score: \(Int(score!))" : "Energy Score Unavailable",
                 bullets: explainers,
                 timestamp: summaryDate
             )
@@ -128,7 +148,7 @@ struct EnergyRingView_Previews: PreviewProvider {
         VStack(spacing: 30) {
             EnergyRingView(score: 74)
             EnergyRingView(score: 93)
-            EnergyRingView(score: 30, dashed: true, desaturate: true) // forecast
+            EnergyRingView(score: nil)
         }
         .padding()
         .background(Color.black)
