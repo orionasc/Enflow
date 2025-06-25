@@ -49,7 +49,8 @@ final class EnergyForecastModel: ObservableObject {
   func forecast(
     for date: Date,
     health: [HealthEvent],
-    events: [CalendarEvent]
+    events: [CalendarEvent],
+    profile: UserProfile? = nil
   ) -> DayEnergyForecast? {
 
     if let cached = ForecastCache.shared.forecast(for: date) {
@@ -63,12 +64,30 @@ final class EnergyForecastModel: ObservableObject {
 
     guard let base = computeHistoricalBase(from: history) else { return nil }
 
-    var wave = circadianBoost.map { max(0, min(1, base + $0)) }
+    var adjustedBase = base
+    if let p = profile {
+      adjustedBase += Double(p.exerciseFrequency - 3) * 0.01
+      if !p.mealsRegular { adjustedBase -= 0.03 }
+      adjustedBase = min(max(adjustedBase, 0), 1)
+    }
+
+    var wave = circadian(for: profile).map { max(0, min(1, adjustedBase + $0)) }
     for ev in events {
       guard let delta = ev.energyDelta else { continue }
       let hr = calendar.component(.hour, from: ev.startTime)
       if hr >= 0 && hr < 24 {
         wave[hr] = max(0, min(1, wave[hr] + delta))
+      }
+    }
+
+    if let p = profile, p.caffeineMgPerDay > 200 {
+      var hours: [Int] = []
+      if p.caffeineMorning { hours.append(8) }
+      if p.caffeineAfternoon { hours.append(14) }
+      if p.caffeineEvening { hours.append(19) }
+      for baseHr in hours {
+        let dipHr = (baseHr + 3) % 24
+        wave[dipHr] = max(0, wave[dipHr] - 0.1)
       }
     }
 
@@ -94,10 +113,11 @@ final class EnergyForecastModel: ObservableObject {
   func threePartEnergy(
     for date: Date,
     health: [HealthEvent],
-    events: [CalendarEvent]
+    events: [CalendarEvent],
+    profile: UserProfile? = nil
   ) -> EnergyParts? {
 
-    guard let wave = forecast(for: date, health: health, events: events)?.values else { return nil }
+    guard let wave = forecast(for: date, health: health, events: events, profile: profile)?.values else { return nil }
     func avg(_ s: ArraySlice<Double>) -> Double { s.reduce(0, +) / Double(s.count) * 100.0 }
     return EnergyParts(
       morning: avg(wave[0..<8]),
@@ -154,4 +174,18 @@ final class EnergyForecastModel: ObservableObject {
     -0.04, -0.03, 0.00, 0.08, 0.12,  // 15-19
     0.10, 0.05, 0.00, -0.04,  // 20-23
   ]
+
+  private func circadian(for profile: UserProfile?) -> [Double] {
+    guard let p = profile else { return circadianBoost }
+    let wake = calendar.component(.hour, from: p.typicalWakeTime)
+    var shift = wake - 7
+    switch p.chronotype {
+    case .morning: shift -= 1
+    case .evening: shift += 1
+    default: break
+    }
+    let n = circadianBoost.count
+    let offset = ((shift % n) + n) % n
+    return Array(circadianBoost[offset..<n] + circadianBoost[0..<offset])
+  }
 }
