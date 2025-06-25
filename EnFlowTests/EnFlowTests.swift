@@ -6,11 +6,22 @@
 //
 
 import Testing
+@testable import EnFlow
 
 struct EnFlowTests {
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    @Test func jsonFormatterPrettifiesSimpleJSON() throws {
+        let raw = "{\"a\":1}"
+        let pretty = JSONFormatter.pretty(from: raw)
+        #expect(pretty.contains("\n"))
+        #expect(pretty.contains("\"a\""))
+    }
+
+    @Test func jsonFormatterRemovesCodeFences() throws {
+        let raw = "```json\n{\"a\":1}\n```"
+        let pretty = JSONFormatter.pretty(from: raw)
+        #expect(!pretty.contains("```"))
+        #expect(pretty.contains("\"a\""))
     }
 
 }
