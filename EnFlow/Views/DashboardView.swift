@@ -150,15 +150,24 @@ struct DashboardView: View {
             .foregroundColor(.orange)
         }
 
-        // No forecast for future days – show placeholder
+        // Forecast (dashed / desaturated)
         EnergyRingView(
-          score: nil,
+          score: missingTomorrowData ? nil : tomorrowSummary?.overallEnergyScore,
           dashed: true,
           desaturate: true
         )
+        .help("Forecast accuracy lower than today’s")
         .frame(maxWidth: .infinity)
 
-        // No hourly forecast shown
+        if let wave = tomorrowSummary?.hourlyWaveform {
+          VStack(alignment: .leading, spacing: 8) {
+            Text("24-Hour Energy Forecast")
+              .font(.headline)
+              .saturation(0.7)
+            EnergyLineChartView(values: wave)
+              .saturation(0.7)
+          }
+        }
 
         if tomorrowConfidence > 0 && tomorrowConfidence < 0.4 {
           Text("⚠️ Forecast based on limited history – add more days of data for accuracy")
@@ -166,7 +175,14 @@ struct DashboardView: View {
             .foregroundColor(.orange)
         }
 
+        ThreePartForecastView(
+          parts: tomorrowParts,
+          dashed: true,
+          desaturate: true)
 
+        if let ctx = tomorrowCtx {
+          SuggestedPrioritiesView(context: ctx)
+        }
 
         Spacer(minLength: 60)
       }
@@ -274,11 +290,11 @@ struct DashboardView: View {
 
     await MainActor.run {
       todaySummary = tSummary
-      tomorrowSummary = nil
+      tomorrowSummary = tmSummary
       todayParts = tParts
-      tomorrowParts = EnergyParts(morning: 0, afternoon: 0, evening: 0)
+      tomorrowParts = tmParts
       todayCtx = tCtx
-      tomorrowCtx = nil
+      tomorrowCtx = tmCtx
       stepsToday = steps
       isLoading = false
       missingTodayData = noToday
