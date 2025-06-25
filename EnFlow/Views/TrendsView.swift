@@ -45,71 +45,7 @@ struct TrendsView: View {
                     .padding(.horizontal)
 
                 // Dual-line chart (Actual = yellow, Forecast = blue)
-                Chart {
-                    ForEach(shadeSections) { section in
-                        ForEach(section.points) { p in
-                            AreaMark(
-                                x: .value("Day", p.date),
-                                yStart: .value("Low", p.low),
-                                yEnd: .value("High", p.high)
-                            )
-                            .interpolationMethod(.catmullRom)
-                            .foregroundStyle(section.color)
-                        }
-                    }
-
-                    ForEach(summaries) { item in
-                        LineMark(x: .value("Day", item.date), y: .value("Actual", item.overallEnergyScore))
-                            .interpolationMethod(.catmullRom)
-                            .foregroundStyle(Color.yellow)
-                            .shadow(color: .yellow.opacity(0.6), radius: 4)
-                    }
-
-                    ForEach(forecastSummaries) { item in
-                        LineMark(x: .value("Day", item.date), y: .value("Forecast", item.overallEnergyScore))
-                            .interpolationMethod(.catmullRom)
-                            .foregroundStyle(Color.blue)
-                            .shadow(color: .blue.opacity(0.6), radius: 4)
-                    }
-
-                    ForEach(trendPoints) { p in
-                        LineMark(x: .value("Day", p.date), y: .value("Trend", p.value))
-                            .interpolationMethod(.linear)
-                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [5,3]))
-                            .foregroundStyle(Color.blue)
-                    }
-
-                    if let lastA = summaries.last {
-                        PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
-                            .symbol(.circle)
-                            .symbolSize(80)
-                            .foregroundStyle(Color.yellow)
-                            .scaleEffect(animatePulse ? 1.2 : 0.8)
-                            .shadow(radius: 8)
-                    }
-                    if let lastF = forecastSummaries.last {
-                        PointMark(x: .value("Day", lastF.date), y: .value("Forecast", lastF.overallEnergyScore))
-                            .symbol(.circle)
-                            .symbolSize(80)
-                            .foregroundStyle(Color.blue)
-                            .scaleEffect(animatePulse ? 1.2 : 0.8)
-                            .shadow(radius: 8)
-                    }
-                }
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-                .chartYScale(domain: 0...100)
-                .frame(height: 200)
-                .padding(.horizontal)
-                .overlay(
-                    VStack {
-                        Text("High").font(.caption).foregroundColor(.gray)
-                        Spacer()
-                        Text("Low").font(.caption).foregroundColor(.gray)
-                    }
-                    .padding(.leading, 4), alignment: .leading
-                )
-                .onAppear { animatePulse = true }
+                energyChart
 
                 HStack(spacing: 16) {
                     HStack(spacing: 4) {
@@ -357,6 +293,75 @@ Analyze correlations between the user's calendar events and their energy data. W
             let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
             selectedEventDate = fmt.date(from: d)
         }
+    }
+
+    /// Chart showing calculated and forecasted energy.
+    private var energyChart: some View {
+        Chart {
+            ForEach(shadeSections) { section in
+                ForEach(section.points) { p in
+                    AreaMark(
+                        x: .value("Day", p.date),
+                        yStart: .value("Low", p.low),
+                        yEnd: .value("High", p.high)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(section.color)
+                }
+            }
+
+            ForEach(summaries) { item in
+                LineMark(x: .value("Day", item.date), y: .value("Actual", item.overallEnergyScore))
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(Color.yellow)
+                    .shadow(color: .yellow.opacity(0.6), radius: 4)
+            }
+
+            ForEach(forecastSummaries) { item in
+                LineMark(x: .value("Day", item.date), y: .value("Forecast", item.overallEnergyScore))
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(Color.blue)
+                    .shadow(color: .blue.opacity(0.6), radius: 4)
+            }
+
+            ForEach(trendPoints) { p in
+                LineMark(x: .value("Day", p.date), y: .value("Trend", p.value))
+                    .interpolationMethod(.linear)
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5,3]))
+                    .foregroundStyle(Color.blue)
+            }
+
+            if let lastA = summaries.last {
+                PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
+                    .symbol(.circle)
+                    .symbolSize(80)
+                    .foregroundStyle(Color.yellow)
+                    .scaleEffect(animatePulse ? 1.2 : 0.8)
+                    .shadow(radius: 8)
+            }
+            if let lastF = forecastSummaries.last {
+                PointMark(x: .value("Day", lastF.date), y: .value("Forecast", lastF.overallEnergyScore))
+                    .symbol(.circle)
+                    .symbolSize(80)
+                    .foregroundStyle(Color.blue)
+                    .scaleEffect(animatePulse ? 1.2 : 0.8)
+                    .shadow(radius: 8)
+            }
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartYScale(domain: 0...100)
+        .frame(height: 200)
+        .padding(.horizontal)
+        .overlay(
+            VStack {
+                Text("High").font(.caption).foregroundColor(.gray)
+                Spacer()
+                Text("Low").font(.caption).foregroundColor(.gray)
+            }
+            .padding(.leading, 4), alignment: .leading
+        )
+        .onAppear { animatePulse = true }
     }
 
     // MARK: Derived Data --------------------------------------------------
