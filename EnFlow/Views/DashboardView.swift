@@ -112,12 +112,13 @@ struct DashboardView: View {
 
         }
 
-        // — 24-hour line graph —
+        // — Daily 7 AM‒7 PM line graph —
         if let wave = todaySummary?.hourlyWaveform {
+          let slice = Array(wave[7...19])
           VStack(alignment: .leading, spacing: 8) {
-            Text("24-Hour Energy Forecast")
+            Text("Daily Energy Forecast")
               .font(.headline)
-            EnergyLineChartView(values: wave)
+            DailyEnergyForecastView(values: slice)
           }
         }
 
