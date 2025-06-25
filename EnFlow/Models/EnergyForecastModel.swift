@@ -20,6 +20,7 @@ final class EnergyForecastModel: ObservableObject {
     private let calendar = Calendar.current
     private let summaryEngine = EnergySummaryEngine.shared
 
+    // Deprecated; use DayEnergyForecast instead
     struct ForecastResult { let values: [Double]; let score: Double }
     struct ThreePartEnergy { let morning: Double; let afternoon: Double; let evening: Double }
 
@@ -40,18 +41,35 @@ final class EnergyForecastModel: ObservableObject {
     // MARK: Single-day forecast (24×values + daily composite)
     func forecast(for date: Date,
                   health: [HealthEvent],
-                  events: [CalendarEvent]) -> ForecastResult? {
+                  events: [CalendarEvent]) -> DayEnergyForecast? {
 
-        if let cached = ForecastCache.shared.wave(for: date) {
-            let sc = cached.reduce(0, +) / Double(cached.count) * 100.0
-            return ForecastResult(values: cached, score: sc)
+        if let cached = ForecastCache.shared.forecast(for: date) {
+            return cached
         }
 
-        let hSample = health.first { calendar.isDate($0.date, inSameDayAs: date) }
-        guard let baseWave = hourlyWaveform(baseHealth: hSample) else { return nil }
-        ForecastCache.shared.saveWave(baseWave, for: date)
-        let score = baseWave.reduce(0, +) / Double(baseWave.count) * 100.0
-        return ForecastResult(values: baseWave, score: score)
+        let history = health.filter { $0.date <= date }
+        guard let hSample = history.first(where: { calendar.isDate($0.date, inSameDayAs: date) }) else {
+            return nil
+        }
+
+        guard let base = computeHistoricalBase(from: history) else { return nil }
+        let wave = Array(repeating: base, count: 24)
+        let score = wave.reduce(0, +) / Double(wave.count) * 100.0
+
+        let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
+        let missing = required.subtracting(hSample.availableMetrics)
+        var confidence = 0.2
+        if history.count >= 7 { confidence = 0.8 }
+        else if history.count >= 3 { confidence = 0.4 }
+
+        let forecast = DayEnergyForecast(date: date,
+                                         values: wave,
+                                         score: score,
+                                         confidenceScore: confidence,
+                                         missingMetrics: Array(missing),
+                                         sourceType: .historicalModel)
+        ForecastCache.shared.saveForecast(forecast)
+        return forecast
     }
 
     // MARK: 3-part (morning / afternoon / evening)
@@ -95,6 +113,16 @@ final class EnergyForecastModel: ObservableObject {
         e += circadianBoost[hr]
 
         return max(0.0, min(1.0, e))
+    }
+
+    /// Moving-average base energy across recent history (7–14 days).
+    private func computeHistoricalBase(from history: [HealthEvent]) -> Double? {
+        let recent = history.suffix(14)
+        let valid = recent.compactMap { computeBaseEnergy(from: $0) }
+        guard !valid.isEmpty else { return nil }
+        let range = valid.suffix(7)
+        let avg = range.reduce(0, +) / Double(range.count)
+        return avg
     }
 
     // MARK: Helpers -------------------------------------------------------------

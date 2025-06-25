@@ -27,7 +27,7 @@ final class UnifiedEnergyModel {
                                                     events: calendarEvents) else {
             return summary
         }
-        cache.saveWave(forecast.values, for: date)
+        cache.saveForecast(forecast)
 
         var blended = summary.hourlyWaveform
         let now = Date()
@@ -40,7 +40,7 @@ final class UnifiedEnergyModel {
         }
 
         // compute accuracy for past days if we have forecast stored
-        if date < calendar.startOfDay(for: now), let prev = cache.wave(for: date) {
+        if date < calendar.startOfDay(for: now), let prev = cache.forecast(for: date)?.values {
             let diffs = zip(prev, summary.hourlyWaveform).map { abs($0 - $1) }
             let acc = 1.0 - diffs.reduce(0, +) / Double(diffs.count)
             cache.saveAccuracy(acc, for: date)
