@@ -73,6 +73,13 @@ struct WeekCalendarView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(6)
                                 .background(Color.black.opacity(0.05))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(
+                                            calendar.isDateInToday(date) ? .orange : .clear,
+                                            lineWidth: 2
+                                        )
+                                )
                                 .onTapGesture { selectedDay = date }
                             }
                         }
