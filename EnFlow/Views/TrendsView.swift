@@ -25,6 +25,23 @@ struct TrendsView: View {
     // Use a vivid blue so the forecast line is clearly distinguished
     private let forecastColor = Color.blue
 
+    private var highlightedSummary: AttributedString {
+        var result = AttributedString()
+        var remaining = gptSummary[...]
+        while let start = remaining.range(of: "<highlight>") {
+            let before = remaining[..<start.lowerBound]
+            result.append(AttributedString(String(before)))
+            remaining = remaining[start.upperBound...]
+            guard let end = remaining.range(of: "</highlight>") else { break }
+            var highlighted = AttributedString(String(remaining[..<end.lowerBound]))
+            highlighted.foregroundColor = .yellow
+            result.append(highlighted)
+            remaining = remaining[end.upperBound...]
+        }
+        result.append(AttributedString(String(remaining)))
+        return result
+    }
+
     private var forecastAvailable: Bool {
         !forecastSummaries.isEmpty && forecastSummaries.count == summaries.count
     }
@@ -134,7 +151,7 @@ struct TrendsView: View {
                             .fill(.ultraThinMaterial)
                             .shadow(radius: 4)
                         ScrollView(.vertical, showsIndicators: true) {
-                            Text(gptSummary)
+                            Text(highlightedSummary)
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding()
@@ -195,14 +212,7 @@ Analyze correlations between the user's calendar events and their energy data. W
                 prompt: prompt,
                 cacheId: "WeeklyJSON.\(period.rawValue)"
             )
-            if let data = raw.data(using: .utf8),
-               let obj = try? JSONSerialization.jsonObject(with: data, options: []),
-               let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]),
-               let prettyString = String(data: pretty, encoding: .utf8) {
-                gptSummary = prettyString
-            } else {
-                gptSummary = raw
-            }
+            gptSummary = JSONFormatter.pretty(from: raw)
         } catch {
             gptSummary = "{ \"error\": \"Unable to load summary\" }"
         }
