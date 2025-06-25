@@ -37,6 +37,8 @@ struct DashboardView: View {
   @State private var isLoading = true
   @State private var stepsToday = 0
   @State private var selection = 0  // 0 = today • 1 = tomorrow
+  /// IDs used to recreate inactive pages so they reset scroll position
+  @State private var pageIDs: [Int: UUID] = [0: UUID(), 1: UUID()]
   @State private var missingTodayData = false
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
@@ -46,8 +48,12 @@ struct DashboardView: View {
   // MARK: Root view ----------------------------------------------------------
   var body: some View {
     TabView(selection: $selection) {
-      todayPage.tag(0)
-      tomorrowPage.tag(1)
+      todayPage
+        .id(pageIDs[0]!)
+        .tag(0)
+      tomorrowPage
+        .id(pageIDs[1]!)
+        .tag(1)
     }
     .tabViewStyle(.page(indexDisplayMode: .never))
     .animation(.easeInOut, value: selection)
@@ -63,11 +69,16 @@ struct DashboardView: View {
       .padding(.trailing, 16)
       .padding(.top, pickerTop)
     }
-    // Soft haptic on tab switch
-    .onChange(of: selection) { _ in
+    // Soft haptic and reset inactive page on tab switch
+    .onChange(of: selection) { newValue in
       #if os(iOS)
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
       #endif
+      if newValue == 0 {
+        pageIDs[1] = UUID()
+      } else {
+        pageIDs[0] = UUID()
+      }
     }
 
     // Notch shim
