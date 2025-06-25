@@ -61,6 +61,7 @@ struct OnboardingAndSettingsView: View {
                 // ─── About ───
                 aboutSection
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
         }
         .enflowBackground()

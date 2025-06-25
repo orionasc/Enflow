@@ -27,6 +27,8 @@ struct ContentView: View {
 #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
 #endif
+            .scrollContentBackground(.hidden)
+            .enflowBackground()
             .toolbar {
 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
