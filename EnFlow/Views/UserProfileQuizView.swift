@@ -21,15 +21,16 @@ struct UserProfileQuizView: View {
                 }
 
                 Section("Caffeine") {
-                    Stepper("Cups per Day: \(profile.caffeineIntakePerDay)", value: $profile.caffeineIntakePerDay, in: 0...10)
-                    DatePicker("Last Caffeine", selection: $profile.caffeineTimeLastUsed, displayedComponents: .hourAndMinute)
+                    Stepper("Daily Intake (mg): \(profile.caffeineMgPerDay)", value: $profile.caffeineMgPerDay, in: 0...1000, step: 10)
+                    Toggle("Morning", isOn: $profile.caffeineMorning)
+                    Toggle("Afternoon", isOn: $profile.caffeineAfternoon)
+                    Toggle("Evening", isOn: $profile.caffeineEvening)
+                    Text("e.g. 1 cup coffee ≈ 95 mg, 1 iced tea ≈ 40 mg")
+                        .font(.footnote).foregroundColor(.secondary)
                 }
 
                 Section("Activity") {
                     Stepper("Exercise per Week: \(profile.exerciseFrequency)", value: $profile.exerciseFrequency, in: 0...14)
-                    Picker("Stress Level", selection: $profile.stressLevel) {
-                        ForEach(1...5, id: \.self) { v in Text("\(v)").tag(v) }
-                    }
                 }
 
                 Section("Notes") {

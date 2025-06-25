@@ -12,15 +12,23 @@ struct UserProfileSummaryView: View {
                 Text("Chronotype: \(profile.chronotype.rawValue.capitalized)")
             }
             Section("Caffeine") {
-                Text("Cups per day: \(profile.caffeineIntakePerDay)")
-                Text("Last at: \(time(profile.caffeineTimeLastUsed))")
+                Text("Intake: \(profile.caffeineMgPerDay) mg/day")
+                Text("Morning: \(profile.caffeineMorning ? "Yes" : "No")")
+                Text("Afternoon: \(profile.caffeineAfternoon ? "Yes" : "No")")
+                Text("Evening: \(profile.caffeineEvening ? "Yes" : "No")")
+                Text("e.g. 1 cup coffee ≈ 95 mg, 1 iced tea ≈ 40 mg")
+                    .font(.footnote).foregroundColor(.secondary)
             }
             Section("Activity") {
                 Text("Exercise per week: \(profile.exerciseFrequency)")
-                Text("Stress: \(profile.stressLevel)/5")
             }
             if let notes = profile.notes, !notes.isEmpty {
                 Section("Notes") { Text(notes) }
+            }
+            Section {
+                NavigationLink("Data") {
+                    DataView()
+                }
             }
             Section("Debug") { Text(profile.debugSummary()) }
         }
