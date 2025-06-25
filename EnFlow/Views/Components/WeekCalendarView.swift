@@ -209,7 +209,13 @@ struct WeekCalendarView: View {
             .font(.caption2.bold())
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(score != nil ? ColorPalette.gradient(for: score!) : Color.gray.opacity(0.3))
+            .background {
+                if let score {
+                    ColorPalette.gradient(for: score)
+                } else {
+                    Color.gray.opacity(0.3)
+                }
+            }
             .clipShape(Capsule())
     }
 
