@@ -372,17 +372,15 @@ Analyze correlations between the user's calendar events and their energy data. W
         if let lastA = summaries.last {
             PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
                 .symbol(.circle)
-                .symbolSize(80)
+                .symbolSize(animatePulse ? 96 : 64)
                 .foregroundStyle(Color.yellow)
-                .scaleEffect(animatePulse ? 1.2 : 0.8)
                 .shadow(radius: 8)
         }
         if let lastF = forecastSummaries.last {
             PointMark(x: .value("Day", lastF.date), y: .value("Forecast", lastF.overallEnergyScore))
                 .symbol(.circle)
-                .symbolSize(80)
+                .symbolSize(animatePulse ? 96 : 64)
                 .foregroundStyle(Color.blue)
-                .scaleEffect(animatePulse ? 1.2 : 0.8)
                 .shadow(radius: 8)
         }
     }
