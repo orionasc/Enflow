@@ -326,8 +326,8 @@ struct DayView: View {
     let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 7)
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
 
-    let summary = UnifiedEnergyModel.shared.summary(
-      for: currentDate,
+    let summary = EnergySummaryEngine.shared.summarize(
+      day: currentDate,
       healthEvents: healthList,
       calendarEvents: dayEvents)
     forecast = summary.hourlyWaveform
