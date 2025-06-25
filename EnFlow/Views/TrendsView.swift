@@ -212,7 +212,7 @@ Analyze correlations between the user's calendar events and their energy data. W
                 prompt: prompt,
                 cacheId: "WeeklyJSON.\(period.rawValue)"
             )
-            gptSummary = JSONFormatter.pretty(from: raw)
+            gptSummary = WeeklySummaryFormatter.format(from: raw)
         } catch {
             gptSummary = "{ \"error\": \"Unable to load summary\" }"
         }

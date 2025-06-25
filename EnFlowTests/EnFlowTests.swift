@@ -24,4 +24,13 @@ struct EnFlowTests {
         #expect(pretty.contains("\"a\""))
     }
 
+    @Test func weeklySummaryFormatterProducesBullets() throws {
+        let raw = "{" +
+            "\"sections\":[{\"title\":\"T\",\"content\":\"C\"}]," +
+            "\"events\":[{\"title\":\"E\",\"date\":\"2025-06-25\"}]}"
+        let text = WeeklySummaryFormatter.format(from: raw)
+        #expect(text.contains("\u2022 T: C"))
+        #expect(text.contains("E"))
+    }
+
 }
