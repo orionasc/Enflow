@@ -9,6 +9,10 @@ import SwiftUI
 
 struct MainShellView: View {
     @State private var showSettings = false
+    /// Active tab index
+    @State private var selection = 0
+    /// Unique IDs to force-reset scroll position when a tab is revisited
+    @State private var tabIDs: [Int: UUID] = [0: UUID(), 1: UUID(), 2: UUID(), 3: UUID()]
     private let accent = ColorPalette.color(for: 70)
 
     var body: some View {
@@ -16,18 +20,32 @@ struct MainShellView: View {
 
             // ───────── Main content (tabs) ─────────
             #if os(iOS)
-            TabView {
+            TabView(selection: $selection) {
                 NavigationView { DashboardView() }
+                    .id(tabIDs[0]!)
                     .tabItem { Label("Dashboard", systemImage: "waveform.path.ecg") }
+                    .tag(0)
 
                 NavigationView { CalendarRootView() }
+                    .id(tabIDs[1]!)
                     .tabItem { Label("Calendar", systemImage: "calendar") }
+                    .tag(1)
 
                 NavigationView { TrendsView() }
+                    .id(tabIDs[2]!)
                     .tabItem { Label("Trends", systemImage: "chart.bar.fill") }
+                    .tag(2)
 
                 NavigationView { UserProfileSummaryView() }
+                    .id(tabIDs[3]!)
                     .tabItem { Label("User", systemImage: "person.crop.circle") }
+                    .tag(3)
+            }
+            .onChange(of: selection) { newValue in
+                // Regenerate IDs for non-active tabs so they reset when revisited
+                for index in 0..<4 where index != newValue {
+                    tabIDs[index] = UUID()
+                }
             }
             .tint(accent)
             .enflowBackground()
