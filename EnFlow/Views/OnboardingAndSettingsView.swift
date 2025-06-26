@@ -63,6 +63,7 @@ struct OnboardingAndSettingsView: View {
             }
             .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .enflowBackground()
         .onAppear(perform: refreshAuthStatus)
