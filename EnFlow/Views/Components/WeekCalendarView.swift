@@ -20,28 +20,24 @@ struct WeekCalendarView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // ─── Two-line header: “Week” + “Week of …” ─────────────
-                VStack(spacing: 6) {
-                    HStack {
-                        Button { shiftWeek(by: -1) } label: {
-                            Image(systemName: "chevron.left")
-                                .padding(8)
-                        }
-                        Spacer()
-                        Button { shiftWeek(by: 1) } label: {
-                            Image(systemName: "chevron.right")
-                                .padding(8)
-                        }
+                // ─── Header with inline week title ─────────────
+                HStack {
+                    Button { shiftWeek(by: -1) } label: {
+                        Image(systemName: "chevron.left")
+                            .padding(8)
                     }
-                    .padding(.horizontal)
-
+                    Spacer()
                     Text(weekTitle)
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.85))
-                        .padding(.horizontal)
+                    Spacer()
+                    Button { shiftWeek(by: 1) } label: {
+                        Image(systemName: "chevron.right")
+                            .padding(8)
+                    }
                 }
-                .padding(.top, 1)
-                .padding(.bottom, 80)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
 
                 // ─── Week grid, vertical-only scroll ────────────────────
                 ScrollView(.vertical, showsIndicators: true) {
@@ -160,8 +156,8 @@ struct WeekCalendarView: View {
                     }
                 }
             }
-            // make the persistent nav-bar show “Week of …” instead of static “Week”
-            .navigationTitle(weekTitle)
+            // Keep simple title in the nav bar
+            .navigationTitle("Week")
             .navigationBarTitleDisplayMode(.inline)
 
             // add left/right swipe anywhere to change weeks

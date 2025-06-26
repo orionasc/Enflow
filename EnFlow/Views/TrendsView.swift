@@ -49,7 +49,6 @@ struct TrendsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Spacer().frame(height: 80)
 
                 // Sub-navigation picker
                 Picker("", selection: $period) {
