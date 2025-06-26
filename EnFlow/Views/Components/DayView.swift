@@ -281,9 +281,10 @@ struct DayView: View {
       }
       Text(title)
         .font(.caption2)
+        .lineLimit(1)
         .foregroundColor(.white.opacity(0.7))
     }
-    .frame(width: 32)
+    .frame(width: 60)
   }
 
   // MARK: ─ Day-swipe gesture ─────────────────────────────────
