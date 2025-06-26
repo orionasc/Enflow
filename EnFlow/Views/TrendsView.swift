@@ -179,9 +179,8 @@ struct TrendsView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
                                 ForEach(parsed.events) { event in
-                                    Text("\(event.title.replacingOccurrences(of: \"<highlight>\", with: \"\").replacingOccurrences(of: \"</highlight>\", with: \"\")) – \(event.date)")
-                                        .font(.caption)
-                                        .foregroundColor(.white)
+                                    Text("\(event.title.replacingOccurrences(of: "<highlight>", with: "").replacingOccurrences(of: "</highlight>", with: "")) – \(event.date)")
+
                                 }
                             } else {
                                 Text(gptSummary)
