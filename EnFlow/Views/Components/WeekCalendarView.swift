@@ -9,6 +9,8 @@ struct WeekCalendarView: View {
         repeating: Array(repeating: nil, count: 20),
         count: 7
     )
+    // Per-day overall scores matching DayView
+    @State private var dayScores: [Double?] = Array(repeating: nil, count: 7)
     @State private var events: [CalendarEvent] = []
     @State private var selectedDay: Date? = nil
 
@@ -58,9 +60,8 @@ struct WeekCalendarView: View {
                                     Text("\(calendar.component(.day, from: date))")
                                         .font(.subheadline.bold())
                                         .foregroundColor(.white)
-                                    // show correct 0–100 score, not 0
-                                    let avgScore = energyMatrix[day].average()
-                                    energyChip(score: avgScore != nil ? avgScore! * 100 : nil)
+                                    // Score now matches DayView
+                                    energyChip(score: dayScores[day])
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(6)
@@ -240,6 +241,7 @@ struct WeekCalendarView: View {
             repeating: Array(repeating: Double?.none, count: hours.count),
             count: 7
         )
+        var scores = Array(repeating: Double?.none, count: 7)
 
         let health = await HealthDataPipeline.shared
             .fetchDailyHealthEvents(daysBack: 7)
@@ -259,6 +261,7 @@ struct WeekCalendarView: View {
             if let day = calendar.date(byAdding: .day, value: d, to: startOfWeek) {
                 if day > today {
                     matrix[d] = Array(repeating: nil, count: hours.count)
+                    scores[d] = nil
                 } else {
                     let dayHealth = health.filter { calendar.isDate($0.date, inSameDayAs: day) }
                    let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: day) }
@@ -269,8 +272,10 @@ struct WeekCalendarView: View {
                                                                   profile: profile)
                     if summary.coverageRatio < 0.3 {
                         matrix[d] = Array(repeating: nil, count: hours.count)
+                        scores[d] = nil
                     } else {
                         matrix[d] = Array(summary.hourlyWaveform[4...23])
+                        scores[d] = summary.overallEnergyScore
                     }
                     events = allEvents
                 }
@@ -279,6 +284,7 @@ struct WeekCalendarView: View {
 
         await MainActor.run {
             energyMatrix = matrix
+            dayScores = scores
         }
     }
 }
