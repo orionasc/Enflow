@@ -13,7 +13,8 @@ struct MeetSolView: View {
                 personalizeSection
                 footerSection
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 32)
         }
         .navigationTitle("Meet Sol")
         .navigationBarTitleDisplayMode(.large)
@@ -111,7 +112,11 @@ struct MeetSolView: View {
     }
 
     private var sampleWave: [Double] {
-        [0.3,0.5,0.7,0.9,0.8,0.6,0.4,0.3,0.2,0.3,0.5,0.8,0.9,0.7,0.5,0.4,0.3,0.5,0.7,0.9,0.8,0.6,0.4,0.2]
+        let count = 24
+        return (0..<count).map { i in
+            let x = Double(i) / Double(count - 1) * .pi * 2
+            return 0.5 + 0.4 * sin(x)
+        }
     }
 
     // MARK: Calendar

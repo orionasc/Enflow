@@ -26,14 +26,21 @@ struct UserProfileSummaryView: View {
                 Section("Notes") { Text(notes) }
             }
             Section {
-                NavigationLink("Data") { DataView() }
+                NavigationLink {
+                    DataView()
+                } label: {
+                    Label("Data", systemImage: "chart.bar")
+                }
                 NavigationLink {
                     MeetSolView()
                 } label: {
                     Label("Meet Sol", systemImage: "sun.max.fill")
                 }
             }
-            Section("Debug") { Text(profile.debugSummary()) }
+            Section("Debug") {
+                Text(profile.debugSummary())
+                    .foregroundColor(.secondary)
+            }
         }
         .navigationTitle("User Profile")
         .toolbar {
@@ -41,6 +48,9 @@ struct UserProfileSummaryView: View {
                 Button("Edit Profile") { showEdit = true }
             }
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .enflowBackground()
         .sheet(isPresented: $showEdit, onDismiss: { profile = UserProfileStore.load() }) {
             UserProfileQuizView()
         }
