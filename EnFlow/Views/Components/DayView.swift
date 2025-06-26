@@ -336,11 +336,13 @@ struct DayView: View {
   private func load() async {
     let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 7)
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
+    let profile = UserProfileStore.load()
 
     let summary = EnergySummaryEngine.shared.summarize(
       day: currentDate,
       healthEvents: healthList,
-      calendarEvents: dayEvents)
+      calendarEvents: dayEvents,
+      profile: profile)
     forecast = summary.hourlyWaveform
     let today = calendar.startOfDay(for: Date())
     if currentDate > today || summary.coverageRatio < 0.3 {

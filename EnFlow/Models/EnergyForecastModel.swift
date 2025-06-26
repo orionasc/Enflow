@@ -41,7 +41,8 @@ final class EnergyForecastModel: ObservableObject {
       summaryEngine.summarize(
         day: day,
         healthEvents: healthByDay[day] ?? [],
-        calendarEvents: eventsByDay[day] ?? [])
+        calendarEvents: eventsByDay[day] ?? [],
+        profile: nil)
     }
   }
 
