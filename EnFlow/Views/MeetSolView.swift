@@ -3,6 +3,7 @@ import SwiftUI
 struct MeetSolView: View {
     @State private var showMetrics = false
     @State private var pulse = false
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
@@ -18,6 +19,18 @@ struct MeetSolView: View {
         }
         .navigationTitle("Meet Sol")
         .navigationBarTitleDisplayMode(.large)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.backward")
+                        Text("Back")
+                    }
+                }
+                .padding(.leading, 32)
+            }
+        }
         .sheet(isPresented: $showMetrics) { MetricDetailsView() }
         .enflowBackground()
     }

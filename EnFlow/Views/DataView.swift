@@ -18,6 +18,7 @@ struct DataView: View {
     @State private var range: DataRange = .week
     @State private var isLoading = false
     @AppStorage("useSimulatedHealthData") private var useSimulatedHealthData = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -90,7 +91,17 @@ struct DataView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .navigationTitle("Data")
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.backward")
+                        Text("Back")
+                    }
+                }
+                .padding(.leading, 32)
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showDateSheet = true } label: {
                     Image(systemName: "calendar")
