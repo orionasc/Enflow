@@ -34,7 +34,7 @@ struct UserProfileSummaryView: View {
                 NavigationLink {
                     MeetSolView()
                 } label: {
-                    Label("Meet Sol", systemImage: "sun.max.fill")
+                    Label("Sol: Our Energy Model", systemImage: "sun.max.fill")
                 }
             }
             Section("Debug") {
