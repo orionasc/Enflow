@@ -197,15 +197,15 @@ struct TrendsView: View {
         await loadGPTSummary()
     }
 
-    /// Reload only the GPT JSON summary with strict formatting instructions.
+    /// Reload only the GPT JSON summary with simplified formatting instructions.
     private func loadGPTSummary() async {
         let prompt = """
-STRICTLY output EXACTLY valid JSON with NO markdown, no code fences, no extra fields. The JSON must have two keys:
-
-"sections": array of objects with keys "title" and "content" (both strings),
-"events": array of objects with keys "title" and "date" (ISO 8601 YYYY-MM-DD).
-
-Analyze correlations between the user's calendar events and their energy data. Wrap any referenced event title in <highlight>…</highlight> tags. Output only the JSON object.
+Respond only with JSON.
+{
+  "sections": [{"title":"","content":""}],
+  "events": [{"title":"","date":"YYYY-MM-DD"}]
+}
+Highlight any mentioned event titles using <highlight> tags. No markdown or extra commentary.
 """
         do {
             let raw = try await OpenAIManager.shared.generateInsight(
