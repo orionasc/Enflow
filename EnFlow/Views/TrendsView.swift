@@ -9,7 +9,7 @@ enum TrendsPeriod: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// TrendsView shows energy trends and an AI-generated weekly YAML summary with full control over reloads and formatting.
+/// TrendsView shows energy trends and an AI-generated weekly JSON summary with full control over reloads and formatting.
 struct TrendsView: View {
     @State private var period: TrendsPeriod = .weekly
 
@@ -30,22 +30,6 @@ struct TrendsView: View {
         "Forecasted": .blue
     ]
 
-    private var highlightedSummary: AttributedString {
-        var result = AttributedString()
-        var remaining = gptSummary[...]
-        while let start = remaining.range(of: "<highlight>") {
-            let before = remaining[..<start.lowerBound]
-            result.append(AttributedString(String(before)))
-            remaining = remaining[start.upperBound...]
-            guard let end = remaining.range(of: "</highlight>") else { break }
-            var highlighted = AttributedString(String(remaining[..<end.lowerBound]))
-            highlighted.foregroundColor = .yellow
-            result.append(highlighted)
-            remaining = remaining[end.upperBound...]
-        }
-        result.append(AttributedString(String(remaining)))
-        return result
-    }
 
     private var forecastAvailable: Bool {
         !forecastSummaries.isEmpty && forecastSummaries.count == summaries.count
@@ -155,13 +139,15 @@ struct TrendsView: View {
                             .fill(.ultraThinMaterial)
                             .shadow(radius: 4)
                         ScrollView(.vertical, showsIndicators: true) {
-                            Text(highlightedSummary)
+                            Text(gptSummary)
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding()
                                 .multilineTextAlignment(.leading)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .onTapGesture { handleEventTap(in: gptSummary) }
+                                .onTapGesture {
+                                    handleEventTap(in: gptSummary)
+                                }
                         }
                         .frame(maxHeight: 300)
                     }
@@ -201,24 +187,22 @@ struct TrendsView: View {
         await loadGPTSummary()
     }
 
-    /// Reload only the GPT YAML summary with simplified formatting instructions.
+    /// Reload only the GPT JSON summary with strict formatting.
     private func loadGPTSummary() async {
         let prompt = """
-Respond only with YAML.
-sections:
-  - title: ""
-    content: ""
-events:
-  - title: ""
-    date: YYYY-MM-DD
-Highlight any mentioned event titles using <highlight> tags. No markdown or extra commentary.
+STRICTLY output EXACTLY valid JSON with NO markdown, no code fences, no extra fields. The JSON must have two keys ONLY:
+
+"sections": array of objects with keys "title" (string) and "content" (string),  
+"events": array of objects with keys "title" (string) and "date" (ISO 8601 "YYYY-MM-DD")
+
+Analyze correlations between the user’s calendar events and energy data. Wrap any referenced event title in <highlight>…</highlight> tags. Output ONLY the raw JSON object.
 """
         do {
             let raw = try await OpenAIManager.shared.generateInsight(
                 prompt: prompt,
-                cacheId: "WeeklyYAML.\(period.rawValue)"
+                cacheId: "WeeklyJSON.\(period.rawValue)"
             )
-            gptSummary = WeeklySummaryFormatter.format(from: raw)
+            gptSummary = JSONFormatter.pretty(from: raw)
         } catch {
             gptSummary = "error: Unable to load summary"
         }
@@ -340,12 +324,12 @@ Highlight any mentioned event titles using <highlight> tags. No markdown or extr
     }
 
 
-    /// Parses a tapped YAML date and navigates to that day.
-    private func handleEventTap(in text: String) {
-        let regex = try? NSRegularExpression(pattern: "date:\\s*\"?(\\d{4}-\\d{2}-\\d{2})\"?", options: [])
-        if let match = regex?.firstMatch(in: text, options: [], range: NSRange(text.startIndex..., in: text)),
-           let r = Range(match.range(at: 1), in: text) {
-            let d = String(text[r])
+    /// Parses a tapped JSON date and navigates to that day.
+    private func handleEventTap(in json: String) {
+        let regex = try? NSRegularExpression(pattern: "\\\"date\\\": \\\"(\\d{4}-\\d{2}-\\d{2})\\\"", options: [])
+        if let match = regex?.firstMatch(in: json, options: [], range: NSRange(json.startIndex..., in: json)),
+           let r = Range(match.range(at: 1), in: json) {
+            let d = String(json[r])
             let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
             selectedEventDate = fmt.date(from: d)
         }
