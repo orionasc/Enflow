@@ -24,6 +24,11 @@ struct TrendsView: View {
     @State private var animatePulse = false
     // Use a vivid blue so the forecast line is clearly distinguished
     private let forecastColor = Color.blue
+    /// Fixed colour scale so Charts doesn't override our explicit styles
+    private let seriesColors: [String: Color] = [
+        "Calculated": .yellow,
+        "Forecasted": .blue
+    ]
 
     private var highlightedSummary: AttributedString {
         var result = AttributedString()
@@ -352,6 +357,7 @@ Highlight any mentioned event titles using <highlight> tags. No markdown or extr
             forecastLineMarks
             endPointMarks
         }
+        .chartForegroundStyleScale(seriesColors)
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartYScale(domain: 0...100)
@@ -388,38 +394,50 @@ Highlight any mentioned event titles using <highlight> tags. No markdown or extr
     @ChartContentBuilder
     private var actualLineMarks: some ChartContent {
         ForEach(summaries) { item in
-            LineMark(x: .value("Day", item.date), y: .value("Actual", item.overallEnergyScore))
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.yellow)
-                .shadow(color: .yellow.opacity(0.6), radius: 4)
+            LineMark(
+                x: .value("Day", item.date),
+                y: .value("Energy", item.overallEnergyScore)
+            )
+            .interpolationMethod(.catmullRom)
+            .foregroundStyle(by: .value("Series", "Calculated"))
+            .shadow(color: Color.yellow.opacity(0.6), radius: 4)
         }
     }
 
     @ChartContentBuilder
     private var forecastLineMarks: some ChartContent {
         ForEach(forecastSummaries) { item in
-            LineMark(x: .value("Day", item.date), y: .value("Forecast", item.overallEnergyScore))
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(forecastColor)
-                .shadow(color: forecastColor.opacity(0.6), radius: 4)
+            LineMark(
+                x: .value("Day", item.date),
+                y: .value("Energy", item.overallEnergyScore)
+            )
+            .interpolationMethod(.catmullRom)
+            .foregroundStyle(by: .value("Series", "Forecasted"))
+            .shadow(color: forecastColor.opacity(0.6), radius: 4)
         }
     }
 
     @ChartContentBuilder
     private var endPointMarks: some ChartContent {
         if let lastA = summaries.last {
-            PointMark(x: .value("Day", lastA.date), y: .value("Actual", lastA.overallEnergyScore))
-                .symbol(.circle)
-                .symbolSize(animatePulse ? 96 : 64)
-                .foregroundStyle(Color.yellow)
-                .shadow(radius: 8)
+            PointMark(
+                x: .value("Day", lastA.date),
+                y: .value("Energy", lastA.overallEnergyScore)
+            )
+            .symbol(.circle)
+            .symbolSize(animatePulse ? 96 : 64)
+            .foregroundStyle(by: .value("Series", "Calculated"))
+            .shadow(radius: 8)
         }
         if let lastF = forecastSummaries.last {
-            PointMark(x: .value("Day", lastF.date), y: .value("Forecast", lastF.overallEnergyScore))
-                .symbol(.circle)
-                .symbolSize(animatePulse ? 96 : 64)
-                .foregroundStyle(forecastColor)
-                .shadow(radius: 8)
+            PointMark(
+                x: .value("Day", lastF.date),
+                y: .value("Energy", lastF.overallEnergyScore)
+            )
+            .symbol(.circle)
+            .symbolSize(animatePulse ? 96 : 64)
+            .foregroundStyle(by: .value("Series", "Forecasted"))
+            .shadow(radius: 8)
         }
     }
 
