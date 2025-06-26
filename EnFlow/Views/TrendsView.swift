@@ -37,6 +37,7 @@ struct TrendsView: View {
     @State private var insightText: String = ""
     @State private var gptSummary: String = ""
     @State private var parsedGPTSummary: GPTSummary? = nil
+    @State private var isGPTLoading = false
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
@@ -143,7 +144,7 @@ struct TrendsView: View {
                             .font(.headline)
                         Spacer()
                         // Reload only GPT summary
-                        Button(action: { Task { await loadGPTSummary() } }) {
+                        Button(action: { Task { await loadGPTSummary(forceReload: true) } }) {
                             Image(systemName: "arrow.clockwise.circle.fill")
                                 .font(.title2)
                                 .foregroundColor(.yellow)
@@ -157,7 +158,11 @@ struct TrendsView: View {
                             .fill(.ultraThinMaterial)
                             .shadow(radius: 4)
                         ScrollView(.vertical, showsIndicators: true) {
-                            if let parsed = parsedGPTSummary {
+                            if isGPTLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .tint(.yellow)
+                            } else if let parsed = parsedGPTSummary {
                                 ForEach(parsed.sections) { section in
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text(section.title)
@@ -229,28 +234,43 @@ struct TrendsView: View {
     }
 
     /// Reload only the GPT JSON summary with strict formatting.
-    private func loadGPTSummary() async {
+    /// - Parameter forceReload: bypasses the cached result when true
+    private func loadGPTSummary(forceReload: Bool = false) async {
         let prompt = """
 STRICTLY output EXACTLY valid JSON with NO markdown, no code fences, no extra fields. The JSON must have two keys ONLY:
 "sections": array of objects with keys "title" (string) and "content" (string),
 "events": array of objects with keys "title" (string) and "date" (ISO 8601 "YYYY-MM-DD")
 Analyze correlations between the user’s calendar events and energy data. Wrap any referenced event title in <highlight>…</highlight> tags. Output ONLY the raw JSON object.
 """
+        await MainActor.run { isGPTLoading = true }
+
         do {
+            let id = forceReload ? "WeeklyJSON.\(period.rawValue).\(Int(Date().timeIntervalSince1970))" : "WeeklyJSON.\(period.rawValue)"
             let raw = try await OpenAIManager.shared.generateInsight(
                 prompt: prompt,
-                cacheId: "WeeklyJSON.\(period.rawValue)"
+                cacheId: id
             )
-            gptSummary = JSONFormatter.pretty(from: raw)
 
-            if let data = raw.data(using: .utf8) {
-                let parsed = try JSONDecoder().decode(GPTSummary.self, from: data)
-                await MainActor.run { parsedGPTSummary = parsed }
+            if let data = raw.data(using: .utf8),
+               let parsed = try? JSONDecoder().decode(GPTSummary.self, from: data) {
+                await MainActor.run {
+                    parsedGPTSummary = parsed
+                    gptSummary = JSONFormatter.pretty(from: raw)
+                }
+            } else {
+                let text = WeeklySummaryFormatter.format(from: raw)
+                await MainActor.run {
+                    parsedGPTSummary = nil
+                    gptSummary = text
+                }
             }
         } catch {
-            gptSummary = "error: Unable to load summary"
-            parsedGPTSummary = nil
+            await MainActor.run {
+                gptSummary = "error: Unable to load summary"
+                parsedGPTSummary = nil
+            }
         }
+        await MainActor.run { isGPTLoading = false }
     }
 
     /// Generate a brief personalized energy tip between the accuracy bar and weekly summary.
