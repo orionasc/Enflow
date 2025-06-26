@@ -46,6 +46,7 @@ struct UserProfileSummaryView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Edit Profile") { showEdit = true }
+                padding()
             }
         }
         .listStyle(.insetGrouped)

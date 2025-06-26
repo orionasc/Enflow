@@ -78,7 +78,7 @@ struct DataView: View {
                                         .foregroundColor(.secondary)
                                 }
                             }
-                            .padding(.vertical, 2)
+                            .padding(.vertical, 20)
                         }
                     }
                 }

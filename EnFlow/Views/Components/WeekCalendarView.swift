@@ -45,7 +45,7 @@ struct WeekCalendarView: View {
                         .padding(.horizontal)
                 }
                 .padding(.top, 8)
-                .padding(.bottom, 8)
+                .padding(.bottom, 80)
 
                 // ─── Week grid, vertical-only scroll ────────────────────
                 ScrollView(.vertical, showsIndicators: true) {
