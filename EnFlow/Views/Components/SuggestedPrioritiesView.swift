@@ -110,36 +110,65 @@ struct SuggestedPrioritiesView: View {
       return ""
     }()
 
-    HStack(alignment: .top, spacing: 12) {
-      ZStack {
-        Circle()
-          .fill(ColorPalette.gradient(for: 75).opacity(0.35))
-          .frame(width: 34, height: 34)
-          .blur(radius: 1)
+    let tint = color(for: p.template)
 
-        Image(systemName: p.template.sfSymbol)
-          .font(.system(size: 17, weight: .semibold))
-      }
-      .frame(width: 34, height: 34)
+    VStack(alignment: .leading, spacing: 8) {
+      Text("Based on today’s recovery + forecast")
+        .font(.caption)
+        .foregroundStyle(.secondary)
 
-      VStack(alignment: .leading, spacing: 4) {
-        Text(titleLine)
-          .font(.headline)
-          .fontWeight(.semibold)
-        if !bodyLines.isEmpty {
-          Text(bodyLines)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+      HStack(alignment: .top, spacing: 12) {
+        ZStack {
+          Circle()
+            .fill(tint.opacity(0.35))
+            .frame(width: 34, height: 34)
+            .blur(radius: 1)
+
+          Image(systemName: p.template.sfSymbol)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundColor(iconColor(for: p.template))
+            .shadow(color: iconColor(for: p.template).opacity(0.6), radius: 3)
         }
+        .frame(width: 34, height: 34)
+
+        VStack(alignment: .leading, spacing: 4) {
+          Text(titleLine)
+            .font(.headline)
+            .fontWeight(.semibold)
+          if !bodyLines.isEmpty {
+            Text(bodyLines)
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        Spacer(minLength: 0)
       }
-      Spacer(minLength: 0)
     }
     .cardStyle(tint: 65)
+    .background(
+      RoundedRectangle(cornerRadius: 16)
+        .fill(tint.opacity(0.15))
+    )
   }
 
   // ───────── Helpers ─────────────────────────────────────────────
   private var contextHash: Int {
     context.overallEnergy.hashValue ^ Int(context.sleepScore * 1_000)
+  }
+
+  // Color helpers -------------------------------------------------
+  private func color(for template: PriorityTemplate) -> Color {
+    switch template {
+    case .focus:       return Color.blue
+    case .movement:    return Color.orange
+    case .rest:        return Color.indigo
+    case .planning:    return Color.pink
+    case .mindfulness: return Color.purple
+    }
+  }
+
+  private func iconColor(for template: PriorityTemplate) -> Color {
+    color(for: template)
   }
 }
