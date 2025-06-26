@@ -21,7 +21,8 @@ final class UnifiedEnergyModel {
 
         let summary = summaryEngine.summarize(day: date,
                                               healthEvents: healthEvents,
-                                              calendarEvents: calendarEvents)
+                                              calendarEvents: calendarEvents,
+                                              profile: profile)
 
         guard let forecast = forecastModel.forecast(for: date,
                                                     health: healthEvents,

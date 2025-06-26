@@ -92,7 +92,8 @@ final class EnergySummaryEngine: ObservableObject {
     @discardableResult
     func summarize(day: Date,
                    healthEvents: [HealthEvent],
-                   calendarEvents: [CalendarEvent]) -> DayEnergySummary {
+                   calendarEvents: [CalendarEvent],
+                   profile: UserProfile? = nil) -> DayEnergySummary {
 
         let start = calendar.startOfDay(for: day)
         let end   = calendar.date(byAdding: .day, value: 1, to: start) ?? start
@@ -104,7 +105,8 @@ final class EnergySummaryEngine: ObservableObject {
         // Sub-scores with fallback logic
         let mental   = computeMentalEnergy(from: hRows.first)
         let physical = computePhysicalEnergy(from: hRows.first)
-        let overall  = (mental + physical) / 2.0
+        let rawOverall = (mental + physical) / 2.0
+        let overall = baselineAdjusted(rawOverall, profile: profile)
 
         // 24-h waveform (starts flat, apply event deltas)
         let wave = hourlyWaveform(base: overall / 100.0, events: cRows)
@@ -229,6 +231,33 @@ final class EnergySummaryEngine: ObservableObject {
     private func activityScore(steps: Int, mean: Int = 8000, sd: Int = 3000) -> Double {
         let z = Double(steps - mean) / Double(sd)
         return exp(-0.5 * z * z)
+    }
+
+    /// Adjusts raw 0–100 scores so that ~50 maps near 70 while
+    /// preserving variability and applying profile bias.
+    private func baselineAdjusted(_ raw: Double,
+                                  profile: UserProfile?) -> Double {
+        let v = max(0, min(100, raw))
+        let shifted: Double
+        if v <= 50 {
+            shifted = v / 50.0 * 70.0
+        } else {
+            shifted = 70.0 + (v - 50.0) / 50.0 * 30.0
+        }
+        guard let p = profile else { return shifted }
+        var bias = 0.0
+        if p.caffeineMgPerDay > 300 { bias -= 5 }
+        if p.usesSleepAid { bias -= 3 }
+        if p.screensBeforeBed { bias -= 2 }
+        if !p.mealsRegular { bias -= 2 }
+        if p.exerciseFrequency >= 5 { bias += 3 }
+        if p.exerciseFrequency <= 1 { bias -= 3 }
+        switch p.chronotype {
+        case .morning: bias += 2
+        case .evening: bias -= 2
+        default: break
+        }
+        return min(max(0, shifted + bias), 100)
     }
 
     private func topEvents(from events: [CalendarEvent],
