@@ -360,6 +360,7 @@ Highlight any mentioned event titles using <highlight> tags. No markdown or extr
             endPointMarks
         }
         .chartForegroundStyleScale(seriesColors)
+        .chartLegend(.hidden)
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartYScale(domain: 0...100)
