@@ -354,7 +354,7 @@ struct DashboardView: View {
 extension View {
   /// Navy-to-charcoal gradient, ignoring safe-area.
   func enflowBackground() -> some View {
-    self.background(
+    background {
       LinearGradient(
         gradient: Gradient(colors: [
           Color(red: 0.05, green: 0.08, blue: 0.20),  // deep navy
@@ -363,7 +363,7 @@ extension View {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
       )
-    )
-    .ignoresSafeArea()
+      .ignoresSafeArea()
+    }
   }
 }
