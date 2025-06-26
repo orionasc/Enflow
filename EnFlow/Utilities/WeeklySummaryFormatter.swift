@@ -10,41 +10,61 @@ enum WeeklySummaryFormatter {
 
     static func format(from raw: String) -> String {
         var cleaned = raw
-            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```yaml", with: "")
             .replacingOccurrences(of: "```", with: "")
             .replacingOccurrences(of: "\u{201C}", with: "\"")
             .replacingOccurrences(of: "\u{201D}", with: "\"")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Extract JSON substring if extraneous text surrounds it
-        if let start = cleaned.firstIndex(of: "{"),
-           let end = cleaned.lastIndex(of: "}") {
-            cleaned = String(cleaned[start...end])
+        // Trim to YAML block if extra text surrounds it
+        if let range = cleaned.range(of: "sections:") ?? cleaned.range(of: "events:") {
+            cleaned = String(cleaned[range.lowerBound...])
         }
 
-        if let data = cleaned.data(using: .utf8),
-           let summary = try? JSONDecoder().decode(Summary.self, from: data) {
+        if let summary = parseYAML(cleaned) {
             return buildText(from: summary)
         }
 
-        if let data = cleaned.data(using: .utf8),
-           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            let sections = (obj["sections"] as? [[String: Any]]) ?? []
-            let events = (obj["events"] as? [[String: Any]]) ?? []
-            let summary = Summary(
-                sections: sections.map {
-                    Summary.Section(title: $0["title"] as? String ?? "",
-                                     content: $0["content"] as? String ?? "")
-                },
-                events: events.map {
-                    Summary.Event(title: $0["title"] as? String ?? "",
-                                  date: $0["date"] as? String ?? "")
-                }
-            )
-            return buildText(from: summary)
+        return cleaned
+    }
+
+    /// Very small YAML parser for the limited summary format.
+    private static func parseYAML(_ text: String) -> Summary? {
+        var sections: [Summary.Section] = []
+        var events: [Summary.Event] = []
+
+        enum Mode { case none, sections, events }
+        var mode: Mode = .none
+        var currentTitle: String = ""
+
+        func strip(_ s: String) -> String {
+            var t = s.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("\"") && t.hasSuffix("\"") { t.removeFirst(); t.removeLast() }
+            return t
         }
 
-        return JSONFormatter.pretty(from: cleaned)
+        for rawLine in text.split(separator: "\n") {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("sections:") { mode = .sections; continue }
+            if line.hasPrefix("events:") { mode = .events; continue }
+            if line.hasPrefix("- title:") {
+                currentTitle = strip(String(line.dropFirst(8)))
+                continue
+            }
+            if line.hasPrefix("content:") && mode == .sections {
+                let content = strip(String(line.dropFirst(8)))
+                sections.append(Summary.Section(title: currentTitle, content: content))
+                continue
+            }
+            if line.hasPrefix("date:") && mode == .events {
+                let date = strip(String(line.dropFirst(5)))
+                events.append(Summary.Event(title: currentTitle, date: date))
+                continue
+            }
+        }
+
+        guard !sections.isEmpty || !events.isEmpty else { return nil }
+        return Summary(sections: sections, events: events)
     }
 
     private static func buildText(from summary: Summary) -> String {

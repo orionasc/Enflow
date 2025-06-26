@@ -25,26 +25,29 @@ struct EnFlowTests {
     }
 
     @Test func weeklySummaryFormatterProducesBullets() throws {
-        let raw = "{" +
-            "\"sections\":[{\"title\":\"T\",\"content\":\"C\"}]," +
-            "\"events\":[{\"title\":\"E\",\"date\":\"2025-06-25\"}]}"
+        let raw = """
+        sections:
+          - title: "T"
+            content: "C"
+        events:
+          - title: "E"
+            date: "2025-06-25"
+        """
         let text = WeeklySummaryFormatter.format(from: raw)
         #expect(text.contains("\u2022 T: C"))
         #expect(text.contains("E"))
     }
 
-    @Test func weeklySummaryFormatterHandlesWrappedJSON() throws {
-        let raw = "Here you go: ```json\n{" +
-            "\"sections\":[{\"title\":\"A\",\"content\":\"B\"}]," +
-            "\"events\":[]}\n``` Enjoy!"
+    @Test func weeklySummaryFormatterHandlesWrappedYAML() throws {
+        let raw = "Here you go: ```yaml\nsections:\n  - title: \"A\"\n    content: \"B\"\nevents: []\n``` Enjoy!"
         let text = WeeklySummaryFormatter.format(from: raw)
         #expect(text.contains("\u2022 A: B"))
     }
 
     @Test func weeklySummaryFormatterFallsBackGracefully() throws {
-        let raw = "not really json"
+        let raw = "not really yaml"
         let text = WeeklySummaryFormatter.format(from: raw)
-        #expect(text.contains("not really json"))
+        #expect(text.contains("not really yaml"))
     }
 
 }
