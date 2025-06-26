@@ -1,10 +1,17 @@
 import SwiftUI
 
 struct DailyEnergyForecastView: View {
-    /// Energy values from 7 AM to 7 PM inclusive (13 values, 0-1)
+    /// Energy values for consecutive hours starting at `startHour`.
     let values: [Double]
-    private let startHour = 7
+    /// First hour represented in `values`. Defaults to 7AM for backward
+    /// compatibility with the dashboard.
+    let startHour: Int
     private let calendar = Calendar.current
+
+    init(values: [Double], startHour: Int = 7) {
+        self.values = values
+        self.startHour = startHour
+    }
 
     var body: some View {
         GeometryReader { proxy in

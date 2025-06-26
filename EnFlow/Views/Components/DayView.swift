@@ -140,38 +140,8 @@ struct DayView: View {
         ThreePartForecastView(parts: parts)
         Text("24-Hour Energy Graph")
           .font(.title2.weight(.medium))
-        ZStack(alignment: .bottomLeading) {
-
-          EnergyLineChartView(values: forecast)
-            .frame(height: 220)
-          ForEach(significantPeaksAndTroughs(), id: \.0) { hour, value in
-            VStack(alignment: .leading, spacing: 4) {
-              RoundedRectangle(cornerRadius: 6)
-                .fill(.ultraThinMaterial)
-                .frame(width: 140)
-                .overlay(
-                  VStack(alignment: .leading, spacing: 4) {
-                    Text("Hour: \(hourLabel(hour))")
-                      .font(.caption2.bold())
-                    Text("Energy: \(Int(value * 100))")
-                      .font(.caption2)
-                    if let ev = events.first(where: {
-                      calendar.component(.hour, from: $0.startTime) == hour
-                    }) {
-                      Text(ev.eventTitle)
-                        .font(.caption2)
-                        .lineLimit(1)
-                    }
-                  }
-                  .padding(6)
-                )
-            }
-            .offset(
-              x: CGFloat(hour) * (UIScreen.main.bounds.width - 32) / 24 + 16,
-              y: 16
-            )
-          }
-        }
+        DailyEnergyForecastView(values: forecast, startHour: 0)
+          .frame(height: 220)
       }
       .padding()
       .padding(.bottom, 30)
@@ -335,7 +305,10 @@ struct DayView: View {
 
   // MARK: ─ Data loader ───────────────────────────────────────
   private func load() async {
-    let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 7)
+    let startOfToday = calendar.startOfDay(for: Date())
+    let diff = calendar.dateComponents([.day], from: currentDate, to: startOfToday).day ?? 0
+    let daysBack = max(7, diff + 1)
+    let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: daysBack)
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
     let profile = UserProfileStore.load()
 
@@ -345,8 +318,7 @@ struct DayView: View {
       calendarEvents: dayEvents,
       profile: profile)
     forecast = summary.hourlyWaveform
-    let today = calendar.startOfDay(for: Date())
-    if currentDate > today || summary.coverageRatio < 0.3 {
+    if currentDate > startOfToday || summary.coverageRatio < 0.3 {
       overallScore = nil
     } else {
       overallScore = summary.overallEnergyScore
