@@ -22,6 +22,9 @@ struct EnergyRingView: View {
     @State private var pulseScale = 1.0
     @State private var showExplanation = false
 
+    // Base scale applied so the composite ring appears slightly smaller
+    private let baseScale: CGFloat = 0.9
+
     // ───────── Derived ──────────────────────────────────────────────
     private var status: String {
         guard let score else { return "N/A" }
@@ -127,7 +130,7 @@ struct EnergyRingView: View {
             }
         }
         .frame(width: 180, height: 180)
-        .scaleEffect(pulseScale)
+        .scaleEffect(baseScale * pulseScale)
         .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 4)
         .saturation(desaturate ? 0.55 : 1.0)
         .onReceive(engine.$refreshVersion.dropFirst()) { _ in
