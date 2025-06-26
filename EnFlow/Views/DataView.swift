@@ -19,6 +19,15 @@ struct DataView: View {
     @State private var isLoading = false
     @AppStorage("useSimulatedHealthData") private var useSimulatedHealthData = false
 
+    /// Sorted list of dates that have either health or calendar data
+    private var displayDates: [Date] {
+        let cal = Calendar.current
+        let healthDays = healthEvents.map { cal.startOfDay(for: $0.date) }
+        let eventDays  = calendarEvents.map { cal.startOfDay(for: $0.startTime) }
+        let unique = Set(healthDays + eventDays)
+        return unique.sorted(by: >)
+    }
+
     var body: some View {
         ZStack {
             List {
@@ -35,24 +44,16 @@ struct DataView: View {
                 }
 
                 Section("Health Data") {
-                ForEach(healthEvents, id: \.date) { h in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(h.date, format: .dateTime.month().day())
-                            .font(.headline)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Steps: \(h.steps)")
-                            Text("HRV: \(Int(h.hrv)) ms")
-                            Text("Resting HR: \(Int(h.restingHR)) bpm")
-                            Text("Sleep Eff: \(Int(h.sleepEfficiency)) %")
-                            Text("Sleep Latency: \(Int(h.sleepLatency)) min")
-                            Text("Deep Sleep: \(Int(h.deepSleep)) min")
-                            Text("REM Sleep: \(Int(h.remSleep)) min")
-                            Text("Calories: \(Int(h.calories)) kcal")
+                    ForEach(displayDates, id: \.self) { day in
+                        HStack(alignment: .top) {
+                            healthColumn(for: healthEvent(for: day), day: day)
+                            if showCalendarEvents {
+                                Divider()
+                                calendarColumn(for: eventsForDay(day))
+                            }
                         }
-                        .font(.caption)
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
-                }
                 }
                 Toggle("Use Simulated Health Data", isOn: $useSimulatedHealthData)
                     .onChange(of: useSimulatedHealthData) { _ in
@@ -63,25 +64,6 @@ struct DataView: View {
                     .onChange(of: showCalendarEvents) { val in
                         if val { Task { await loadCalendar() } }
                     }
-
-                if showCalendarEvents {
-                    Section("Calendar Events") {
-                        ForEach(calendarEvents) { ev in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(ev.startTime, format: .dateTime.month().day().hour().minute())
-                                    .font(.headline)
-                                Text(ev.eventTitle)
-                                    .font(.subheadline)
-                                if let delta = ev.energyDelta {
-                                    Text("Δ \(delta, specifier: "%.2f")")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .padding(.vertical, 200)
-                        }
-                    }
-                }
             }
         if isLoading {
             ProgressView().progressViewStyle(.circular)
@@ -122,6 +104,64 @@ struct DataView: View {
         let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: endDate)) ?? endDate
         calendarEvents = await CalendarDataPipeline.shared.fetchEvents(start: start, end: end)
         isLoading = false
+    }
+
+    private func healthEvent(for day: Date) -> HealthEvent? {
+        let cal = Calendar.current
+        return healthEvents.first { cal.isDate($0.date, inSameDayAs: day) }
+    }
+
+    private func eventsForDay(_ day: Date) -> [CalendarEvent] {
+        let cal = Calendar.current
+        return calendarEvents.filter { cal.isDate($0.startTime, inSameDayAs: day) }
+    }
+
+    @ViewBuilder
+    private func healthColumn(for event: HealthEvent?, day: Date) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(day, format: .dateTime.month().day())
+                .font(.headline)
+            if let h = event {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Steps: \(h.steps)")
+                    Text("HRV: \(Int(h.hrv)) ms")
+                    Text("Resting HR: \(Int(h.restingHR)) bpm")
+                    Text("Sleep Eff: \(Int(h.sleepEfficiency)) %")
+                    Text("Sleep Latency: \(Int(h.sleepLatency)) min")
+                    Text("Deep Sleep: \(Int(h.deepSleep)) min")
+                    Text("REM Sleep: \(Int(h.remSleep)) min")
+                    Text("Calories: \(Int(h.calories)) kcal")
+                }
+                .font(.caption)
+            } else {
+                Text("No Data")
+                    .font(.caption)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func calendarColumn(for events: [CalendarEvent]) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if events.isEmpty {
+                Text("No Events")
+                    .font(.caption)
+            } else {
+                ForEach(events) { ev in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(ev.startTime, format: .dateTime.hour().minute())
+                            .font(.subheadline)
+                        Text(ev.eventTitle)
+                            .font(.caption)
+                        if let delta = ev.energyDelta {
+                            Text("Δ \(delta, specifier: \"%.2f\")")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private func applyRange() {
