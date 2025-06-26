@@ -15,7 +15,6 @@ struct MeetSolView: View {
                 footerSection
             }
             .padding(.horizontal)
-            .padding(.vertical, 150)
         }
         .navigationTitle("Meet Sol")
         .navigationBarTitleDisplayMode(.large)
