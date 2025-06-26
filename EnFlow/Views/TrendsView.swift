@@ -2,6 +2,23 @@ import SwiftUI
 import Charts
 import Foundation
 
+struct GPTSection: Codable, Identifiable {
+    let id = UUID()
+    let title: String
+    let content: String
+}
+
+struct GPTEvent: Codable, Identifiable {
+    let id = UUID()
+    let title: String
+    let date: String
+}
+
+struct GPTSummary: Codable {
+    let sections: [GPTSection]
+    let events: [GPTEvent]
+}
+
 enum TrendsPeriod: String, CaseIterable, Identifiable {
     case weekly = "Weekly"
     case monthly = "Monthly"
@@ -19,6 +36,7 @@ struct TrendsView: View {
     @State private var insightTags: [String] = []
     @State private var insightText: String = ""
     @State private var gptSummary: String = ""
+    @State private var parsedGPTSummary: GPTSummary? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
@@ -139,15 +157,38 @@ struct TrendsView: View {
                             .fill(.ultraThinMaterial)
                             .shadow(radius: 4)
                         ScrollView(.vertical, showsIndicators: true) {
-                            Text(gptSummary)
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundColor(.white)
-                                .padding()
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .onTapGesture {
-                                    handleEventTap(in: gptSummary)
+                            if let parsed = parsedGPTSummary {
+                                ForEach(parsed.sections) { section in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(section.title)
+                                            .font(.headline)
+                                            .foregroundColor(.yellow)
+                                        Text(section.content)
+                                            .font(.body)
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.bottom, 10)
                                 }
+
+                                Text("Highlighted Events:")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                ForEach(parsed.events) { event in
+                                    Text("\(event.title.replacingOccurrences(of: \"<highlight>\", with: \"\").replacingOccurrences(of: \"</highlight>\", with: \"\")) – \(event.date)")
+                                        .font(.caption)
+                                        .foregroundColor(.white)
+                                }
+                            } else {
+                                Text(gptSummary)
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .onTapGesture {
+                                        handleEventTap(in: gptSummary)
+                                    }
+                            }
                         }
                         .frame(maxHeight: 300)
                     }
@@ -191,10 +232,8 @@ struct TrendsView: View {
     private func loadGPTSummary() async {
         let prompt = """
 STRICTLY output EXACTLY valid JSON with NO markdown, no code fences, no extra fields. The JSON must have two keys ONLY:
-
-"sections": array of objects with keys "title" (string) and "content" (string),  
+"sections": array of objects with keys "title" (string) and "content" (string),
 "events": array of objects with keys "title" (string) and "date" (ISO 8601 "YYYY-MM-DD")
-
 Analyze correlations between the user’s calendar events and energy data. Wrap any referenced event title in <highlight>…</highlight> tags. Output ONLY the raw JSON object.
 """
         do {
@@ -203,8 +242,14 @@ Analyze correlations between the user’s calendar events and energy data. Wrap 
                 cacheId: "WeeklyJSON.\(period.rawValue)"
             )
             gptSummary = JSONFormatter.pretty(from: raw)
+
+            if let data = raw.data(using: .utf8) {
+                let parsed = try JSONDecoder().decode(GPTSummary.self, from: data)
+                await MainActor.run { parsedGPTSummary = parsed }
+            }
         } catch {
             gptSummary = "error: Unable to load summary"
+            parsedGPTSummary = nil
         }
     }
 
