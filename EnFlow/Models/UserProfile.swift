@@ -3,7 +3,7 @@ import Foundation
 struct UserProfile: Codable, Equatable {
     enum Chronotype: String, CaseIterable, Identifiable, Codable {
         case morning
-        case intermediate
+        case Afternoon
         case evening
         var id: String { rawValue }
     }
@@ -39,7 +39,7 @@ extension UserProfile {
             usesSleepAid: false,
             screensBeforeBed: true,
             mealsRegular: true,
-            chronotype: .intermediate,
+            chronotype: .Afternoon,
             lastUpdated: Date(),
             notes: nil
         )

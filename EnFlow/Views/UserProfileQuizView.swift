@@ -8,12 +8,12 @@ struct UserProfileQuizView: View {
         NavigationView {
             Form {
                 Section("Sleep") {
-                    DatePicker("Wake Time", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
-                    DatePicker("Sleep Time", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
+                    DatePicker("Usual Wake Time", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
+                    DatePicker("Usual Bed Time", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
                     Toggle("Use Sleep Aid", isOn: $profile.usesSleepAid)
                     Toggle("Screens Before Bed", isOn: $profile.screensBeforeBed)
                     Toggle("Regular Meals", isOn: $profile.mealsRegular)
-                    Picker("Chronotype", selection: $profile.chronotype) {
+                    Picker("Most Energy [Self Report]", selection: $profile.chronotype) {
                         ForEach(UserProfile.Chronotype.allCases) { c in
                             Text(c.rawValue.capitalized).tag(c)
                         }
@@ -33,7 +33,7 @@ struct UserProfileQuizView: View {
                     Stepper("Exercise per Week: \(profile.exerciseFrequency)", value: $profile.exerciseFrequency, in: 0...14)
                 }
 
-                Section("Notes") {
+                Section("Additional Notes for Sol?") {
                     TextEditor(text: Binding(get: { profile.notes ?? "" }, set: { profile.notes = $0 }))
                         .frame(minHeight: 80)
                 }
