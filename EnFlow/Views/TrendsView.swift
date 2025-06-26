@@ -9,7 +9,7 @@ enum TrendsPeriod: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// TrendsView shows energy trends and an AI-generated weekly JSON summary with full control over reloads and formatting.
+/// TrendsView shows energy trends and an AI-generated weekly YAML summary with full control over reloads and formatting.
 struct TrendsView: View {
     @State private var period: TrendsPeriod = .weekly
 
@@ -201,24 +201,26 @@ struct TrendsView: View {
         await loadGPTSummary()
     }
 
-    /// Reload only the GPT JSON summary with simplified formatting instructions.
+    /// Reload only the GPT YAML summary with simplified formatting instructions.
     private func loadGPTSummary() async {
         let prompt = """
-Respond only with JSON.
-{
-  "sections": [{"title":"","content":""}],
-  "events": [{"title":"","date":"YYYY-MM-DD"}]
-}
+Respond only with YAML.
+sections:
+  - title: ""
+    content: ""
+events:
+  - title: ""
+    date: YYYY-MM-DD
 Highlight any mentioned event titles using <highlight> tags. No markdown or extra commentary.
 """
         do {
             let raw = try await OpenAIManager.shared.generateInsight(
                 prompt: prompt,
-                cacheId: "WeeklyJSON.\(period.rawValue)"
+                cacheId: "WeeklyYAML.\(period.rawValue)"
             )
             gptSummary = WeeklySummaryFormatter.format(from: raw)
         } catch {
-            gptSummary = "{ \"error\": \"Unable to load summary\" }"
+            gptSummary = "error: Unable to load summary"
         }
     }
 
@@ -338,12 +340,12 @@ Highlight any mentioned event titles using <highlight> tags. No markdown or extr
     }
 
 
-    /// Parses a tapped JSON date and navigates to that day.
-    private func handleEventTap(in json: String) {
-        let regex = try? NSRegularExpression(pattern: "\\\"date\\\": \\\"(\\\\d{4}-\\\\d{2}-\\\\d{2})\\\"", options: [])
-        if let match = regex?.firstMatch(in: json, options: [], range: NSRange(json.startIndex..., in: json)),
-           let r = Range(match.range(at: 1), in: json) {
-            let d = String(json[r])
+    /// Parses a tapped YAML date and navigates to that day.
+    private func handleEventTap(in text: String) {
+        let regex = try? NSRegularExpression(pattern: "date:\\s*\"?(\\d{4}-\\d{2}-\\d{2})\"?", options: [])
+        if let match = regex?.firstMatch(in: text, options: [], range: NSRange(text.startIndex..., in: text)),
+           let r = Range(match.range(at: 1), in: text) {
+            let d = String(text[r])
             let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
             selectedEventDate = fmt.date(from: d)
         }
