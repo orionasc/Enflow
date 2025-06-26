@@ -91,6 +91,8 @@ final class EnergyForecastModel: ObservableObject {
       }
     }
 
+    wave = smooth(wave)
+
     let score = wave.reduce(0, +) / Double(wave.count) * 100.0
 
     let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
@@ -164,6 +166,16 @@ final class EnergyForecastModel: ObservableObject {
   private func activityScore(steps: Int, mean: Int = 8000, sd: Int = 3000) -> Double {
     let z = Double(steps - mean) / Double(sd)
     return exp(-0.5 * z * z)  // Gaussian bell, 0–1
+  }
+
+  /// Simple 3-point moving average to smooth abrupt dips
+  private func smooth(_ values: [Double]) -> [Double] {
+    guard values.count > 2 else { return values }
+    var out = values
+    for i in 1..<(values.count - 1) {
+      out[i] = (values[i-1] + values[i] + values[i+1]) / 3
+    }
+    return out
   }
 
   /// Consensus circadian energy curve (dips ≈ 2 am & 3 pm; peaks ≈ 10 am & 6 pm)

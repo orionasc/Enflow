@@ -23,14 +23,8 @@ struct DashboardView: View {
   @State private var todaySummary: DayEnergySummary?
   @State private var tomorrowSummary: DayEnergySummary?
 
-  @State private var todayParts = EnergyForecastModel.EnergyParts(
-    morning: 0,
-    afternoon: 0,
-    evening: 0)
-  @State private var tomorrowParts = EnergyForecastModel.EnergyParts(
-    morning: 0,
-    afternoon: 0,
-    evening: 0)
+  @State private var todayParts: EnergyParts? = nil
+  @State private var tomorrowParts: EnergyParts? = nil
   @State private var todayCtx: SuggestedPriorityContext?
   @State private var tomorrowCtx: SuggestedPriorityContext?
 
@@ -56,7 +50,6 @@ struct DashboardView: View {
         .tag(1)
     }
     .tabViewStyle(.page(indexDisplayMode: .never))
-    .animation(.easeInOut, value: selection)
 
     // ───────── Segmented pill ─────────
     .overlay(alignment: .topTrailing) {
@@ -146,6 +139,8 @@ struct DashboardView: View {
       .padding(.top, headerPadding)
       .padding(.horizontal)
     }
+    .scrollIndicators(.hidden)
+    .scrollIndicators(.hidden)
   }
 
   // MARK: TOMORROW PAGE -------------------------------------------------------
@@ -308,8 +303,8 @@ struct DashboardView: View {
     await MainActor.run {
       todaySummary = tSummary
       tomorrowSummary = tmSummary
-      todayParts = tParts
-      tomorrowParts = tmParts
+      todayParts = noToday ? nil : tParts
+      tomorrowParts = noTomorrow ? nil : tmParts
       todayCtx = tCtx
       tomorrowCtx = tmCtx
       stepsToday = steps
