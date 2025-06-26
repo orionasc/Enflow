@@ -165,7 +165,7 @@ struct DataView: View {
                         Text(ev.eventTitle)
                             .font(.caption)
                         if let delta = ev.energyDelta {
-                            Text("Δ \(delta, specifier: \"%.2f\")")
+                            Text("Δ \(String(format: "%.2f", delta))")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }

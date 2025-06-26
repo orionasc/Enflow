@@ -25,7 +25,7 @@ struct TrendsView: View {
     // Use a vivid blue so the forecast line is clearly distinguished
     private let forecastColor = Color.blue
     /// Fixed colour scale so Charts doesn't override our explicit styles
-    private let seriesColors: [String: Color] = [
+    private let seriesColors: KeyValuePairs<String, Color> = [
         "Calculated": .yellow,
         "Forecasted": .blue
     ]
