@@ -112,7 +112,7 @@ struct MeetSolView: View {
     }
 
     private var sampleWave: [Double] {
-        let count = 24
+        let count = 240
         return (0..<count).map { i in
             let x = Double(i) / Double(count - 1) * .pi * 2
             return 0.5 + 0.4 * sin(x)
