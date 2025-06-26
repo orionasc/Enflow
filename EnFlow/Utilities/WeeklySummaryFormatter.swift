@@ -16,9 +16,15 @@ enum WeeklySummaryFormatter {
             .replacingOccurrences(of: "\u{201D}", with: "\"")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // Extract JSON substring if extraneous text surrounds it
+        if let start = cleaned.firstIndex(of: "{"),
+           let end = cleaned.lastIndex(of: "}") {
+            cleaned = String(cleaned[start...end])
+        }
+
         guard let data = cleaned.data(using: .utf8),
               let summary = try? JSONDecoder().decode(Summary.self, from: data) else {
-            return cleaned
+            return JSONFormatter.pretty(from: cleaned)
         }
 
         var lines: [String] = []
