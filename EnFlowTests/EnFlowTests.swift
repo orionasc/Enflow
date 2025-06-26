@@ -33,4 +33,18 @@ struct EnFlowTests {
         #expect(text.contains("E"))
     }
 
+    @Test func weeklySummaryFormatterHandlesWrappedJSON() throws {
+        let raw = "Here you go: ```json\n{" +
+            "\"sections\":[{\"title\":\"A\",\"content\":\"B\"}]," +
+            "\"events\":[]}\n``` Enjoy!"
+        let text = WeeklySummaryFormatter.format(from: raw)
+        #expect(text.contains("\u2022 A: B"))
+    }
+
+    @Test func weeklySummaryFormatterFallsBackGracefully() throws {
+        let raw = "not really json"
+        let text = WeeklySummaryFormatter.format(from: raw)
+        #expect(text.contains("not really json"))
+    }
+
 }

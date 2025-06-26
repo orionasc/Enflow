@@ -22,13 +22,35 @@ enum WeeklySummaryFormatter {
             cleaned = String(cleaned[start...end])
         }
 
-        guard let data = cleaned.data(using: .utf8),
-              let summary = try? JSONDecoder().decode(Summary.self, from: data) else {
-            return JSONFormatter.pretty(from: cleaned)
+        if let data = cleaned.data(using: .utf8),
+           let summary = try? JSONDecoder().decode(Summary.self, from: data) {
+            return buildText(from: summary)
         }
 
+        if let data = cleaned.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            let sections = (obj["sections"] as? [[String: Any]]) ?? []
+            let events = (obj["events"] as? [[String: Any]]) ?? []
+            let summary = Summary(
+                sections: sections.map {
+                    Summary.Section(title: $0["title"] as? String ?? "",
+                                     content: $0["content"] as? String ?? "")
+                },
+                events: events.map {
+                    Summary.Event(title: $0["title"] as? String ?? "",
+                                  date: $0["date"] as? String ?? "")
+                }
+            )
+            return buildText(from: summary)
+        }
+
+        return JSONFormatter.pretty(from: cleaned)
+    }
+
+    private static func buildText(from summary: Summary) -> String {
         var lines: [String] = []
         for section in summary.sections {
+            guard !section.title.isEmpty || !section.content.isEmpty else { continue }
             lines.append("\u{2022} \(section.title): \(section.content)")
         }
 
@@ -38,10 +60,12 @@ enum WeeklySummaryFormatter {
             let dfIn = ISO8601DateFormatter()
             let dfOut = DateFormatter(); dfOut.dateStyle = .medium
             for event in summary.events {
-                if let date = dfIn.date(from: event.date) {
-                    lines.append("- \(dfOut.string(from: date)): \(event.title)")
+                let title = event.title
+                let rawDate = event.date
+                if let date = dfIn.date(from: rawDate) {
+                    lines.append("- \(dfOut.string(from: date)): \(title)")
                 } else {
-                    lines.append("- \(event.date): \(event.title)")
+                    lines.append("- \(rawDate): \(title)")
                 }
             }
         }
