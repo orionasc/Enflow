@@ -137,11 +137,7 @@ struct EnergyRingView: View {
             }
         }
         .sheet(isPresented: $showExplanation) {
-            ExplainSheetView(
-                header: score != nil ? "Your Energy Score: \(Int(score!))" : "Energy Score Unavailable",
-                bullets: explainers,
-                timestamp: summaryDate
-            )
+            NavigationView { MeetSolView() }
         }
     }
 }

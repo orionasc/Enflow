@@ -7,7 +7,8 @@
 import SwiftUI
 
 struct ThreePartForecastView: View {
-  let parts: EnergyForecastModel.EnergyParts
+  /// `nil` values indicate missing Health data for that period.
+  let parts: EnergyForecastModel.EnergyParts?
   var dashed: Bool = false
   var desaturate: Bool = false
 
@@ -17,16 +18,16 @@ struct ThreePartForecastView: View {
 
   var body: some View {
     HStack(spacing: spacing) {
-      ring(title: "Morning", value: parts.morning, startHour: 5)
-      ring(title: "Afternoon", value: parts.afternoon, startHour: 12)
-      ring(title: "Evening", value: parts.evening, startHour: 17)
+      ring(title: "Morning", value: parts?.morning, startHour: 5)
+      ring(title: "Afternoon", value: parts?.afternoon, startHour: 12)
+      ring(title: "Evening", value: parts?.evening, startHour: 17)
     }
     .frame(maxWidth: .infinity)
     .saturation(desaturate ? 0.6 : 1.0)
   }
 
   @ViewBuilder
-  private func ring(title: String, value: Double, startHour: Int) -> some View {
+  private func ring(title: String, value: Double?, startHour: Int) -> some View {
     let currentHour = Calendar.current.component(.hour, from: Date())
     let isAvailable = currentHour >= startHour
 
@@ -41,11 +42,11 @@ struct ThreePartForecastView: View {
           )
           .frame(width: ringSize, height: ringSize)
 
-        if isAvailable {
+        if isAvailable, let val = value {
           Circle()
-            .trim(from: 0, to: CGFloat(value / 100))
+            .trim(from: 0, to: CGFloat(val / 100))
             .stroke(
-              ColorPalette.gradient(for: value),
+              ColorPalette.gradient(for: val),
               style: StrokeStyle(
                 lineWidth: lineWidth,
                 lineCap: .round,
@@ -58,7 +59,7 @@ struct ThreePartForecastView: View {
             Text(title)
               .font(.caption)
               .foregroundColor(.white)
-            Text("\(Int(value))")
+            Text("\(Int(val))")
               .font(.title3.bold())
               .foregroundColor(.white)
           }
@@ -69,11 +70,11 @@ struct ThreePartForecastView: View {
         }
       }
 
-      if isAvailable {
-        Text(status(for: value))
+      if isAvailable, let val = value {
+        Text(status(for: val))
           .font(.caption2)
           .fontWeight(.medium)
-          .foregroundColor(ColorPalette.color(for: value))
+          .foregroundColor(ColorPalette.color(for: val))
       }
     }
     .frame(width: ringSize, height: ringSize + 24)

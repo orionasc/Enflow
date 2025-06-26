@@ -13,7 +13,7 @@ struct DayView: View {
   // ───────── State ──────────────────────────────────────────
   @State private var events: [CalendarEvent] = []
   @State private var forecast: [Double] = Array(repeating: 0.5, count: 24)
-  @State private var parts = EnergyForecastModel.EnergyParts(morning: 0, afternoon: 0, evening: 0)
+  @State private var parts: EnergyForecastModel.EnergyParts? = nil
   @State private var overallScore: Double? = nil
   @State private var page = 0  // 0 = schedule, 1 = overview
 
@@ -116,9 +116,9 @@ struct DayView: View {
           EnergyRingView(score: overallScore, summaryDate: currentDate)
             .frame(width: 100, height: 100)
           VStack(alignment: .center, spacing: 12) {
-            labeledMiniRing(title: "Morning", value: parts.morning)
-            labeledMiniRing(title: "Afternoon", value: parts.afternoon)
-            labeledMiniRing(title: "Evening", value: parts.evening)
+            labeledMiniRing(title: "Morning", value: parts?.morning)
+            labeledMiniRing(title: "Afternoon", value: parts?.afternoon)
+            labeledMiniRing(title: "Evening", value: parts?.evening)
           }
         }
 
@@ -255,23 +255,29 @@ struct DayView: View {
   }
 
   @ViewBuilder
-  private func labeledMiniRing(title: String, value: Double) -> some View {
+  private func labeledMiniRing(title: String, value: Double?) -> some View {
     VStack(spacing: 4) {
       ZStack {
         Circle()
           .stroke(Color.white.opacity(0.10), lineWidth: 4)
           .frame(width: 32, height: 32)
-        Circle()
-          .trim(from: 0, to: CGFloat(value / 100))
-          .stroke(
-            ColorPalette.gradient(for: value),
-            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-          )
-          .rotationEffect(.degrees(-90))
-          .frame(width: 32, height: 32)
-        Text("\(Int(value))")
-          .font(.caption2.bold())
-          .foregroundColor(.white)
+        if let v = value {
+          Circle()
+            .trim(from: 0, to: CGFloat(v / 100))
+            .stroke(
+              ColorPalette.gradient(for: v),
+              style: StrokeStyle(lineWidth: 4, lineCap: .round)
+            )
+            .rotationEffect(.degrees(-90))
+            .frame(width: 32, height: 32)
+          Text("\(Int(v))")
+            .font(.caption2.bold())
+            .foregroundColor(.white)
+        } else {
+          Text("--")
+            .font(.caption2.bold())
+            .foregroundColor(.white.opacity(0.6))
+        }
       }
       Text(title)
         .font(.caption2)
@@ -343,14 +349,16 @@ struct DayView: View {
       overallScore = summary.overallEnergyScore
     }
 
-    func avg(_ slice: ArraySlice<Double>) -> Double {
-      slice.reduce(0, +) / Double(slice.count) * 100
+    func avg(_ slice: ArraySlice<Double>) -> Double { slice.reduce(0, +) / Double(slice.count) * 100 }
+    if summary.coverageRatio < 0.3 {
+      parts = nil
+    } else {
+      parts = EnergyForecastModel.EnergyParts(
+        morning: avg(forecast[0..<8]),
+        afternoon: avg(forecast[8..<16]),
+        evening: avg(forecast[16..<24])
+      )
     }
-    parts = EnergyForecastModel.EnergyParts(
-      morning: avg(forecast[0..<8]),
-      afternoon: avg(forecast[8..<16]),
-      evening: avg(forecast[16..<24])
-    )
 
     events = dayEvents
   }
