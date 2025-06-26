@@ -13,7 +13,7 @@ import SwiftUI
 struct DashboardView: View {
 
   // ───────── Layout ────────────────────────────────────────────
-  private let pickerTop: CGFloat = 60  // distance from top safe-area to pill
+  private let pickerTop: CGFloat = 8  // distance from top safe-area to pill
   private let headerPadding: CGFloat = 52  // distance from top safe-area to first header
 
   // ───────── Engine (for ring-pulse) ───────────────────────────

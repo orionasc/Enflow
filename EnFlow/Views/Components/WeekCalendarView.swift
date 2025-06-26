@@ -28,10 +28,6 @@ struct WeekCalendarView: View {
                                 .padding(8)
                         }
                         Spacer()
-                        Text("Week")
-                            .font(.headline.bold())
-                            .foregroundColor(.white)
-                        Spacer()
                         Button { shiftWeek(by: 1) } label: {
                             Image(systemName: "chevron.right")
                                 .padding(8)
@@ -44,7 +40,7 @@ struct WeekCalendarView: View {
                         .foregroundColor(.white.opacity(0.85))
                         .padding(.horizontal)
                 }
-                .padding(.top, 8)
+                .padding(.top, 1)
                 .padding(.bottom, 80)
 
                 // ─── Week grid, vertical-only scroll ────────────────────

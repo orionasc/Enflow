@@ -44,7 +44,7 @@ struct CalendarRootView: View {
                             .shadow(radius: 2)
                     )
                 }
-                .padding(.top, 72)
+                .padding(.top, 12)
                 .padding(.trailing, 20)
             }
 
