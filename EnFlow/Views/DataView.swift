@@ -83,6 +83,7 @@ struct DataView: View {
                     }
                 }
             }
+            .padding(.vertical, 200)
             if isLoading {
                 ProgressView().progressViewStyle(.circular)
             }

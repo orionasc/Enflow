@@ -42,6 +42,7 @@ struct UserProfileSummaryView: View {
                     .foregroundColor(.secondary)
             }
         }
+        .padding(.vertical, 200)
         .navigationTitle("User Profile")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
