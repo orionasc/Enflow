@@ -28,7 +28,7 @@ struct WeekCalendarView: View {
                     }
                     Spacer()
                     Text(weekTitle)
-                        .font(.subheadline)
+                        .font(.headline)
                         .foregroundColor(.white.opacity(0.85))
                     Spacer()
                     Button { shiftWeek(by: 1) } label: {
@@ -156,9 +156,6 @@ struct WeekCalendarView: View {
                     }
                 }
             }
-            // Keep simple title in the nav bar
-            .navigationTitle("Week")
-            .navigationBarTitleDisplayMode(.inline)
 
             // add left/right swipe anywhere to change weeks
             .gesture(
@@ -176,7 +173,7 @@ struct WeekCalendarView: View {
         }
     }
 
-    // MARK: — Helpers unchanged from original version —
+    // MARK: — Helpers unchanged 
 
     private func shiftWeek(by delta: Int) {
         if let newStart = calendar.date(
