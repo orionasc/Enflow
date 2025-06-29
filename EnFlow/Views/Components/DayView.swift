@@ -140,6 +140,7 @@ struct DayView: View {
         }
         .background(Color.white.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(hourMarkers, alignment: .topLeading)
         .overlay(timeIndicator, alignment: .topLeading)
       } else {
         Text("No Data")
@@ -271,6 +272,22 @@ struct DayView: View {
         .fill(Color.orange)
         .frame(height: 2)
         .offset(x: 0, y: offset)
+    }
+  }
+
+  private var hourMarkers: some View {
+    GeometryReader { proxy in
+      let width = proxy.size.width
+      let spacing = rowHeight + 1
+      Canvas { ctx, size in
+        for hour in 0...24 {
+          let y = CGFloat(hour) * spacing
+          var path = Path()
+          path.move(to: CGPoint(x: 0, y: y))
+          path.addLine(to: CGPoint(x: width, y: y))
+          ctx.stroke(path, with: .color(Color.white.opacity(0.1)), lineWidth: 0.5)
+        }
+      }
     }
   }
 
