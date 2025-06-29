@@ -445,26 +445,65 @@ struct TrendsView: View {
 
     private var shadeSections: [ShadeSection] {
         guard summaries.count == forecastSummaries.count else { return [] }
+        guard let firstA = summaries.first, let firstF = forecastSummaries.first else { return [] }
+
         var sections: [ShadeSection] = []
-        var currentColor: Color? = nil
-        var currentPoints: [ShadePoint] = []
-        for (a, f) in zip(summaries, forecastSummaries) {
-            let color: Color = a.overallEnergyScore >= f.overallEnergyScore ? Color.yellow.opacity(0.2) : forecastColor.opacity(0.2)
-            let point = ShadePoint(date: a.date,
-                                   low: min(a.overallEnergyScore, f.overallEnergyScore),
-                                   high: max(a.overallEnergyScore, f.overallEnergyScore))
-            if currentColor == nil || color != currentColor {
-                if let c = currentColor, !currentPoints.isEmpty {
-                    sections.append(ShadeSection(points: currentPoints, color: c))
-                    currentPoints.removeAll()
-                }
-                currentColor = color
+
+        func shadeColor(for diff: Double) -> Color {
+            diff >= 0 ? Color.yellow.opacity(0.2) : forecastColor.opacity(0.2)
+        }
+
+        var currentDiff = firstA.overallEnergyScore - firstF.overallEnergyScore
+        var currentColor = shadeColor(for: currentDiff)
+        var currentPoints: [ShadePoint] = [
+            ShadePoint(date: firstA.date,
+                       low: min(firstA.overallEnergyScore, firstF.overallEnergyScore),
+                       high: max(firstA.overallEnergyScore, firstF.overallEnergyScore))
+        ]
+
+        for i in 0..<(summaries.count - 1) {
+            let a1 = summaries[i]
+            let f1 = forecastSummaries[i]
+            let a2 = summaries[i + 1]
+            let f2 = forecastSummaries[i + 1]
+
+            let diff1 = a1.overallEnergyScore - f1.overallEnergyScore
+            let diff2 = a2.overallEnergyScore - f2.overallEnergyScore
+
+            // Linear interpolation for possible intersection
+            if diff1 * diff2 < 0 {
+                let t = (f1.overallEnergyScore - a1.overallEnergyScore) /
+                        ((a2.overallEnergyScore - a1.overallEnergyScore) - (f2.overallEnergyScore - f1.overallEnergyScore))
+                let time1 = a1.date.timeIntervalSince1970
+                let time2 = a2.date.timeIntervalSince1970
+                let crossTime = time1 + t * (time2 - time1)
+                let crossValue = a1.overallEnergyScore + t * (a2.overallEnergyScore - a1.overallEnergyScore)
+                let crossDate = Date(timeIntervalSince1970: crossTime)
+                let crossPoint = ShadePoint(date: crossDate, low: crossValue, high: crossValue)
+                currentPoints.append(crossPoint)
+                sections.append(ShadeSection(points: currentPoints, color: currentColor))
+                currentDiff = diff2
+                currentColor = shadeColor(for: currentDiff)
+                currentPoints = [crossPoint]
             }
-            currentPoints.append(point)
+
+            let nextPoint = ShadePoint(date: a2.date,
+                                       low: min(a2.overallEnergyScore, f2.overallEnergyScore),
+                                       high: max(a2.overallEnergyScore, f2.overallEnergyScore))
+
+            if (diff1 >= 0 && diff2 < 0) || (diff1 < 0 && diff2 >= 0) {
+                // color already changed when crossing was handled above
+                currentPoints.append(nextPoint)
+            } else {
+                // continue same colour segment
+                currentPoints.append(nextPoint)
+            }
         }
-        if let c = currentColor, !currentPoints.isEmpty {
-            sections.append(ShadeSection(points: currentPoints, color: c))
+
+        if !currentPoints.isEmpty {
+            sections.append(ShadeSection(points: currentPoints, color: currentColor))
         }
+
         return sections
     }
 
