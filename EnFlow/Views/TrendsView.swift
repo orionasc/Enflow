@@ -235,12 +235,7 @@ struct TrendsView: View {
     /// Reload only the GPT JSON summary with strict formatting.
     /// - Parameter forceReload: bypasses the cached result when true
     private func loadGPTSummary(forceReload: Bool = false) async {
-        let prompt = """
-STRICTLY output EXACTLY valid JSON with NO markdown, no code fences, no extra fields. The JSON must have two keys ONLY:
-"sections": array of objects with keys "title" (string) and "content" (string),
-"events": array of objects with keys "title" (string) and "date" (ISO 8601 "YYYY-MM-DD")
-Analyze correlations between the user’s calendar events and energy data. Wrap any referenced event title in <highlight>…</highlight> tags. Output ONLY the raw JSON object.
-"""
+        let prompt = weeklySummaryPrompt
         await MainActor.run { isGPTLoading = true }
 
         do {
