@@ -10,7 +10,7 @@ import SwiftUI
 
 extension TrendsView {
     // MARK: – Refactored GPT Summary Loader
-    private func loadGPTSummary(forceReload: Bool = false) async {
+    func loadGPTSummary(forceReload: Bool = false) async {
         await MainActor.run { isGPTLoading = true }
         do {
             let raw = try await OpenAIManager.shared.generateInsight(
@@ -24,7 +24,7 @@ extension TrendsView {
                 .replacingOccurrences(of: "```", with: "")
                 .replacingOccurrences(of: "\u{201C}", with: "\"")
                 .replacingOccurrences(of: "\u{201D}", with: "\"")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
 
             // attempt JSON parse via JSONSerialization for robustness
             if let obj = try? JSONSerialization.jsonObject(with: Data(cleaned.utf8), options: []),
@@ -49,7 +49,7 @@ extension TrendsView {
     }
 
     // MARK: – Refactored Summary UI Block
-    private var gptSummarySection: some View {
+    var gptSummarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("GPT Weekly Summary").font(.headline)

@@ -28,16 +28,16 @@ enum TrendsPeriod: String, CaseIterable, Identifiable {
 
 /// TrendsView shows energy trends and an AI-generated weekly JSON summary with full control over reloads and formatting.
 struct TrendsView: View {
-    @State private var period: TrendsPeriod = .weekly
+    @State var period: TrendsPeriod = .weekly
 
     @State private var summaries: [DayEnergySummary] = []
     @State private var forecastSummaries: [DayEnergySummary] = []
     @State private var accuracy: Double = 0.0
     @State private var insightTags: [String] = []
     @State private var insightText: String = ""
-    @State private var gptSummary: String = ""
-    @State private var parsedGPTSummary: GPTSummary? = nil
-    @State private var isGPTLoading = false
+    @State var gptSummary: String = ""
+    @State var parsedGPTSummary: GPTSummary? = nil
+    @State var isGPTLoading = false
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
@@ -138,58 +138,8 @@ struct TrendsView: View {
                     .padding(.horizontal)
 
                 // GPT Weekly Summary with separate reload
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("GPT Weekly Summary")
-                            .font(.headline)
-                        Spacer()
-                        Button(action: { Task { await loadGPTSummary(forceReload: true) } }) {
-                            Image(systemName: "arrow.clockwise.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.yellow)
-                        }
-                        .accessibilityLabel("Reload GPT summary")
-                    }
-                    .padding(.horizontal)
-
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .shadow(radius: 4)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            if isGPTLoading {
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                                    .tint(.yellow)
-                            } else if let parsed = parsedGPTSummary {
-                                ForEach(parsed.sections) { section in
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(section.title)
-                                            .bold()
-                                            .foregroundColor(.yellow)
-                                        Text(section.content)
-                                            .foregroundColor(.white)
-                                    }
-                                }
-                            } else {
-                                Text("⚠️ Parsing failed")
-                                    .foregroundColor(.orange)
-                                ScrollView {
-                                    Text(gptSummary)
-                                        .font(.system(.body, design: .monospaced))
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .multilineTextAlignment(.leading)
-                                }
-                            }
-                        }
-                        .padding()
-                        .frame(maxHeight: 300)
-                    }
-                    .padding(.horizontal)
-                }
-                .padding(.bottom, 30)
+                gptSummarySection
+                    .padding(.bottom, 30)
             }
         }
         .enflowBackground()
@@ -223,49 +173,6 @@ struct TrendsView: View {
         await loadGPTSummary()
     }
 
-    /// Reload only the GPT JSON summary with strict formatting.
-    /// - Parameter forceReload: bypasses the cached result when true
-    private func loadGPTSummary(forceReload: Bool = false) async {
-        let prompt = weeklySummaryPrompt
-        await MainActor.run { isGPTLoading = true }
-
-        do {
-            let id = forceReload ? "WeeklyJSON.\(period.rawValue).\(Int(Date().timeIntervalSince1970))" : "WeeklyJSON.\(period.rawValue)"
-            let raw = try await OpenAIManager.shared.generateInsight(
-                prompt: prompt,
-                cacheId: id
-            )
-
-            print("RAW GPT OUTPUT: \(raw)")
-
-            let cleaned = raw
-                .replacingOccurrences(of: "```json", with: "")
-                .replacingOccurrences(of: "```", with: "")
-                .replacingOccurrences(of: "\u{201C}", with: "\"")
-                .replacingOccurrences(of: "\u{201D}", with: "\"")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if let data = cleaned.data(using: .utf8),
-               let parsed = try? JSONDecoder().decode(GPTSummary.self, from: data) {
-                await MainActor.run {
-                    parsedGPTSummary = parsed
-                    gptSummary = JSONFormatter.pretty(from: cleaned)
-                }
-            } else {
-                let text = WeeklySummaryFormatter.format(from: cleaned)
-                await MainActor.run {
-                    parsedGPTSummary = nil
-                    gptSummary = text
-                }
-            }
-        } catch {
-            await MainActor.run {
-                gptSummary = "error: Unable to load summary"
-                parsedGPTSummary = nil
-            }
-        }
-        await MainActor.run { isGPTLoading = false }
-    }
 
     /// Generate a brief personalized energy tip between the accuracy bar and weekly summary.
     private func loadEnergyInsight() async {
