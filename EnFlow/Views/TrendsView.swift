@@ -327,7 +327,7 @@ struct TrendsView: View {
     @AxisContentBuilder
     private var xAxisMarks: some AxisContent {
         switch period {
-        case .weekly:
+       case .weekly:
             AxisMarks(values: .stride(by: .day)) { value in
                 if let date = value.as(Date.self) {
                     AxisTick()
@@ -335,8 +335,8 @@ struct TrendsView: View {
                 }
             }
         case .monthly, .sixWeeks:
-            AxisMarks(values: .stride(by: .day)) { value in
-                if value.as(Date.self) != nil {
+            AxisMarks(values: .stride(by: .weekOfYear)) { value in
+                if let date = value.as(Date.self) {
                     AxisTick()
                     AxisValueLabel(format: .dateTime.month(.abbreviated).day())
                 }
