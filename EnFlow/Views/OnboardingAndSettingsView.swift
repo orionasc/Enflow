@@ -116,14 +116,6 @@ struct OnboardingAndSettingsView: View {
     private var preferencesSection: some View {
         Section(header: Text("App Preferences")) {
             Toggle("Enable Notifications", isOn: .constant(false))
-                .disabled(true)
-                .overlay(
-                    ZStack {
-                        Color.gray.opacity(0.4)
-                        Text("Coming Soon")
-                            .foregroundColor(.blue)
-                    }
-                )
             Picker("GPT Tone", selection: $gptTone) {
                 Text("Wellness").tag("wellness")
                 Text("Scientific").tag("scientific")
@@ -131,6 +123,15 @@ struct OnboardingAndSettingsView: View {
             }
             .pickerStyle(.segmented)
         }
+        .disabled(true)
+        .overlay(
+            ZStack {
+                Color.black.opacity(0.6)
+                Text("Coming Soon")
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+        )
     }
 
     @ViewBuilder
