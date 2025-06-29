@@ -17,11 +17,13 @@ struct DayView: View {
   @State private var overallScore: Double? = nil
   @State private var showHeatMap = false
   @State private var now = Date()
-  @State private var page = 0  // 0 = schedule, 1 = overview
+  private enum Page: Int { case schedule, overview }
+  @State private var page: Page = .schedule
 
   private let calendar = Calendar.current
   private let rowHeight: CGFloat = 32
   private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+  private var isToday: Bool { calendar.isDateInToday(currentDate) }
 
   // ───────── Init ───────────────────────────────────────────
   init(date: Date, showBackButton: Bool = false) {
@@ -68,13 +70,13 @@ struct DayView: View {
   // MARK: ─ Page toggle buttons ───────────────────────────────
   private var pageToggleButtons: some View {
     HStack {
-      Button("Schedule") { withAnimation { page = 0 } }
+      Button("Schedule") { withAnimation { page = .schedule } }
         .font(.subheadline.weight(.bold))
-        .foregroundColor(page == 0 ? .white : .secondary)
+        .foregroundColor(page == .schedule ? .white : .secondary)
       Spacer()
-      Button("Energy") { withAnimation { page = 1 } }
+      Button("Energy") { withAnimation { page = .overview } }
         .font(.subheadline.weight(.bold))
-        .foregroundColor(page == 1 ? .white : .secondary)
+        .foregroundColor(page == .overview ? .white : .secondary)
     }
     .padding(.horizontal)
     .padding(.top, 10)
@@ -128,7 +130,7 @@ struct DayView: View {
       if forecast.count == 24 {
         VStack(spacing: 1) {
           ForEach(0..<24, id: \.self) { hr in
-            let isForecast = calendar.isDateInToday(currentDate) && hr >= calendar.component(.hour, from: now)
+            let isForecast = isToday && hr >= calendar.component(.hour, from: now)
             timelineRow(for: hr, showEnergy: showHeatMap, forecasted: isForecast)
           }
         }
@@ -248,7 +250,7 @@ struct DayView: View {
   }
 
   private func fadeFactor(for hour: Int) -> Double {
-    guard calendar.isDateInToday(currentDate) else { return 1 }
+    guard isToday else { return 1 }
     let fadeStart = 19
     if hour < fadeStart { return 1 }
     let factor = 1 - Double(hour - fadeStart) / 5.0
@@ -257,7 +259,7 @@ struct DayView: View {
 
   @ViewBuilder
   private var timeIndicator: some View {
-    if calendar.isDateInToday(currentDate) {
+    if isToday {
       let hr = calendar.component(.hour, from: now)
       let min = calendar.component(.minute, from: now)
       let offset = (rowHeight + 1) * CGFloat(hr) + rowHeight * CGFloat(min) / 60
@@ -320,24 +322,6 @@ struct DayView: View {
     }
   }
 
-  // MARK: ─ Peak/trough markers ───────────────────────────────
-  private func significantPeaksAndTroughs(
-    threshold: Double = 0.15
-  ) -> [(Int, Double)] {
-    guard forecast.count == 24 else { return [] }
-    var result: [(Int, Double)] = []
-    for hr in 1..<23 {
-      let prev = forecast[hr - 1]
-      let curr = forecast[hr]
-      let next = forecast[hr + 1]
-      let isPeak = curr > prev && curr > next && curr - min(prev, next) > threshold
-      let isTrough = curr < prev && curr < next && max(prev, next) - curr > threshold
-      if isPeak || isTrough {
-        result.append((hr, curr))
-      }
-    }
-    return result
-  }
 
   private func hourLabel(_ hr: Int) -> String {
     var comps = DateComponents()
@@ -396,7 +380,7 @@ struct DayView: View {
           Divider()
             .background(Color.white.opacity(0.2))
             .padding(.horizontal, 16)
-          if page == 0 {
+          if page == .schedule {
             schedulePage
           } else {
             overviewPage
