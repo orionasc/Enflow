@@ -13,4 +13,6 @@ struct DayEnergyForecast: Codable {
     let confidenceScore: Double   // 0…1
     let missingMetrics: [MetricType]
     let sourceType: SourceType
+    /// Optional debug description when forecast confidence is low.
+    let debugInfo: String?
 }
