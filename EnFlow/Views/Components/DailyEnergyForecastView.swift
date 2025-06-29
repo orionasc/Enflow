@@ -64,7 +64,7 @@ struct DailyEnergyForecastView: View {
             }
 
             // hour labels
-            ForEach(0..<count, id: \.self) { idx in
+            ForEach(Array(stride(from: 0, to: count, by: 2)), id: \.self) { idx in
                 let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
                 Text(hourLabel(startHour + idx))
                     .font(.system(size: 8))
