@@ -48,7 +48,7 @@ final class OpenAIManager {
 
     // Config
     private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
-    private let model    = "gpt-4o-mini"
+    private let model    = "gpt-4o"
     private lazy var apiKey: String = (try? KeychainHelper.read()) ?? ""
 
     // User context summary for all prompts
