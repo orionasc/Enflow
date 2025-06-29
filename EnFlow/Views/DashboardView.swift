@@ -125,7 +125,10 @@ struct DashboardView: View {
           VStack(alignment: .leading, spacing: 8) {
             Text("Daily Energy Forecast")
                   .font(.headline)
-            DailyEnergyForecastView(values: slice)
+            DailyEnergyForecastView(
+              values: slice,
+              highlightHour: Calendar.current.component(.hour, from: Date())
+            )
           }
         }
 
