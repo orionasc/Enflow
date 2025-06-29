@@ -250,7 +250,7 @@ struct TrendsView: View {
                                                                      score: res.reduce(0, +) / Double(res.count) * 100,
                                                                      confidenceScore: 0.2,
                                                                      missingMetrics: [],
-                                                                     sourceType: .historicalModel))
+                                                                        sourceType: .historicalModel, debugInfo: "..."))
                 }
             }
             if let wave = fWave {
