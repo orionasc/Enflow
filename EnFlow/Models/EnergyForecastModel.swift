@@ -72,12 +72,12 @@ final class EnergyForecastModel: ObservableObject {
       adjustedBase = min(max(adjustedBase, 0), 1)
     }
 
-    var wave = circadian(for: profile).map { max(0, min(1, adjustedBase + $0)) }
+    var wave = circadian(for: profile).map { clamp(adjustedBase + $0) }
     for ev in events {
       guard let delta = ev.energyDelta else { continue }
       let hr = calendar.component(.hour, from: ev.startTime)
       if hr >= 0 && hr < 24 {
-        wave[hr] = max(0, min(1, wave[hr] + delta))
+        apply(delta: delta, at: hr, to: &wave)
       }
     }
 
@@ -94,12 +94,21 @@ final class EnergyForecastModel: ObservableObject {
 
     wave = smooth(wave)
 
-    let score = wave.reduce(0, +) / Double(wave.count) * 100.0
-
     let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
     let missing = required.subtracting(hSample.availableMetrics)
     var confidence = 0.2
     if history.count >= 7 { confidence = 0.8 } else if history.count >= 3 { confidence = 0.4 }
+
+    wave = applySleepFloor(to: wave, profile: profile, missing: missing, confidence: confidence)
+    wave = adjustAmplitude(of: wave, base: adjustedBase, confidence: confidence)
+
+    let score = wave.reduce(0, +) / Double(wave.count) * 100.0
+
+    var debugInfo: String? = nil
+    if confidence < 0.5 {
+      let mList = missing.map { $0.rawValue }.joined(separator: ",")
+      debugInfo = "missing: \(mList)"
+    }
 
     let forecast = DayEnergyForecast(
       date: date,
@@ -107,7 +116,8 @@ final class EnergyForecastModel: ObservableObject {
       score: score,
       confidenceScore: confidence,
       missingMetrics: Array(missing),
-      sourceType: .historicalModel)
+      sourceType: .historicalModel,
+      debugInfo: debugInfo)
     ForecastCache.shared.saveForecast(forecast)
     return forecast
   }
@@ -169,14 +179,54 @@ final class EnergyForecastModel: ObservableObject {
     return exp(-0.5 * z * z)  // Gaussian bell, 0–1
   }
 
-  /// Simple 3-point moving average to smooth abrupt dips
+  /// 5-point weighted smoothing (Gaussian-like) to reduce volatility
   private func smooth(_ values: [Double]) -> [Double] {
-    guard values.count > 2 else { return values }
+    guard values.count >= 5 else { return values }
     var out = values
-    for i in 1..<(values.count - 1) {
-      out[i] = (values[i-1] + values[i] + values[i+1]) / 3
+    for i in 2..<(values.count - 2) {
+      let v =   values[i-2] * 1
+              + values[i-1] * 2
+              + values[i]   * 3
+              + values[i+1] * 2
+              + values[i+2] * 1
+      out[i] = v / 9.0
     }
     return out
+  }
+
+  /// Clamp helper to keep values within 0…1
+  private func clamp(_ v: Double) -> Double { max(0, min(1, v)) }
+
+  /// Apply an event delta over a 3-hour window instead of a single spike
+  private func apply(delta: Double, at hour: Int, to wave: inout [Double]) {
+    let idxs = [hour - 1, hour, hour + 1]
+    let weights: [Double] = [0.25, 0.5, 0.25]
+    for (offset, h) in idxs.enumerated() where h >= 0 && h < wave.count {
+      wave[h] = clamp(wave[h] + delta * weights[offset])
+    }
+  }
+
+  /// Scales deviations from the base when confidence is low
+  private func adjustAmplitude(of wave: [Double], base: Double, confidence: Double) -> [Double] {
+    guard confidence < 0.5 else { return wave }
+    let factor = 0.5 + confidence
+    return wave.map { base + ($0 - base) * factor }
+  }
+
+  /// Forces a low baseline during typical sleep hours when data is limited
+  private func applySleepFloor(to wave: [Double], profile: UserProfile?, missing: Set<MetricType>, confidence: Double) -> [Double] {
+    guard let p = profile else { return wave }
+    guard confidence < 0.5 || !missing.isEmpty else { return wave }
+
+    var result = wave
+    let start = calendar.component(.hour, from: p.typicalSleepTime)
+    let end = calendar.component(.hour, from: p.typicalWakeTime)
+    var h = start
+    repeat {
+      if h >= 0 && h < result.count { result[h] = min(result[h], 0.2) }
+      h = (h + 1) % 24
+    } while h != end
+    return result
   }
 
   /// Consensus circadian energy curve (dips ≈ 2 am & 3 pm; peaks ≈ 10 am & 6 pm)
