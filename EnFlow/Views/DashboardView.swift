@@ -37,17 +37,6 @@ struct DashboardView: View {
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
 
-  /// Drag gesture to move between Today and Tomorrow pages.
-  private var pageSwipe: some Gesture {
-    DragGesture(minimumDistance: 20)
-      .onEnded { value in
-        if value.translation.width > 50 {
-          changePage(by: -1)
-        } else if value.translation.width < -50 {
-          changePage(by: 1)
-        }
-      }
-  }
 
   private typealias EnergyParts = EnergyForecastModel.EnergyParts
 
@@ -57,17 +46,18 @@ struct DashboardView: View {
       TabView(selection: $selection) {
         todayPage
           .id(pageIDs[0]!)
+          .onAppear { pageIDs[0] = UUID() }
           .tag(0)
         tomorrowPage
           .id(pageIDs[1]!)
+          .onAppear { pageIDs[1] = UUID() }
           .tag(1)
       }
       .tabViewStyle(.page(indexDisplayMode: .never))
 
       if isLoading { ProgressView().progressViewStyle(.circular) }
     }
-    .contentShape(Rectangle())
-    .gesture(pageSwipe)
+
 
     // ───────── Segmented pill ─────────
     .overlay(alignment: .topTrailing) {
@@ -80,16 +70,11 @@ struct DashboardView: View {
       .padding(.trailing, 16)
       .padding(.top, pickerTop)
     }
-    // Soft haptic and reset inactive page on tab switch
-    .onChange(of: selection) { newValue in
+    // Soft haptic on tab switch
+    .onChange(of: selection) { _ in
       #if os(iOS)
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
       #endif
-      if newValue == 0 {
-        pageIDs[1] = UUID()
-      } else {
-        pageIDs[0] = UUID()
-      }
     }
 
     // Notch shim
@@ -334,13 +319,6 @@ struct DashboardView: View {
     }
   }
 
-  /// Move the tab selection left or right when swiping.
-  private func changePage(by delta: Int) {
-    let newIndex = selection + delta
-    if (0...1).contains(newIndex) {
-      withAnimation { selection = newIndex }
-    }
-  }
 
   /// Returns ≥15-minute gaps in the day’s schedule.
   private func freeBlocks(from events: [CalendarEvent], for day: Date) -> [DateInterval] {
