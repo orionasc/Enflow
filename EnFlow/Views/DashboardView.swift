@@ -41,15 +41,19 @@ struct DashboardView: View {
 
   // MARK: Root view ----------------------------------------------------------
   var body: some View {
-    TabView(selection: $selection) {
-      todayPage
-        .id(pageIDs[0]!)
-        .tag(0)
-      tomorrowPage
-        .id(pageIDs[1]!)
-        .tag(1)
+    ZStack {
+      TabView(selection: $selection) {
+        todayPage
+          .id(pageIDs[0]!)
+          .tag(0)
+        tomorrowPage
+          .id(pageIDs[1]!)
+          .tag(1)
+      }
+      .tabViewStyle(.page(indexDisplayMode: .never))
+
+      if isLoading { ProgressView().progressViewStyle(.circular) }
     }
-    .tabViewStyle(.page(indexDisplayMode: .never))
 
     // ───────── Segmented pill ─────────
     .overlay(alignment: .topTrailing) {
@@ -78,7 +82,7 @@ struct DashboardView: View {
     .safeAreaInset(edge: .top) { Spacer().frame(height: 0) }
 
     .enflowBackground()
-    .navigationBarHidden(true)
+    .navigationBarTitleDisplayMode(.inline)
     .environmentObject(engine)  // ring-pulse observer
     .task { await loadData() }
   }
