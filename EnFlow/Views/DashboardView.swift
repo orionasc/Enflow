@@ -140,6 +140,8 @@ struct DashboardView: View {
           SuggestedPrioritiesView(context: ctx)
         }
 
+        DailyFeedbackCard()
+
         Spacer(minLength: 40)
       }
       .padding(.top, headerPadding)
