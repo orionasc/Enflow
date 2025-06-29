@@ -235,8 +235,11 @@ struct DayView: View {
         }
         .frame(maxHeight: .infinity)
       }
+
       .frame(height: rowHeight)
     }
+  }
+
   }
 
   private func eventHeight(from ev: CalendarEvent) -> CGFloat {
