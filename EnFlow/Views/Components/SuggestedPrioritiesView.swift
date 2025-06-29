@@ -25,13 +25,22 @@ struct SuggestedPrioritiesView: View {
   // ───────── State ──────────────────────────────────────────────
   @StateObject private var vm = SuggestedPrioritiesVM()
   @State private var selectedForExplain: PriorityResult?
+  @State private var showInfo = false
 
   // ───────── View ───────────────────────────────────────────────
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Text("Suggested Priorities")
-        .font(.headline)
-        .padding(.bottom, 4)
+      HStack {
+        Text("Suggested Priorities")
+          .font(.headline)
+        Spacer()
+        Button { showInfo = true } label: {
+          Image(systemName: "info.circle")
+            .font(.headline)
+            .foregroundColor(.white.opacity(0.6))
+        }
+      }
+      .padding(.bottom, 4)
 
       if vm.isLoading {
         ProgressView()
@@ -84,6 +93,9 @@ struct SuggestedPrioritiesView: View {
     .task(id: contextHash) { await vm.refresh() }
     .onAppear { if vm.priorities.isEmpty { Task { await vm.refresh() } } }
     .animation(.easeInOut, value: vm.priorities)
+    .sheet(isPresented: $showInfo) {
+      SuggestedPrioritiesInfoView()
+    }
     .sheet(item: $selectedForExplain) { p in
       let parts = p.text.components(separatedBy: .newlines)
       let header = parts.first ?? p.text
