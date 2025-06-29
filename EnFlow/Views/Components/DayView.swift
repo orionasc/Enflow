@@ -29,38 +29,6 @@ struct DayView: View {
     self.showBackButton = showBackButton
   }
 
-  var body: some View {
-    VStack(spacing: 16) {
-      dayHeader
-
-      ZStack {
-        RoundedRectangle(cornerRadius: 16)
-          .fill(.ultraThinMaterial)
-          .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 4)
-
-        VStack(spacing: 12) {
-          pageToggleButtons
-          Divider()
-            .background(Color.white.opacity(0.2))
-            .padding(.horizontal, 16)
-          if page == 0 {
-            schedulePage
-          } else {
-            overviewPage
-          }
-        }
-      }
-      .padding(.horizontal)
-      .gesture(daySwipe)
-
-      Spacer()
-    }
-    .enflowBackground()
-    .navigationBarBackButtonHidden(true)
-    .onAppear { Task { await load() } }
-    .onReceive(timer) { now = $0 }
-  }
-
   // MARK: ─ Header with optional back button ──────────────────
   private var dayHeader: some View {
     HStack(spacing: 12) {
@@ -409,6 +377,38 @@ struct DayView: View {
     }
 
     events = dayEvents
+  }
+
+  var body: some View {
+    VStack(spacing: 16) {
+      dayHeader
+
+      ZStack {
+        RoundedRectangle(cornerRadius: 16)
+          .fill(.ultraThinMaterial)
+          .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 4)
+
+        VStack(spacing: 12) {
+          pageToggleButtons
+          Divider()
+            .background(Color.white.opacity(0.2))
+            .padding(.horizontal, 16)
+          if page == 0 {
+            schedulePage
+          } else {
+            overviewPage
+          }
+        }
+      }
+      .padding(.horizontal)
+      .gesture(daySwipe)
+
+      Spacer()
+    }
+    .navigationBarBackButtonHidden(true)
+    .onAppear { Task { await load() } }
+    .onReceive(timer) { now = $0 }
+    .enflowBackground()
   }
 }
 
