@@ -6,11 +6,16 @@ struct DailyEnergyForecastView: View {
     /// First hour represented in `values`. Defaults to 7AM for backward
     /// compatibility with the dashboard.
     let startHour: Int
+    /// Hour to highlight with a pulsing dot. Nil to disable.
+    let highlightHour: Int?
+    @State private var pulse = false
+
     private let calendar = Calendar.current
 
-    init(values: [Double], startHour: Int = 7) {
+    init(values: [Double], startHour: Int = 7, highlightHour: Int? = nil) {
         self.values = values
         self.startHour = startHour
+        self.highlightHour = highlightHour
     }
 
     var body: some View {
@@ -20,9 +25,10 @@ struct DailyEnergyForecastView: View {
             let height = proxy.size.height
 
             // points for smoothed path
+            let clamped = values.map { min(max($0, 0), 1) }
             let points = (0..<count).map { i -> CGPoint in
                 let x = width * CGFloat(i) / CGFloat(max(count - 1, 1))
-                let y = height * (1 - CGFloat(values[i]))
+                let y = height * (1 - CGFloat(clamped[i]))
                 return CGPoint(x: x, y: y)
             }
             let path = smoothPath(points)
@@ -32,10 +38,30 @@ struct DailyEnergyForecastView: View {
             ColorPalette.verticalEnergyGradient
                 .mask(path.stroke(style: stroke))
                 .overlay(
-                    ColorPalette.gradient(for: average(values) * 100)
+                    ColorPalette.gradient(for: average(clamped) * 100)
                         .mask(path.stroke(style: stroke))
                         .blendMode(.overlay)
                 )
+
+            if let h = highlightHour, h >= startHour, h < startHour + count {
+                let idx = h - startHour
+                let pt = points[idx]
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 8, height: 8)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.8), lineWidth: 2)
+                            .scaleEffect(pulse ? 1.6 : 1)
+                            .opacity(pulse ? 0 : 1)
+                    )
+                    .position(pt)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
+                            pulse.toggle()
+                        }
+                    }
+            }
 
             // hour labels
             ForEach(0..<count, id: \.self) { idx in
