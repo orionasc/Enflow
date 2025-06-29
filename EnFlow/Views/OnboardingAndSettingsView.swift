@@ -145,7 +145,13 @@ struct OnboardingAndSettingsView: View {
     private func calendarToggleChanged(_ newValue: Bool) {
         if newValue {
             CalendarDataPipeline.shared.requestAccess { calendarGranted = $0 }
-        } else { showSettingsAlert = true }
+        } else {
+            // Permissions can only be revoked in the iOS Settings app. If the
+            // user cancels the alert, keep the toggle enabled so the state
+            // reflects the actual authorization status.
+            showSettingsAlert = true
+            calendarGranted = true
+        }
     }
 
     private func healthToggleChanged(_ newValue: Bool) {
@@ -154,7 +160,11 @@ struct OnboardingAndSettingsView: View {
                 healthGranted = $0
                 updateHealthGranted()
             }
-        } else { showSettingsAlert = true }
+        } else {
+            // Mirror the same revoke-flow behavior for Health permissions.
+            showSettingsAlert = true
+            healthGranted = true
+        }
     }
 
     private func systemSettingsButtons() -> some View {
