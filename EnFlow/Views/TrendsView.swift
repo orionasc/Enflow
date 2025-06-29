@@ -143,7 +143,6 @@ struct TrendsView: View {
                         Text("GPT Weekly Summary")
                             .font(.headline)
                         Spacer()
-                        // Reload only GPT summary
                         Button(action: { Task { await loadGPTSummary(forceReload: true) } }) {
                             Image(systemName: "arrow.clockwise.circle.fill")
                                 .font(.title2)
@@ -157,43 +156,35 @@ struct TrendsView: View {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(.ultraThinMaterial)
                             .shadow(radius: 4)
-                        ScrollView(.vertical, showsIndicators: true) {
+
+                        VStack(alignment: .leading, spacing: 8) {
                             if isGPTLoading {
                                 ProgressView()
                                     .progressViewStyle(.circular)
                                     .tint(.yellow)
                             } else if let parsed = parsedGPTSummary {
                                 ForEach(parsed.sections) { section in
-                                    VStack(alignment: .leading, spacing: 6) {
+                                    VStack(alignment: .leading, spacing: 4) {
                                         Text(section.title)
-                                            .font(.headline)
+                                            .bold()
                                             .foregroundColor(.yellow)
                                         Text(section.content)
-                                            .font(.body)
                                             .foregroundColor(.white)
                                     }
-                                    .padding(.bottom, 10)
-                                }
-
-                                Text("Highlighted Events:")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                ForEach(parsed.events) { event in
-                                    Text("\(event.title.replacingOccurrences(of: "<highlight>", with: "").replacingOccurrences(of: "</highlight>", with: "")) – \(event.date)")
-
                                 }
                             } else {
-                                Text(gptSummary)
-                                    .font(.system(.body, design: .monospaced))
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .multilineTextAlignment(.leading)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .onTapGesture {
-                                        handleEventTap(in: gptSummary)
-                                    }
+                                Text("⚠️ Parsing failed")
+                                    .foregroundColor(.orange)
+                                ScrollView {
+                                    Text(gptSummary)
+                                        .font(.system(.body, design: .monospaced))
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .multilineTextAlignment(.leading)
+                                }
                             }
                         }
+                        .padding()
                         .frame(maxHeight: 300)
                     }
                     .padding(.horizontal)
