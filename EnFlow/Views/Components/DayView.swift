@@ -114,7 +114,11 @@ struct DayView: View {
         ThreePartForecastView(parts: parts)
         Text("24-Hour Energy Graph")
           .font(.title2.weight(.medium))
-        DailyEnergyForecastView(values: forecast, startHour: 0)
+        DailyEnergyForecastView(
+          values: forecast,
+          startHour: 0,
+          highlightHour: isToday ? calendar.component(.hour, from: now) : nil
+        )
           .frame(height: 220)
       }
       .padding()
