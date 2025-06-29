@@ -140,7 +140,7 @@ struct EnergyRingView: View {
             }
         }
         .sheet(isPresented: $showExplanation) {
-            NavigationView { MeetSolView() }
+            EnergyRingInfoView()
         }
     }
 }
