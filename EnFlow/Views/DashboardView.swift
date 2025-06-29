@@ -174,7 +174,7 @@ struct DashboardView: View {
             Text("24-Hour Energy Forecast")
               .font(.headline)
               .saturation(0.7)
-            EnergyLineChartView(values: wave)
+            DailyEnergyForecastView(values: wave, startHour: 0)
               .saturation(0.7)
           }
         }
