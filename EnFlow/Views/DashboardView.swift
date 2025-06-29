@@ -37,6 +37,18 @@ struct DashboardView: View {
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
 
+  /// Drag gesture to move between Today and Tomorrow pages.
+  private var pageSwipe: some Gesture {
+    DragGesture(minimumDistance: 20)
+      .onEnded { value in
+        if value.translation.width > 50 {
+          changePage(by: -1)
+        } else if value.translation.width < -50 {
+          changePage(by: 1)
+        }
+      }
+  }
+
   private typealias EnergyParts = EnergyForecastModel.EnergyParts
 
   // MARK: Root view ----------------------------------------------------------
@@ -54,6 +66,8 @@ struct DashboardView: View {
 
       if isLoading { ProgressView().progressViewStyle(.circular) }
     }
+    .contentShape(Rectangle())
+    .gesture(pageSwipe)
 
     // ───────── Segmented pill ─────────
     .overlay(alignment: .topTrailing) {
@@ -317,6 +331,14 @@ struct DashboardView: View {
       missingTomorrowData = noTomorrow
       tomorrowConfidence = forecastConf
       engine.markRefreshed()  // trigger ring-pulse animation
+    }
+  }
+
+  /// Move the tab selection left or right when swiping.
+  private func changePage(by delta: Int) {
+    let newIndex = selection + delta
+    if (0...1).contains(newIndex) {
+      withAnimation { selection = newIndex }
     }
   }
 
