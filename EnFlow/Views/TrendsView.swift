@@ -304,6 +304,27 @@ struct TrendsView: View {
         }
     }
 
+    /// Horizontal swipe gesture to move between weekly, monthly and six-week views.
+    private var periodSwipe: some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onEnded { value in
+                if value.translation.width > 50 {
+                    changePeriod(by: -1)
+                } else if value.translation.width < -50 {
+                    changePeriod(by: 1)
+                }
+            }
+    }
+
+    private func changePeriod(by delta: Int) {
+        if let idx = TrendsPeriod.allCases.firstIndex(of: period) {
+            let newIdx = idx + delta
+            if TrendsPeriod.allCases.indices.contains(newIdx) {
+                period = TrendsPeriod.allCases[newIdx]
+            }
+        }
+    }
+
     /// Chart showing calculated and forecasted energy.
     private var energyChart: some View {
         Chart {
@@ -327,6 +348,8 @@ struct TrendsView: View {
             }
             .padding(.leading, 4), alignment: .leading
         )
+        .contentShape(Rectangle())
+        .gesture(periodSwipe)
         .onAppear { animatePulse = true }
     }
 
