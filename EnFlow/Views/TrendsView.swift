@@ -245,14 +245,23 @@ struct TrendsView: View {
                 cacheId: id
             )
 
-            if let data = raw.data(using: .utf8),
+            print("RAW GPT OUTPUT: \(raw)")
+
+            let cleaned = raw
+                .replacingOccurrences(of: "```json", with: "")
+                .replacingOccurrences(of: "```", with: "")
+                .replacingOccurrences(of: "\u{201C}", with: "\"")
+                .replacingOccurrences(of: "\u{201D}", with: "\"")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if let data = cleaned.data(using: .utf8),
                let parsed = try? JSONDecoder().decode(GPTSummary.self, from: data) {
                 await MainActor.run {
                     parsedGPTSummary = parsed
-                    gptSummary = JSONFormatter.pretty(from: raw)
+                    gptSummary = JSONFormatter.pretty(from: cleaned)
                 }
             } else {
-                let text = WeeklySummaryFormatter.format(from: raw)
+                let text = WeeklySummaryFormatter.format(from: cleaned)
                 await MainActor.run {
                     parsedGPTSummary = nil
                     gptSummary = text
