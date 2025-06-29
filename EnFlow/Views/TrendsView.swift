@@ -325,6 +325,26 @@ struct TrendsView: View {
         }
     }
 
+    @AxisContentBuilder
+    private var xAxisMarks: some AxisContent {
+        switch period {
+        case .weekly:
+            AxisMarks(values: .stride(by: .day)) { value in
+                if let date = value.as(Date.self) {
+                    AxisTick()
+                    AxisValueLabel(date, format: .dateTime.month(.abbreviated).day())
+                }
+            }
+        case .monthly, .sixWeeks:
+            AxisMarks(values: .stride(by: .weekOfYear)) { value in
+                if let date = value.as(Date.self) {
+                    AxisTick()
+                    AxisValueLabel(date, format: .dateTime.month(.abbreviated).day())
+                }
+            }
+        }
+    }
+
     /// Chart showing calculated and forecasted energy.
     private var energyChart: some View {
         Chart {
@@ -335,7 +355,9 @@ struct TrendsView: View {
         }
         .chartForegroundStyleScale(seriesColors)
         .chartLegend(.hidden)
-        .chartXAxis(.hidden)
+        .chartXAxis {
+            xAxisMarks
+        }
         .chartYAxis(.hidden)
         .chartYScale(domain: 0...100)
         .frame(height: 200)
