@@ -37,17 +37,6 @@ struct DashboardView: View {
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
 
-  /// Drag gesture to move between Today and Tomorrow pages.
-  private var pageSwipe: some Gesture {
-    DragGesture(minimumDistance: 20)
-      .onEnded { value in
-        if value.translation.width > 50 {
-          changePage(by: -1)
-        } else if value.translation.width < -50 {
-          changePage(by: 1)
-        }
-      }
-  }
 
   private typealias EnergyParts = EnergyForecastModel.EnergyParts
 
@@ -66,8 +55,7 @@ struct DashboardView: View {
 
       if isLoading { ProgressView().progressViewStyle(.circular) }
     }
-    .contentShape(Rectangle())
-    .gesture(pageSwipe)
+
 
     // ───────── Segmented pill ─────────
     .overlay(alignment: .topTrailing) {
@@ -334,13 +322,6 @@ struct DashboardView: View {
     }
   }
 
-  /// Move the tab selection left or right when swiping.
-  private func changePage(by delta: Int) {
-    let newIndex = selection + delta
-    if (0...1).contains(newIndex) {
-      withAnimation { selection = newIndex }
-    }
-  }
 
   /// Returns ≥15-minute gaps in the day’s schedule.
   private func freeBlocks(from events: [CalendarEvent], for day: Date) -> [DateInterval] {
