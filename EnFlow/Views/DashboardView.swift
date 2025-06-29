@@ -46,9 +46,11 @@ struct DashboardView: View {
       TabView(selection: $selection) {
         todayPage
           .id(pageIDs[0]!)
+          .onAppear { pageIDs[0] = UUID() }
           .tag(0)
         tomorrowPage
           .id(pageIDs[1]!)
+          .onAppear { pageIDs[1] = UUID() }
           .tag(1)
       }
       .tabViewStyle(.page(indexDisplayMode: .never))
@@ -68,16 +70,11 @@ struct DashboardView: View {
       .padding(.trailing, 16)
       .padding(.top, pickerTop)
     }
-    // Soft haptic and reset inactive page on tab switch
-    .onChange(of: selection) { newValue in
+    // Soft haptic on tab switch
+    .onChange(of: selection) { _ in
       #if os(iOS)
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
       #endif
-      if newValue == 0 {
-        pageIDs[1] = UUID()
-      } else {
-        pageIDs[0] = UUID()
-      }
     }
 
     // Notch shim
