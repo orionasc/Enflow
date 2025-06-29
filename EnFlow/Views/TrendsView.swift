@@ -63,6 +63,9 @@ struct TrendsView: View {
                     ForEach(TrendsPeriod.allCases) { p in Text(p.rawValue).tag(p) }
                 }
                 .pickerStyle(.segmented)
+                .onChange(of: period) { _ in
+                    Task { await loadData() }
+                }
                 .padding(.horizontal)
 
                 // Energy chart title
