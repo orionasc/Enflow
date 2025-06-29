@@ -15,10 +15,13 @@ struct DayView: View {
   @State private var forecast: [Double] = Array(repeating: 0.5, count: 24)
   @State private var parts: EnergyForecastModel.EnergyParts? = nil
   @State private var overallScore: Double? = nil
+  @State private var showHeatMap = false
+  @State private var now = Date()
   @State private var page = 0  // 0 = schedule, 1 = overview
 
   private let calendar = Calendar.current
   private let rowHeight: CGFloat = 32
+  private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
   // ───────── Init ───────────────────────────────────────────
   init(date: Date, showBackButton: Bool = false) {
@@ -55,6 +58,7 @@ struct DayView: View {
     .enflowBackground()
     .navigationBarBackButtonHidden(true)
     .onAppear { Task { await load() } }
+    .onReceive(timer) { now = $0 }
   }
 
   // MARK: ─ Header with optional back button ──────────────────
@@ -156,17 +160,13 @@ struct DayView: View {
       if forecast.count == 24 {
         VStack(spacing: 1) {
           ForEach(0..<24, id: \.self) { hr in
-            HStack(spacing: 0) {
-              Capsule()
-                .fill(ColorPalette.color(for: forecast[hr] * 100))
-                .frame(width: 6, height: 32)
-                .padding(.trailing, 4)
-              timelineRow(for: hr)
-            }
+            let isForecast = calendar.isDateInToday(currentDate) && hr >= calendar.component(.hour, from: now)
+            timelineRow(for: hr, showEnergy: showHeatMap, forecasted: isForecast)
           }
         }
         .background(Color.white.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(timeIndicator, alignment: .topLeading)
       } else {
         Text("No Data")
           .font(.headline)
@@ -179,23 +179,75 @@ struct DayView: View {
   }
 
   @ViewBuilder
-  private func timelineRow(for hour: Int) -> some View {
+  private func timelineRow(for hour: Int, showEnergy: Bool, forecasted: Bool) -> some View {
     let label = hourLabel(hour)
     let energy = forecast.indices.contains(hour) ? forecast[hour] : 0
-    let bg = ColorPalette.color(for: energy * 100)
+    let nextEnergy = forecast.indices.contains(hour + 1) ? forecast[hour + 1] : energy
+    let fade = fadeFactor(for: hour)
+    let baseColor = ColorPalette.color(for: energy * 100)
+    let nextColor = ColorPalette.color(for: nextEnergy * 100)
     let evs = events.filter {
       calendar.component(.hour, from: $0.startTime) == hour
     }
-    ZStack(alignment: .leading) {
-      bg.opacity(0.12).frame(height: rowHeight)
-      HStack(spacing: 6) {
-        Text(label)
-          .font(.caption2)
-          .frame(width: 46, alignment: .trailing)
-          .foregroundColor(.secondary)
-        ZStack(alignment: .topLeading) {
-          Rectangle()
-            .fill(bg.opacity(0.22))
+    HStack(spacing: 0) {
+      if showEnergy {
+        Capsule()
+          .fill(
+            LinearGradient(
+              gradient: Gradient(stops: [
+                .init(color: baseColor.opacity(fade), location: 0),
+                .init(color: nextColor.opacity(fade), location: 1)
+              ]),
+              startPoint: .top,
+              endPoint: .bottom
+            )
+          )
+          .frame(width: 6, height: rowHeight)
+          .padding(.trailing, 4)
+          .overlay(
+            Group {
+              if forecasted { DotPatternOverlay(color: baseColor).clipShape(Capsule()) }
+            }
+          )
+      } else {
+        Capsule().fill(Color.clear)
+          .frame(width: 6, height: rowHeight)
+          .padding(.trailing, 4)
+      }
+
+      ZStack(alignment: .leading) {
+        if showEnergy {
+          LinearGradient(
+            gradient: Gradient(stops: [
+              .init(color: baseColor.opacity(0.12 * fade), location: 0),
+              .init(color: nextColor.opacity(0.12 * fade), location: 1)
+            ]),
+            startPoint: .top,
+            endPoint: .bottom
+          )
+          .frame(height: rowHeight)
+        } else {
+          Color.clear.frame(height: rowHeight)
+        }
+        HStack(spacing: 6) {
+          Text(label)
+            .font(.caption2)
+            .frame(width: 46, alignment: .trailing)
+            .foregroundColor(.secondary)
+          ZStack(alignment: .topLeading) {
+          if showEnergy {
+            LinearGradient(
+              gradient: Gradient(stops: [
+                .init(color: baseColor.opacity(0.22 * fade), location: 0),
+                .init(color: nextColor.opacity(0.22 * fade), location: 1)
+              ]),
+              startPoint: .top,
+              endPoint: .bottom
+            )
+          }
+          if forecasted && showEnergy {
+            DotPatternOverlay(color: baseColor)
+          }
           ForEach(evs) { ev in
             let startMinute = calendar.component(.minute, from: ev.startTime)
             let minuteOffset = rowHeight * CGFloat(startMinute) / 60
@@ -222,6 +274,27 @@ struct DayView: View {
   private func eventHeight(from ev: CalendarEvent) -> CGFloat {
     let hours = ev.endTime.timeIntervalSince(ev.startTime) / 3600
     return max(rowHeight, rowHeight * CGFloat(hours))
+  }
+
+  private func fadeFactor(for hour: Int) -> Double {
+    guard calendar.isDateInToday(currentDate) else { return 1 }
+    let fadeStart = 19
+    if hour < fadeStart { return 1 }
+    let factor = 1 - Double(hour - fadeStart) / 5.0
+    return max(0, factor)
+  }
+
+  @ViewBuilder
+  private var timeIndicator: some View {
+    if calendar.isDateInToday(currentDate) {
+      let hr = calendar.component(.hour, from: now)
+      let min = calendar.component(.minute, from: now)
+      let offset = (rowHeight + 1) * CGFloat(hr) + rowHeight * CGFloat(min) / 60
+      Rectangle()
+        .fill(Color.orange)
+        .frame(height: 2)
+        .offset(x: 0, y: offset)
+    }
   }
 
   @ViewBuilder
@@ -312,27 +385,27 @@ struct DayView: View {
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
     let profile = UserProfileStore.load()
 
-    let summary = EnergySummaryEngine.shared.summarize(
-      day: currentDate,
-      healthEvents: healthList,
-      calendarEvents: dayEvents,
-      profile: profile)
+    let summary = UnifiedEnergyModel.shared.summary(for: currentDate,
+                                                    healthEvents: healthList,
+                                                    calendarEvents: dayEvents,
+                                                    profile: profile)
     forecast = summary.hourlyWaveform
-    if currentDate > startOfToday || summary.coverageRatio < 0.3 {
-      overallScore = nil
-    } else {
+    showHeatMap = summary.coverageRatio >= 0.3 && currentDate <= startOfToday
+    if showHeatMap {
       overallScore = summary.overallEnergyScore
+    } else {
+      overallScore = nil
     }
 
     func avg(_ slice: ArraySlice<Double>) -> Double { slice.reduce(0, +) / Double(slice.count) * 100 }
-    if summary.coverageRatio < 0.3 {
-      parts = nil
-    } else {
+    if showHeatMap {
       parts = EnergyForecastModel.EnergyParts(
         morning: avg(forecast[0..<8]),
         afternoon: avg(forecast[8..<16]),
         evening: avg(forecast[16..<24])
       )
+    } else {
+      parts = nil
     }
 
     events = dayEvents
