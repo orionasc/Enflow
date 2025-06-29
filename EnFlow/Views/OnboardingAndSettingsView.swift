@@ -116,6 +116,14 @@ struct OnboardingAndSettingsView: View {
     private var preferencesSection: some View {
         Section(header: Text("App Preferences")) {
             Toggle("Enable Notifications", isOn: .constant(false))
+                .disabled(true)
+                .overlay(
+                    ZStack {
+                        Color.gray.opacity(0.4)
+                        Text("Coming Soon")
+                            .foregroundColor(.blue)
+                    }
+                )
             Picker("GPT Tone", selection: $gptTone) {
                 Text("Wellness").tag("wellness")
                 Text("Scientific").tag("scientific")
