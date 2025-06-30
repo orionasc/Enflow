@@ -18,34 +18,31 @@ struct EnergyRingInfoView: View {
                         .buttonStyle(.borderedProminent)
                 }
                 .padding()
-                .background(.ultraThinMaterial)
                 .cornerRadius(20)
                 .padding()
             }
             .navigationTitle("Understanding Your Energy Rings")
             .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showMore) { NavigationStack { MeetSolView() } }
+            .enflowBackground()
         }
     }
 
     private var ringStates: some View {
-        VStack(spacing: 16) {
-            ringRow(score: 25, title: "Low (0–40)", description: "Ring appears red/orange, sparse fill.")
-            ringRow(score: 55, title: "Moderate (40–65)", description: "Yellow, steady glow.")
-            ringRow(score: 78, title: "High (65–90)", description: "Vibrant green with pulse.")
-            ringRow(score: 95, title: "Supercharged (90–100)", description: "Blue-tinted white with glow.")
+        HStack(spacing: 20) {
+            ringExample(score: 25, label: "Low")
+            ringExample(score: 55, label: "Moderate")
+            ringExample(score: 78, label: "High")
+            ringExample(score: 95, label: "Super")
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private func ringRow(score: Double, title: String, description: String) -> some View {
-        HStack(spacing: 16) {
-            EnergyRingView(score: score)
-                .frame(width: 60, height: 60)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
-                Text(description).font(.subheadline).foregroundColor(.secondary)
-            }
-            Spacer(minLength: 0)
+    private func ringExample(score: Double, label: String) -> some View {
+        VStack(spacing: 4) {
+            EnergyRingView(score: score, size: 60)
+            Text(label)
+                .font(.caption)
         }
     }
 

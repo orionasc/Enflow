@@ -16,6 +16,8 @@ struct EnergyRingView: View {
     var explainers: [String] = []
     /// Supply the timestamp from your parent (e.g. summary.date)
     var summaryDate: Date = Date()
+    /// Overall size for the ring (default 180 for full display)
+    var size: CGFloat = 180
 
     // ───────── Engine + State ──────────────────────────────────────
     @ObservedObject private var engine = EnergySummaryEngine.shared
@@ -129,8 +131,8 @@ struct EnergyRingView: View {
                 Spacer()
             }
         }
-        .frame(width: 180, height: 180)
-        .scaleEffect(baseScale * pulseScale)
+        .frame(width: size, height: size)
+        .scaleEffect((size / 180) * baseScale * pulseScale)
         .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 4)
         .saturation(desaturate ? 0.55 : 1.0)
         .onReceive(engine.$refreshVersion.dropFirst()) { _ in
