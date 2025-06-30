@@ -26,6 +26,20 @@ enum PriorityTemplate: String, Codable, CaseIterable, Hashable, Identifiable {
         case .mindfulness: "sparkle"
         }
     }
+
+    /// User-facing title
+    var title: String { rawValue.capitalized }
+
+    /// Short explainer used in info views
+    var blurb: String {
+        switch self {
+        case .focus:       return "Deep work or tasks requiring high concentration."
+        case .movement:    return "Quick physical activity to boost energy."
+        case .rest:        return "Short rest strategies to recharge."
+        case .planning:    return "Light planning or admin work."
+        case .mindfulness: return "Mindfulness cues to reset your mind."
+        }
+    }
 }
 
 struct TemplatePrompt: Identifiable, Hashable, Codable {

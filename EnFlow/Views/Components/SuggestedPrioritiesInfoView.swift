@@ -8,7 +8,7 @@ struct SuggestedPrioritiesInfoView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    ForEach(SuggestedPriorityTemplate.allCases) { t in
+                    ForEach(PriorityTemplate.allCases, id: \.\.self) { t in
                         priorityRow(t)
                     }
                     Divider()
@@ -28,33 +28,20 @@ struct SuggestedPrioritiesInfoView: View {
         }
     }
 
-    private func priorityRow(_ template: SuggestedPriorityTemplate) -> some View {
+    private func priorityRow(_ template: PriorityTemplate) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: template.sfSymbol)
                 .font(.title2)
                 .frame(width: 32)
                 .foregroundColor(.accentColor)
             VStack(alignment: .leading, spacing: 4) {
-                Text(template.rawValue)
+                Text(template.title)
                     .font(.headline)
-                Text(blurb(for: template))
+                Text(template.blurb)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
             Spacer(minLength: 0)
-        }
-    }
-
-    private func blurb(for t: SuggestedPriorityTemplate) -> String {
-        switch t {
-        case .deepWork:           return "Best used during peak mental energy."
-        case .lightAdmin:         return "Great for lower focus periods."
-        case .activeRecovery:     return "Helps you bounce back after effort."
-        case .socialRecharge:     return "Connect with others to restore mood."
-        case .morningReflection:  return "Start your day with clarity."
-        case .windDown:           return "Ideal near bedtime or after intense sessions."
-        case .creativeSpur:       return "Suggested when mental energy is high but physical is moderate."
-        case .quickPhysicalReset: return "Short movement to perk up energy."
         }
     }
 }
