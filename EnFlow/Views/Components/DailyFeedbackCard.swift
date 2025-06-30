@@ -1,20 +1,29 @@
 import SwiftUI
 
-struct FeedbackToggle: View {
-    let icon: String
-    let label: String
-    @Binding var isOn: Bool
+struct EnergyLevelToggle: View {
+    let level: EnergyLevel
+    @Binding var selection: EnergyLevel?
+
+    var isSelected: Bool { selection == level }
 
     var body: some View {
-        Button(action: { withAnimation(.easeInOut(duration: 0.2)) { isOn.toggle() } }) {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selection = isSelected ? nil : level
+            }
+        }) {
             VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(isOn ? .yellow : .gray)
-                    .scaleEffect(isOn ? 1.2 : 1.0)
-                    .padding(12)
-                    .background(Circle().fill(isOn ? Color.yellow.opacity(0.25) : Color.gray.opacity(0.15)))
-                Text(label).font(.caption)
+                HStack(spacing: 2) {
+                    ForEach(0..<level.rawValue, id: \.self) { _ in
+                        Image(systemName: "bolt.fill")
+                    }
+                }
+                .font(.title2)
+                .foregroundColor(isSelected ? .yellow : .gray)
+                .scaleEffect(isSelected ? 1.2 : 1.0)
+                .padding(12)
+                .background(Circle().fill(isSelected ? Color.yellow.opacity(0.25) : Color.gray.opacity(0.15)))
+                Text(level.label).font(.caption)
             }
         }
         .buttonStyle(.plain)
@@ -22,9 +31,7 @@ struct FeedbackToggle: View {
 }
 
 struct DailyFeedbackCard: View {
-    @State private var energy = false
-    @State private var stress = false
-    @State private var sleep = false
+    @State private var energyLevel: EnergyLevel? = nil
     @State private var note = ""
     @State private var saved = false
     @ObservedObject private var store = FeedbackStore.shared
@@ -37,24 +44,24 @@ struct DailyFeedbackCard: View {
                 .font(.headline)
 
             HStack(spacing: 24) {
-                FeedbackToggle(icon: "bolt.fill", label: "Energy", isOn: $energy)
-                FeedbackToggle(icon: "exclamationmark.triangle.fill", label: "Stress", isOn: $stress)
-                FeedbackToggle(icon: "bed.double.fill", label: "Sleep", isOn: $sleep)
+                EnergyLevelToggle(level: .high, selection: $energyLevel)
+                EnergyLevelToggle(level: .moderate, selection: $energyLevel)
+                EnergyLevelToggle(level: .low, selection: $energyLevel)
             }
 
             TextField("Add a note...", text: $note)
-                .textFieldStyle(.roundedBorder)
+                .padding(8)
+                .background(.ultraThinMaterial)
+                .cornerRadius(8)
 
             Button("Submit") {
                 let entry = DailyFeedback(id: UUID(),
                                           date: today,
-                                          feltHighEnergy: energy,
-                                          feltStressed: stress,
-                                          feltWellRested: sleep,
+                                          energyLevel: energyLevel,
                                           note: note.isEmpty ? nil : note)
                 store.save(entry)
                 withAnimation { saved = true }
-                energy = false; stress = false; sleep = false; note = ""
+                energyLevel = nil; note = ""
             }
             .buttonStyle(.borderedProminent)
 

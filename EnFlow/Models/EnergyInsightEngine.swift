@@ -30,12 +30,8 @@ final class EnergyInsightEngine {
             return av - bv
         }
 
-        let highEnergyDays = feedback.filter(\.feltHighEnergy).map(\.date)
-        let lowEnergyDays = feedback.filter { !$0.feltHighEnergy }.map(\.date)
-        let stressDays = feedback.filter(\.feltStressed).map(\.date)
-        let calmDays = feedback.filter { !$0.feltStressed }.map(\.date)
-        let restDays = feedback.filter(\.feltWellRested).map(\.date)
-        let tiredDays = feedback.filter { !$0.feltWellRested }.map(\.date)
+        let highEnergyDays = feedback.filter { $0.energyLevel == .high }.map(\.date)
+        let lowEnergyDays = feedback.filter { $0.energyLevel == .low }.map(\.date)
 
         var lines: [String] = []
 
@@ -61,27 +57,7 @@ final class EnergyInsightEngine {
             }
         }
 
-        if !stressDays.isEmpty && !calmDays.isEmpty {
-            let meetStress = stressDays.reduce(0) { $0 + metrics(for: $1).meetings }
-            let meetCalm = calmDays.reduce(0) { $0 + metrics(for: $1).meetings }
-            let avgStress = Double(meetStress) / Double(stressDays.count)
-            let avgCalm = Double(meetCalm) / Double(calmDays.count)
-            let diffM = avgStress - avgCalm
-            if diffM > 0.5 {
-                lines.append("Stressful days had about \(Int(round(diffM))) more meetings")
-            }
-        }
-
-        let restGood = restDays.compactMap { metrics(for: $0).sleep }
-        let restBad = tiredDays.compactMap { metrics(for: $0).sleep }
-        let restDiff = diff(restGood, restBad)
-        if abs(restDiff) > 10 {
-            if restDiff > 0 {
-                lines.append("Well rested days included \(Int(restDiff)) more mins of sleep")
-            } else {
-                lines.append("Tired days slept \(Int(-restDiff)) mins less")
-            }
-        }
+        // Additional insights could be added here for other feedback metrics
 
         return lines
     }
