@@ -101,6 +101,7 @@ struct SuggestedPrioritiesView: View {
       let header = parts.first ?? p.text
       let bullets = p.rationale.components(separatedBy: "\n")
       ExplainSheetView(
+        template: p.template,
         header: header,
         bullets: bullets,
         timestamp: Date()

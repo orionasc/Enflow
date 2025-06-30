@@ -20,6 +20,8 @@ struct ExplainSheetView: View {
     let bullets: [String]
     /// When the data/prompt was generated
     let timestamp: Date
+    /// Optional template/category for suggestion explainers
+    var template: PriorityTemplate? = nil
 
     /// DateFormatter for the footer timestamp
     private static let dateFormatter: DateFormatter = {
@@ -31,6 +33,21 @@ struct ExplainSheetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            if let template {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: template.sfSymbol)
+                        .font(.title2)
+                        .foregroundColor(.accentColor)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(template.title)
+                            .font(.headline)
+                        Text(template.blurb)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             // Header
             Text(header)
                 .font(.title2).bold()
