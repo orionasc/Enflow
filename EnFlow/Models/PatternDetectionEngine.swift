@@ -1,13 +1,5 @@
 import Foundation
 
-struct DetectedPattern: Identifiable {
-    let id = UUID()
-    let pattern: String
-    let impactPercent: Double  // negative % drop in energy
-    let confidence: Double     // 0.0 – 1.0
-    let exampleCount: Int
-}
-
 struct PatternDetectionEngine {
     private let calendar = Calendar.current
 
@@ -29,7 +21,7 @@ struct PatternDetectionEngine {
             })
         ]
 
-        var results: [DetectedPattern] = []
+        var results: [(DetectedPattern, Double)] = []
         let totalDays = summaries.count
 
         for (desc, matcher) in checks {
@@ -52,16 +44,18 @@ struct PatternDetectionEngine {
             // Only interested in drops
             guard diff < -2 else { continue }
 
-            let impact = diff
             let conf = min(1.0, abs(diff) / 20.0 * Double(withScores.count) / Double(totalDays))
+            let effect = String(format: "%.0f%% avg energy", diff)
 
-            results.append(DetectedPattern(pattern: desc,
-                                           impactPercent: impact,
-                                           confidence: conf,
-                                           exampleCount: withScores.count))
+            let pattern = DetectedPattern(pattern: desc,
+                                          effect: effect,
+                                          evidenceCount: withScores.count,
+                                          confidence: conf)
+
+            results.append((pattern, diff))
         }
 
-        return results.sorted { $0.impactPercent < $1.impactPercent }
+        return results.sorted { $0.1 < $1.1 }.map { $0.0 }
     }
 
     // MARK: - Helpers
