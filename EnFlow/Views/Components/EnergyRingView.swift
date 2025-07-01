@@ -14,6 +14,8 @@ struct EnergyRingView: View {
     var desaturate: Bool = false   // forecast style?
     /// Animate the ring fill from 0 on each appearance
     var animateFromZero: Bool = false
+    /// Highlight the ring with a subtle shimmer animation
+    var shimmer: Bool = false
     /// Supply the “why” bullets from your parent (e.g. summary.explainers)
     var explainers: [String] = []
     /// Supply the timestamp from your parent (e.g. summary.date)
@@ -27,6 +29,7 @@ struct EnergyRingView: View {
     @State private var showExplanation = false
     @State private var ringProgress: Double = 0
     @State private var hasAnimated = false
+    @State private var shimmerAngle: Double = 0
 
     // Base scale applied so the composite ring appears slightly smaller
     private let baseScale: CGFloat = 0.9
@@ -79,6 +82,28 @@ struct EnergyRingView: View {
                                                dash: dashed ? [4, 2] : []))
                     .rotationEffect(.degrees(-90))
                     .animation(.easeOut(duration: 0.8), value: ringProgress)
+                    .overlay(
+                        Group {
+                            if shimmer {
+                                Circle()
+                                    .trim(from: 0, to: CGFloat(ringProgress))
+                                    .stroke(
+                                        AngularGradient(
+                                            gradient: Gradient(colors: [
+                                                .white.opacity(0.0),
+                                                .white.opacity(0.4),
+                                                .white.opacity(0.0)
+                                            ]),
+                                            center: .center,
+                                            angle: .degrees(shimmerAngle)
+                                        ),
+                                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                                    )
+                                    .rotationEffect(.degrees(-90))
+                                    .blendMode(.screen)
+                            }
+                        }
+                    )
 
                 // — Label —
                 VStack(spacing: 4) {
@@ -157,6 +182,12 @@ struct EnergyRingView: View {
                 hasAnimated = true
             } else {
                 ringProgress = sc / 100
+            }
+            if shimmer {
+                shimmerAngle = 0
+                withAnimation(.linear(duration: 5).repeatForever(autoreverses: false)) {
+                    shimmerAngle = 360
+                }
             }
         }
         .onChange(of: score) { newValue in
