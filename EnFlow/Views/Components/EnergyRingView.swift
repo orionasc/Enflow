@@ -12,6 +12,8 @@ struct EnergyRingView: View {
     let score: Double?
     var dashed: Bool     = false   // forecast style?
     var desaturate: Bool = false   // forecast style?
+    /// Animate the ring fill from 0 on each appearance
+    var animateFromZero: Bool = false
     /// Supply the “why” bullets from your parent (e.g. summary.explainers)
     var explainers: [String] = []
     /// Supply the timestamp from your parent (e.g. summary.date)
@@ -23,6 +25,8 @@ struct EnergyRingView: View {
     @ObservedObject private var engine = EnergySummaryEngine.shared
     @State private var pulseScale = 1.0
     @State private var showExplanation = false
+    @State private var ringProgress: Double = 0
+    @State private var hasAnimated = false
 
     // Base scale applied so the composite ring appears slightly smaller
     private let baseScale: CGFloat = 0.9
@@ -68,13 +72,13 @@ struct EnergyRingView: View {
 
                 // — Progress arc —
                 Circle()
-                    .trim(from: 0, to: CGFloat(sc / 100))
+                    .trim(from: 0, to: CGFloat(ringProgress))
                     .stroke(ColorPalette.gradient(for: sc),
                             style: StrokeStyle(lineWidth: 20,
                                                lineCap: .round,
                                                dash: dashed ? [4, 2] : []))
                     .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.8), value: sc)
+                    .animation(.easeOut(duration: 0.8), value: ringProgress)
 
                 // — Label —
                 VStack(spacing: 4) {
@@ -141,6 +145,24 @@ struct EnergyRingView: View {
             withAnimation(.easeOut(duration: 0.35)) { pulseScale = 1.08 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 withAnimation(.easeOut(duration: 0.25)) { pulseScale = 1.0 }
+            }
+        }
+        .onAppear {
+            guard let sc = score else { ringProgress = 0; return }
+            if animateFromZero && !hasAnimated {
+                ringProgress = 0
+                withAnimation(.easeOut(duration: 0.75)) {
+                    ringProgress = sc / 100
+                }
+                hasAnimated = true
+            } else {
+                ringProgress = sc / 100
+            }
+        }
+        .onChange(of: score) { newValue in
+            let val = (newValue ?? 0) / 100
+            withAnimation(.easeOut(duration: 0.8)) {
+                ringProgress = val
             }
         }
         .sheet(isPresented: $showExplanation) {
