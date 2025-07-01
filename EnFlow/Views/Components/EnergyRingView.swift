@@ -31,6 +31,10 @@ struct EnergyRingView: View {
     @State private var showExplanation = false
     @State private var ringProgress: Double = 0
     @State private var hasAnimated = false
+    @State private var shimmerPhase: CGFloat = -1
+
+
+
 
     // Base scale applied so the composite ring appears slightly smaller
     private let baseScale: CGFloat = 0.9
@@ -84,8 +88,35 @@ struct EnergyRingView: View {
                     .rotationEffect(.degrees(-90))
                     .animation(.easeOut(duration: 0.8), value: ringProgress)
                     .applyIf(shimmer) { view in
-                        view.shimmering(duration: 2.4)
+                        view
+                            .overlay(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        .white.opacity(0.0),
+                                        .white.opacity(0.6),
+                                        .white.opacity(0.0)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                .rotationEffect(.degrees(30))
+                                .offset(x: shimmerPhase * 250)
+                                .blendMode(.plusLighter)
+                                .mask(
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(ringProgress))
+                                        .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                                        .rotationEffect(.degrees(-90))
+                                )
+                            )
+                        
                     }
+                    .onAppear {
+                        withAnimation(.linear(duration: 2.4).repeatForever(autoreverses: false)) {
+                            shimmerPhase = 1
+                        }
+                    }
+
 
                 // — Label —
                 VStack(spacing: 4) {
@@ -124,6 +155,7 @@ struct EnergyRingView: View {
                         Image(systemName: "bolt.fill")
                             .font(.system(size: 34, weight: .bold))
                             .foregroundColor(.orange)
+                            .padding()
                     )
                     .transition(.scale.combined(with: .opacity))
             }
