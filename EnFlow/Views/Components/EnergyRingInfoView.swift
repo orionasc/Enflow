@@ -8,7 +8,7 @@ struct EnergyRingInfoView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    Text("The ring represents your current day’s composite energy score, a weighted blend of mental and physical readiness.")
+                    Text("The EnFlow Energy Ring represents your current day’s composite energy score, a weighted blend of your mental and physical readiness.")
                         .frame(maxWidth: .infinity, alignment: .leading)
                     ringStates
                     Text("Sol calculates this score from:")

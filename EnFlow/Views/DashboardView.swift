@@ -103,13 +103,14 @@ struct DashboardView: View {
         // — Composite ring —
         if let summary = todaySummary {
           VStack(spacing: 4) {
-            EnergyRingView(
-              score: missingTodayData ? nil : summary.overallEnergyScore,
-              explainers: summary.explainers,
-              summaryDate: summary.date,
-              animateFromZero: true,
-              shimmer: true
-            )
+              EnergyRingView(
+                score: missingTodayData ? nil : summary.overallEnergyScore,
+                animateFromZero: true,
+                shimmer: true,
+                explainers: summary.explainers,
+                summaryDate: summary.date
+              )
+
             if stepsToday > 1000000 {
               Text("Steps today: \(stepsToday)")
                 .font(.caption2)
