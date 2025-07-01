@@ -39,16 +39,23 @@ struct SimulatedHealthLoader {
         }
 
         let sortedDays = byDay.keys.sorted()
+        guard let lastDay = sortedDays.last else { return [] }
+        let today = cal.startOfDay(for: Date())
+        let offset = cal.dateComponents([.day], from: lastDay, to: today).day ?? 0
+
         let startIndex = max(0, sortedDays.count - daysBack)
         return sortedDays[startIndex...].compactMap { day in
-            guard let acc = byDay[day] else { return nil }
+            guard let acc = byDay[day],
+                  let shifted = cal.date(byAdding: .day, value: offset, to: day) else {
+                return nil
+            }
             let steps = acc.steps
             let restHR = acc.restHRCount > 0 ? acc.restHRTotal / Double(acc.restHRCount) : 0
             let hrv = acc.hrvCount > 0 ? acc.hrvTotal / Double(acc.hrvCount) : 0
             let eff = acc.sleepEffCount > 0 ? acc.sleepEffTotal / Double(acc.sleepEffCount) : 0
             let lat = acc.sleepLatCount > 0 ? acc.sleepLatTotal / Double(acc.sleepLatCount) : 0
             return HealthEvent(
-                date: day,
+                date: shifted,
                 hrv: hrv,
                 restingHR: restHR,
                 sleepEfficiency: eff,
