@@ -84,7 +84,7 @@ struct EnergyRingView: View {
                     .rotationEffect(.degrees(-90))
                     .animation(.easeOut(duration: 0.8), value: ringProgress)
                     .applyIf(shimmer) { view in
-                        view.shimmering()
+                        view.shimmering(duration: 2.4)
                     }
 
                 // — Label —
