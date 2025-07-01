@@ -263,7 +263,7 @@ struct DashboardView: View {
     let tomorrow = cal.startOfDay(for: Date().addingTimeInterval(86_400))
 
     // Health + calendar pulls
-    let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 2)
+    let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 14)
     let steps = await HealthDataPipeline.shared.stepsToday()
     let eventsToday = await CalendarDataPipeline.shared.fetchEvents(for: today)
     let eventsTomorrow = await CalendarDataPipeline.shared.fetchEvents(for: tomorrow)
@@ -289,9 +289,8 @@ struct DashboardView: View {
         profile: profile)?.confidenceScore ?? 0
 
     let todayHealth = healthList.first { cal.isDate($0.date, inSameDayAs: today) }
-    let tomorrowHealth = healthList.first { cal.isDate($0.date, inSameDayAs: tomorrow) }
     let noToday = !(todayHealth?.hasSamples ?? false)
-    let noTomorrow = !(tomorrowHealth?.hasSamples ?? false)
+    let noTomorrow = forecastConf == 0
 
     // 3-part slices
     func slices(from wave: [Double]) -> EnergyForecastModel.EnergyParts {

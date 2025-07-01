@@ -59,7 +59,7 @@ final class EnergyForecastModel: ObservableObject {
     }
 
     let history = health.filter { $0.date <= date }
-    guard let hSample = history.first(where: { calendar.isDate($0.date, inSameDayAs: date) }) else {
+    guard let hSample = history.first(where: { calendar.isDate($0.date, inSameDayAs: date) }) ?? history.last else {
       return nil
     }
 
