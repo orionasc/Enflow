@@ -14,7 +14,7 @@ enum CalendarMode: String, CaseIterable, Identifiable {
 struct CalendarRootView: View {
     @State private var mode: CalendarMode = .day
     @State private var showInsights = false
-    @StateObject private var insightsModel = CalendarInsightsViewModel()
+    @State private var patterns: [DetectedPattern] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -67,9 +67,10 @@ struct CalendarRootView: View {
             .padding(.top, 12)
             .padding(.horizontal, 20)
             .sheet(isPresented: $showInsights) {
-                CalendarInsightsPopup(viewModel: insightsModel)
-                    .task { await loadInsights() }
-                    .presentationDetents([.medium])
+                CalendarInsightsPopup(patterns: patterns) { showInsights = false }
+                    .task { await loadPatterns() }
+                    .presentationDetents([.fraction(0.45)])
+                    .presentationBackground(.clear)
             }
 
             // Dynamic View Injection
@@ -89,10 +90,10 @@ struct CalendarRootView: View {
         .enflowBackground()
         .animation(.easeInOut(duration: 0.25), value: mode)
         .edgesIgnoringSafeArea(.bottom)
-        .task { await loadInsights() }
+        .task { await loadPatterns() }
     }
 
-    private func loadInsights() async {
+    private func loadPatterns() async {
         let cal = Calendar.current
         let end = cal.startOfDay(for: Date())
         guard let start = cal.date(byAdding: .day, value: -30, to: end) else { return }
@@ -114,9 +115,8 @@ struct CalendarRootView: View {
             }
         }
 
-        let patterns = PatternDetectionEngine().detectPatterns(events: events,
-                                                               summaries: summaries)
-        await insightsModel.loadInsights(from: patterns)
+        patterns = PatternDetectionEngine().detectPatterns(events: events,
+                                                          summaries: summaries)
     }
 }
 
