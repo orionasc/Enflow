@@ -32,6 +32,9 @@ struct EnergyRingView: View {
     @State private var ringProgress: Double = 0
     @State private var hasAnimated = false
     @State private var shimmerPhase: CGFloat = -1
+    @State private var rotation: Double = 0
+    @State private var pulseAura = false
+    @State private var showLabel = false
 
 
 
@@ -71,6 +74,41 @@ struct EnergyRingView: View {
                     .opacity(glowStrength * 0.55)
                     .frame(width: 220, height: 220)
 
+                // — Supercharged pulsing aura —
+                if isSupercharged && shimmer {
+                    Circle()
+                        .fill(Color.yellow.opacity(0.4))
+                        .frame(width: 240, height: 240)
+                        .scaleEffect(pulseAura ? 1.25 : 0.9)
+                        .opacity(pulseAura ? 0.0 : 0.6)
+                        .animation(.easeOut(duration: 1.6).repeatForever(autoreverses: false), value: pulseAura)
+                        .onAppear { pulseAura = true }
+
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                gradient: Gradient(colors: [Color.yellow.opacity(0.6), .clear]),
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: size
+                            )
+                        )
+                        .blur(radius: 30)
+                        .frame(width: size * 1.6, height: size * 1.6)
+
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                gradient: Gradient(colors: [Color.orange.opacity(0.4), .clear]),
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: size
+                            )
+                        )
+                        .blur(radius: 60)
+                        .frame(width: size * 1.6, height: size * 1.6)
+                }
+
                 // — Background track —
                 Circle()
                     .stroke(ColorPalette.color(for: sc).opacity(0.15),
@@ -109,11 +147,31 @@ struct EnergyRingView: View {
                                         .rotationEffect(.degrees(-90))
                                 )
                             )
-                        
+                    }
+                    .applyIf(isSupercharged && shimmer) { view in
+                        view
+                            .overlay(
+                                AngularGradient(
+                                    gradient: Gradient(colors: [Color.yellow, Color.orange, Color.red, Color.yellow]),
+                                    center: .center
+                                )
+                                .rotationEffect(.degrees(rotation))
+                                .mask(
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(ringProgress))
+                                        .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                                        .rotationEffect(.degrees(-90))
+                                )
+                            )
                     }
                     .onAppear {
                         withAnimation(.linear(duration: 6.4).repeatForever(autoreverses: false)) {
                             shimmerPhase = 1
+                        }
+                        if isSupercharged && shimmer {
+                            withAnimation(.linear(duration: 12).repeatForever(autoreverses: false)) {
+                                rotation = 360
+                            }
                         }
                     }
 
@@ -128,6 +186,14 @@ struct EnergyRingView: View {
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.white.opacity(0.7))
+                }
+                .applyIf(isSupercharged && shimmer) { view in
+                    view
+                        .scaleEffect(showLabel ? 1 : 0.8)
+                        .opacity(showLabel ? 1 : 0)
+                        .onAppear {
+                            withAnimation(.easeOut(duration: 0.6)) { showLabel = true }
+                        }
                 }
             } else {
                 Circle()
@@ -145,19 +211,23 @@ struct EnergyRingView: View {
                 }
             }
 
-            // — Supercharged bolt & orange ring —
-            if isSupercharged {
-                Circle()
-                    .stroke(Color.orange.opacity(0.8), lineWidth: 3)
-                    .blur(radius: 0.5)
-                    .frame(width: 210, height: 210)
-                    .overlay(
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 34, weight: .bold))
-                            .foregroundColor(.orange)
-                            .padding()
-                    )
-                    .transition(.scale.combined(with: .opacity))
+            // — Supercharged bolt & aura icon —
+            if isSupercharged && shimmer {
+                ZStack {
+                    Circle()
+                        .stroke(Color.orange.opacity(0.8), lineWidth: 3)
+                        .frame(width: 210, height: 210)
+                        .blur(radius: 0.5)
+                    Circle()
+                        .stroke(Color.orange.opacity(0.6), lineWidth: 4)
+                        .frame(width: 60, height: 60)
+                        .blur(radius: 6)
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(.yellow)
+                        .shadow(color: Color.yellow.opacity(0.9), radius: 8)
+                }
+                .transition(.scale.combined(with: .opacity))
             }
 
             // — Info button (top-right) —
@@ -213,9 +283,9 @@ struct EnergyRingView: View {
 struct EnergyRingView_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 30) {
-            EnergyRingView(score: 74)
-            EnergyRingView(score: 93)
-            EnergyRingView(score: nil)
+            EnergyRingView(score: 74, shimmer: true)
+            EnergyRingView(score: 93, shimmer: true)
+            EnergyRingView(score: nil, shimmer: true)
         }
         .padding()
         .background(Color.black)
