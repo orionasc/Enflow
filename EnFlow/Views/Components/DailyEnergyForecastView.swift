@@ -126,31 +126,31 @@ struct DailyEnergyForecastView: View {
                         .transition(.opacity)
                 }
             }
-        }
-        .frame(height: 80)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    dragging = true
-                    let x = min(max(0, value.location.x), width)
-                    let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
-                    if idx != activeIndex {
-                        activeIndex = idx
+            .frame(height: 80)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        dragging = true
+                        let x = min(max(0, value.location.x), width)
+                        let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
+                        if idx != activeIndex {
+                            activeIndex = idx
+                        }
                     }
-                }
-                .onEnded { _ in
-                    dragging = false
-                    withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
-                }
-        )
+                    .onEnded { _ in
+                        dragging = false
+                        withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
+                    }
+            )
 #if !os(iOS)
-        .onHover { inside in
-            if !inside && !dragging {
-                activeIndex = nil
+            .onHover { inside in
+                if !inside && !dragging {
+                    activeIndex = nil
+                }
             }
-        }
 #endif
+        }
     }
 
     private func average(_ vals: [Double]) -> Double {
