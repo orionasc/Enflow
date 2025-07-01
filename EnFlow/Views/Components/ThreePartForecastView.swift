@@ -60,13 +60,15 @@ struct ThreePartForecastView: View {
               .font(.caption)
               .foregroundColor(.white)
             Text("\(Int(val))")
-              .font(.title3.bold())
+              .font(Font.system(.title3, design: .rounded).weight(.bold))
               .foregroundColor(.white)
+              .shadow(color: ColorPalette.color(for: val).opacity(0.8), radius: 3)
           }
         } else {
           Text("--")
-            .font(.title3)
+            .font(Font.system(.title3, design: .rounded))
             .foregroundColor(.white.opacity(0.6))
+            .shadow(color: .white.opacity(0.3), radius: 2)
         }
       }
 

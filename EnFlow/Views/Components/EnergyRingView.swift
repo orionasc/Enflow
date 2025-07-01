@@ -79,8 +79,9 @@ struct EnergyRingView: View {
                 // — Label —
                 VStack(spacing: 4) {
                     Text("\(Int(sc))")
-                        .font(.system(size: 36, weight: .bold))
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
+                        .shadow(color: ColorPalette.color(for: sc).opacity(0.8), radius: 4)
                     Text(status)
                         .font(.caption)
                         .fontWeight(.medium)
@@ -92,8 +93,9 @@ struct EnergyRingView: View {
 
                 VStack(spacing: 4) {
                     Text("--")
-                        .font(.system(size: 36, weight: .bold))
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.8))
+                        .shadow(color: .white.opacity(0.4), radius: 3)
                     Text(status)
                         .font(.caption)
                         .fontWeight(.medium)
