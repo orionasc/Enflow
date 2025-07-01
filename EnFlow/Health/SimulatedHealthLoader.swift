@@ -1,88 +1,69 @@
 import Foundation
 
 // MARK: - SimulatedHealthLoader
-struct SimulatedHealthLoader {
-    static func loadSimulatedHealthEvents(daysBack: Int) -> [HealthEvent] {
-        // Locate CSV in bundle or documents
-        let fm = FileManager.default
-        let bundleURL = Bundle.main.url(forResource: "simulatedData", withExtension: "csv")
-        let docsURL = fm.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("simulatedData.csv")
-        guard let url = bundleURL ?? docsURL,
-              let csv = try? String(contentsOf: url) else { return [] }
+/// Generates synthetic health data for previews and testing.
+final class SimulatedHealthLoader {
+    static let shared = SimulatedHealthLoader()
+    private init() {}
 
-        let lines = csv.split(whereSeparator: { $0.isNewline })
-        guard lines.count > 1 else { return [] }
-
-        let dateFmt = DateFormatter()
-        dateFmt.dateFormat = "yyyy-MM-dd HH:mm"
-        dateFmt.timeZone = TimeZone.current
-        var byDay: [Date: DayAcc] = [:]
+    /// Returns synthetic health data covering today and `daysBack` history.
+    func load(daysBack: Int = 7) -> [HealthEvent] {
         let cal = Calendar.current
-
-        for line in lines.dropFirst() {
-            let cols = line.split(separator: ",", omittingEmptySubsequences: false)
-            guard cols.count >= 15, let ts = dateFmt.date(from: String(cols[0])) else { continue }
-            let day = cal.startOfDay(for: ts)
-            var acc = byDay[day] ?? DayAcc()
-
-            if let v = Double(cols[1]) { acc.steps += Int(v); acc.metrics.insert(.stepCount) }
-            if let v = Double(cols[2]) { acc.restHRTotal += v; acc.restHRCount += 1; acc.metrics.insert(.restingHR) }
-            if let v = Double(cols[3]) { acc.calories += v; acc.metrics.insert(.activeEnergyBurned) }
-            if let v = Double(cols[4]) { acc.hrvTotal += v; acc.hrvCount += 1; acc.metrics.insert(.heartRateVariabilitySDNN) }
-            // Sleep-related columns might be empty
-            if let v = Double(cols[11]) { acc.sleepEffTotal += v; acc.sleepEffCount += 1; acc.metrics.insert(.sleepEfficiency) }
-            if let v = Double(cols[12]) { acc.sleepLatTotal += v; acc.sleepLatCount += 1; acc.metrics.insert(.sleepLatency) }
-            if let v = Double(cols[13]) { acc.deepSleep += v; acc.metrics.insert(.deepSleep) }
-            if let v = Double(cols[14]) { acc.remSleep += v; acc.metrics.insert(.remSleep) }
-
-            byDay[day] = acc
-        }
-
-        let sortedDays = byDay.keys.sorted()
-        guard let lastDay = sortedDays.last else { return [] }
         let today = cal.startOfDay(for: Date())
-        let offset = cal.dateComponents([.day], from: lastDay, to: today).day ?? 0
+        var rng = SystemRandomNumberGenerator()
 
-        let startIndex = max(0, sortedDays.count - daysBack)
-        return sortedDays[startIndex...].compactMap { day in
-            guard let acc = byDay[day],
-                  let shifted = cal.date(byAdding: .day, value: offset, to: day) else {
-                return nil
-            }
-            let steps = acc.steps
-            let restHR = acc.restHRCount > 0 ? acc.restHRTotal / Double(acc.restHRCount) : 0
-            let hrv = acc.hrvCount > 0 ? acc.hrvTotal / Double(acc.hrvCount) : 0
-            let eff = acc.sleepEffCount > 0 ? acc.sleepEffTotal / Double(acc.sleepEffCount) : 0
-            let lat = acc.sleepLatCount > 0 ? acc.sleepLatTotal / Double(acc.sleepLatCount) : 0
+        return (0..<daysBack).compactMap { offset -> HealthEvent? in
+            guard let day = cal.date(byAdding: .day, value: -offset, to: today) else { return nil }
+
+            let steps = Int(clampedNormal(mean: 8000, sd: 1500, minValue: 4000, maxValue: 11000, using: &rng))
+            let hrv = clampedNormal(mean: 70, sd: 7, minValue: 55, maxValue: 85, using: &rng)
+            let resting = clampedNormal(mean: 63, sd: 3, minValue: 58, maxValue: 70, using: &rng)
+            let sleepHours = clampedNormal(mean: 7.5, sd: 0.4, minValue: 6.5, maxValue: 8.5, using: &rng)
+            let deepRatio = clampedNormal(mean: 0.2, sd: 0.04, minValue: 0.1, maxValue: 0.3, using: &rng)
+            let remRatio = clampedNormal(mean: 0.25, sd: 0.04, minValue: 0.15, maxValue: 0.35, using: &rng)
+            let latency = clampedNormal(mean: 15, sd: 5, minValue: 5, maxValue: 40, using: &rng)
+            let efficiency = clampedNormal(mean: 85, sd: 5, minValue: 75, maxValue: 95, using: &rng)
+            let activeEnergy = clampedNormal(mean: 850, sd: 80, minValue: 700, maxValue: 1000, using: &rng)
+
+            let deep = sleepHours * 60 * deepRatio
+            let rem = sleepHours * 60 * remRatio
+
+            let metrics: Set<MetricType> = [
+                .stepCount,
+                .restingHR,
+                .activeEnergyBurned,
+                .heartRateVariabilitySDNN,
+                .sleepEfficiency,
+                .sleepLatency,
+                .deepSleep,
+                .remSleep
+            ]
+
             return HealthEvent(
-                date: shifted,
+                date: day,
                 hrv: hrv,
-                restingHR: restHR,
-                sleepEfficiency: eff,
-                sleepLatency: lat,
-                deepSleep: acc.deepSleep,
-                remSleep: acc.remSleep,
+                restingHR: resting,
+                sleepEfficiency: efficiency,
+                sleepLatency: latency,
+                deepSleep: deep,
+                remSleep: rem,
                 steps: steps,
-                calories: acc.calories,
-                availableMetrics: acc.metrics,
-                hasSamples: !acc.metrics.isEmpty
+                calories: activeEnergy,
+                availableMetrics: metrics,
+                hasSamples: true
             )
-        }
+        }.sorted { $0.date < $1.date }
     }
-}
 
-private struct DayAcc {
-    var steps: Int = 0
-    var calories: Double = 0
-    var restHRTotal: Double = 0
-    var restHRCount: Int = 0
-    var hrvTotal: Double = 0
-    var hrvCount: Int = 0
-    var sleepEffTotal: Double = 0
-    var sleepEffCount: Int = 0
-    var sleepLatTotal: Double = 0
-    var sleepLatCount: Int = 0
-    var deepSleep: Double = 0
-    var remSleep: Double = 0
-    var metrics: Set<MetricType> = []
+    // MARK: Random Helpers
+    private func gaussian(using rng: inout SystemRandomNumberGenerator) -> Double {
+        let u1 = Double.random(in: 0..<1, using: &rng)
+        let u2 = Double.random(in: 0..<1, using: &rng)
+        return sqrt(-2 * log(u1)) * cos(2 * .pi * u2)
+    }
+
+    private func clampedNormal(mean: Double, sd: Double, minValue: Double, maxValue: Double, using rng: inout SystemRandomNumberGenerator) -> Double {
+        let value = gaussian(using: &rng) * sd + mean
+        return max(minValue, min(maxValue, value))
+    }
 }
