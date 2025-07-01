@@ -50,4 +50,24 @@ struct EnFlowTests {
         #expect(text.contains("not really yaml"))
     }
 
+
+    @Test func classifierIdentifiesShortWalkAsBooster() throws {
+        let start = Date()
+        let end = start.addingTimeInterval(900) // 15 min
+        let event = CalendarEvent(eventTitle: "Afternoon Walk", startTime: start, endTime: end, isAllDay: false)
+        let result = CalendarEventClassifier().classify(event)
+        #expect(result.label == "Booster")
+        #expect(result.confidence > 0.7)
+    }
+
+    @Test func classifierIdentifiesLongAfternoonMeetingAsDrainer() throws {
+        let cal = Calendar.current
+        var comps = DateComponents(); comps.hour = 14
+        let start = cal.date(from: comps) ?? Date()
+        let end = start.addingTimeInterval(7200) // 2 h
+        let event = CalendarEvent(eventTitle: "Team Meeting", startTime: start, endTime: end, isAllDay: false)
+        let result = CalendarEventClassifier().classify(event)
+        #expect(result.label == "Drainer")
+        #expect(result.confidence >= 0.8)
+    }
 }
