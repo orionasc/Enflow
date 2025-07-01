@@ -18,20 +18,25 @@ struct CalendarRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Dropdown Header — Top Right + Insights button
-            HStack {
-                Button {
-                    showInsights = true
-                } label: {
-                    Image(systemName: "lightbulb")
-                        .font(.title3)
-                        .padding(8)
+            // Dropdown Header with centered Insights button + mode menu
+            HStack(spacing: 12) {
+                Spacer(minLength: 0)
+                Button(action: { showInsights = true }) {
+                    Text("Insights")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule().fill(
+                                LinearGradient(
+                                    colors: [Color.yellow, Color.orange],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                        )
                 }
-                .sheet(isPresented: $showInsights) {
-                    CalendarInsightsPopup(viewModel: insightsModel)
-                        .presentationDetents([.medium])
-                }
-                Spacer()
                 Menu {
                     ForEach(CalendarMode.allCases) { option in
                         Button {
@@ -57,9 +62,16 @@ struct CalendarRootView: View {
                             .shadow(radius: 2)
                     )
                 }
+                .foregroundColor(.white)
+                Spacer(minLength: 0)
             }
             .padding(.top, 12)
             .padding(.horizontal, 20)
+            .sheet(isPresented: $showInsights) {
+                CalendarInsightsPopup(viewModel: insightsModel)
+                    .task { await loadInsights() }
+                    .presentationDetents([.medium])
+            }
 
             // Dynamic View Injection
             switch mode {
