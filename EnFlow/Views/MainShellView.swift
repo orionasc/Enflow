@@ -13,6 +13,8 @@ struct MainShellView: View {
     @State private var selection = 0
     /// Unique IDs to force-reset scroll position when a tab is revisited
     @State private var tabIDs: [Int: UUID] = [0: UUID(), 1: UUID(), 2: UUID(), 3: UUID()]
+    /// Accumulated rotation for the gear icon
+    @State private var gearRotation = 0.0
     private let accent = ColorPalette.color(for: 70)
 
     var body: some View {
@@ -66,11 +68,15 @@ struct MainShellView: View {
 
             // ───────── Gear button ─────────
             Button {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    gearRotation += 360
+                }
                 showSettings.toggle()
             } label: {
                 Image(systemName: "gearshape")
                     .font(.title3.weight(.semibold))
                     .padding(14)
+                    .rotationEffect(.degrees(gearRotation))
             }
             .accessibilityLabel("Settings")
         }
