@@ -41,6 +41,12 @@ struct DashboardView: View {
 
   private typealias EnergyParts = EnergyForecastModel.EnergyParts
 
+  /// Opacity for the Today/Tomorrow picker. Dims slightly when scrolled.
+  private var pickerOpacity: Double {
+    let base = 1 + Double(scrollOffset / 80)
+    return min(1, max(0.5, base))
+  }
+
   // MARK: Root view ----------------------------------------------------------
   var body: some View {
     ZStack {
@@ -70,6 +76,8 @@ struct DashboardView: View {
       .frame(width: 180)
       .padding(.trailing, 16)
       .padding(.top, pickerTop)
+      .opacity(pickerOpacity)
+      .animation(.easeInOut(duration: 0.2), value: pickerOpacity)
     }
     // Soft haptic on tab switch
     .onChange(of: selection) { _ in
