@@ -97,15 +97,16 @@ struct SuggestedPrioritiesView: View {
       SuggestedPrioritiesInfoView()
     }
     .sheet(item: $selectedForExplain) { p in
-      let parts = p.text.components(separatedBy: .newlines)
-      let header = parts.first ?? p.text
-      let bullets = p.rationale.components(separatedBy: "\n")
-      ExplainSheetView(
-        template: p.template,
-        header: header,
-        bullets: bullets,
-        timestamp: Date()
-      )
+        let parts = p.text.components(separatedBy: .newlines)
+        let header = parts.first ?? p.text
+        let bullets = p.rationale.components(separatedBy: "\n")
+
+        ExplainSheetView(
+            header: header,
+            bullets: bullets,
+            timestamp: Date(),
+            template: p.template
+        )
     }
   }
 

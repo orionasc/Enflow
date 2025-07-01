@@ -95,7 +95,7 @@ struct DashboardView: View {
           title: greeting,
           subtitle: "Your energy status for today:")
         if missingTodayData {
-          Text("No Health Data")
+          Text("Not Enough Health Data")
             .font(.caption)
             .foregroundColor(.orange)
         }
@@ -160,7 +160,7 @@ struct DashboardView: View {
           title: "Tomorrow",
           subtitle: "Tomorrow’s Forecasted Energy")
         if missingTomorrowData {
-          Text("No Health Data")
+          Text("Not Enough Health Data")
             .font(.caption)
             .foregroundColor(.orange)
         }
