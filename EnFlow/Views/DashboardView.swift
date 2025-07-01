@@ -107,7 +107,8 @@ struct DashboardView: View {
               score: missingTodayData ? nil : summary.overallEnergyScore,
               explainers: summary.explainers,
               summaryDate: summary.date,
-              animateFromZero: true
+              animateFromZero: true,
+              shimmer: true
             )
             if stepsToday > 1000000 {
               Text("Steps today: \(stepsToday)")
