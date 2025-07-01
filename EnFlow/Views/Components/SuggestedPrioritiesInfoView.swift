@@ -8,7 +8,7 @@ struct SuggestedPrioritiesInfoView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    ForEach(PriorityTemplate.allCases, id: \.\.self) { t in
+                    ForEach(PriorityTemplate.allCases, id: \.self) { t in
                         priorityRow(t)
                     }
                     Divider()
