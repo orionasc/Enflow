@@ -23,22 +23,30 @@ struct MainShellView: View {
             TabView(selection: $selection) {
                 NavigationView { DashboardView() }
                     .id(tabIDs[0]!)
-                    .tabItem { Label("Dashboard", systemImage: "waveform.path.ecg") }
+                    .tabItem {
+                        TabBarLabel(title: "Dashboard", systemImage: "waveform.path.ecg", index: 0, selection: $selection)
+                    }
                     .tag(0)
 
                 NavigationView { CalendarRootView() }
                     .id(tabIDs[1]!)
-                    .tabItem { Label("Calendar", systemImage: "calendar") }
+                    .tabItem {
+                        TabBarLabel(title: "Calendar", systemImage: "calendar", index: 1, selection: $selection)
+                    }
                     .tag(1)
 
                 NavigationView { TrendsView() }
                     .id(tabIDs[2]!)
-                    .tabItem { Label("Trends", systemImage: "chart.bar.fill") }
+                    .tabItem {
+                        TabBarLabel(title: "Trends", systemImage: "chart.bar.fill", index: 2, selection: $selection)
+                    }
                     .tag(2)
 
                 NavigationView { UserProfileSummaryView() }
                     .id(tabIDs[3]!)
-                    .tabItem { Label("User", systemImage: "person.crop.circle") }
+                    .tabItem {
+                        TabBarLabel(title: "User", systemImage: "person.crop.circle", index: 3, selection: $selection)
+                    }
                     .tag(3)
             }
             .onChange(of: selection) { newValue in
