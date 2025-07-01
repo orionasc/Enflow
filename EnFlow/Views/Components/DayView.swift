@@ -87,8 +87,11 @@ struct DayView: View {
     ScrollView {
       VStack(spacing: 24) {
         HStack(alignment: .center, spacing: 70) {
-          EnergyRingView(score: overallScore, summaryDate: currentDate)
-            .frame(width: 100, height: 100)
+          EnergyRingView(
+            score: overallScore,
+            summaryDate: currentDate,
+            size: 100
+          )
           VStack(alignment: .center, spacing: 12) {
             labeledMiniRing(title: "Morning", value: parts?.morning)
             labeledMiniRing(title: "Afternoon", value: parts?.afternoon)
@@ -106,10 +109,13 @@ struct DayView: View {
   // MARK: ─ Page 2: 24-hour Overview ───────────────────────────
   private var overviewPage: some View {
     ScrollView {
-      VStack(spacing: 85) {
+        VStack(spacing: 85) {
 
-        EnergyRingView(score: overallScore, summaryDate: currentDate)
-          .frame(width: 100, height: 100)
+        EnergyRingView(
+          score: overallScore,
+          summaryDate: currentDate,
+          size: 100
+        )
 
         ThreePartForecastView(parts: parts)
         Text("24-Hour Energy Graph")
