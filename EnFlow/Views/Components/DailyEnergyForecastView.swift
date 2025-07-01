@@ -9,6 +9,8 @@ struct DailyEnergyForecastView: View {
     /// Hour to highlight with a pulsing dot. Nil to disable.
     let highlightHour: Int?
     @State private var pulse = false
+    @State private var activeIndex: Int? = nil
+    @State private var tooltipWidth: CGFloat = 0
 
     private let calendar = Calendar.current
 
@@ -105,8 +107,55 @@ struct DailyEnergyForecastView: View {
                     lineWidth: 1
                 )
             }
+
+            // ───────── Tooltip overlay ─────────────────────────
+            if let idx = activeIndex {
+                let point = points[idx]
+                let score = Int(clamped[idx] * 100)
+                let label = hourLabel(startHour + idx)
+
+                // vertical guide line
+                Path { p in
+                    p.move(to: point)
+                    p.addLine(to: CGPoint(x: point.x, y: point.y - 18))
+                }
+                .stroke(Color.white.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [2]))
+
+                // selection dot
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 6, height: 6)
+                    .position(point)
+
+                // tooltip bubble
+                TooltipBubble(hour: label, score: score)
+                    .background(GeometryReader { g in
+                        Color.clear.onAppear { tooltipWidth = g.size.width }
+                    })
+                    .position(x: clamp(point.x, lower: tooltipWidth / 2, upper: width - tooltipWidth / 2),
+                              y: point.y - 28)
+                    .animation(.easeInOut(duration: 0.25), value: activeIndex)
+                    .transition(.opacity)
+            }
         }
         .frame(height: 80)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    let x = min(max(0, value.location.x), width)
+                    let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
+                    if idx != activeIndex {
+                        activeIndex = idx
+                    }
+                }
+                .onEnded { _ in
+                    withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
+                }
+        )
+        .onHover { inside in
+            if !inside { activeIndex = nil }
+        }
     }
 
     private func average(_ vals: [Double]) -> Double {
@@ -147,5 +196,27 @@ struct DailyEnergyForecastView: View {
             path.addCurve(to: curr, control1: c1, control2: c2)
         }
         return path
+    }
+
+    private func clamp(_ value: CGFloat, lower: CGFloat, upper: CGFloat) -> CGFloat {
+        min(max(value, lower), upper)
+    }
+}
+
+private struct TooltipBubble: View {
+    let hour: String
+    let score: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(hour)
+            Text("\(score)")
+        }
+        .font(.caption.bold())
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.ultraThinMaterial, in: Capsule())
+        .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 1)
+        .foregroundColor(.white)
     }
 }
