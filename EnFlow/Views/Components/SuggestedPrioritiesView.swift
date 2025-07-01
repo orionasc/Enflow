@@ -37,8 +37,8 @@ struct SuggestedPrioritiesView: View {
         Button { showInfo = true } label: {
           Image(systemName: "info.circle")
             .font(.headline)
-            .foregroundColor(.white.opacity(0.6))
         }
+        .buttonStyle(.embossedInfo)
       }
       .padding(.bottom, 4)
 
@@ -80,8 +80,8 @@ struct SuggestedPrioritiesView: View {
               Image(systemName: "info.circle")
                 .font(.headline)
                 .padding(8)
-                .foregroundColor(.white.opacity(0.6))
             }
+            .buttonStyle(.embossedInfo)
           }
         }
       } else {

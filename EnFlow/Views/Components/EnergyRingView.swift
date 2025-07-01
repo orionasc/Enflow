@@ -150,14 +150,11 @@ struct EnergyRingView: View {
             VStack {
                 HStack {
                     Spacer()
-                    Button {
-                        showExplanation = true
-                    } label: {
+                    Button { showExplanation = true } label: {
                         Image(systemName: "info.circle")
                             .font(.headline)
-                            .foregroundColor(.white.opacity(0.5))
                     }
-                    .padding(6)
+                    .buttonStyle(.embossedInfo)
                 }
                 Spacer()
             }
