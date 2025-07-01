@@ -36,6 +36,7 @@ struct DashboardView: View {
   @State private var missingTodayData = false
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
+  @State private var scrollOffset: CGFloat = 0
 
 
   private typealias EnergyParts = EnergyForecastModel.EnergyParts
@@ -80,7 +81,7 @@ struct DashboardView: View {
     // Notch shim
     .safeAreaInset(edge: .top) { Spacer().frame(height: 0) }
 
-    .dashboardBackground()
+    .dashboardBackground(parallaxOffset: scrollOffset)
     .navigationBarTitleDisplayMode(.inline)
     .environmentObject(engine)  // ring-pulse observer
     .task { await loadData() }
@@ -89,6 +90,12 @@ struct DashboardView: View {
   // MARK: TODAY PAGE ----------------------------------------------------------
   private var todayPage: some View {
     ScrollView {
+      GeometryReader { geo in
+        Color.clear
+          .preference(key: ScrollOffsetKey.self,
+                      value: geo.frame(in: .named("scroll")).minY)
+      }
+      .frame(height: 0)
       VStack(alignment: .leading, spacing: 35) {
 
         header(
@@ -148,6 +155,11 @@ struct DashboardView: View {
       .padding(.top, headerPadding)
       .padding(.horizontal)
     }
+    .coordinateSpace(name: "scroll")
+    .onPreferenceChange(ScrollOffsetKey.self) { value in
+      scrollOffset = value
+    }
+    .onAppear { scrollOffset = 0 }
     .scrollIndicators(.hidden)
     .scrollIndicators(.hidden)
   }
@@ -155,6 +167,12 @@ struct DashboardView: View {
   // MARK: TOMORROW PAGE -------------------------------------------------------
   private var tomorrowPage: some View {
     ScrollView {
+      GeometryReader { geo in
+        Color.clear
+          .preference(key: ScrollOffsetKey.self,
+                      value: geo.frame(in: .named("scroll")).minY)
+      }
+      .frame(height: 0)
       VStack(alignment: .leading, spacing: 28) {
 
         header(
@@ -205,6 +223,11 @@ struct DashboardView: View {
       .padding(.top, headerPadding)
       .padding(.horizontal)
     }
+    .coordinateSpace(name: "scroll")
+    .onPreferenceChange(ScrollOffsetKey.self) { value in
+      scrollOffset = value
+    }
+    .onAppear { scrollOffset = 0 }
   }
 
   // MARK: Header helper -------------------------------------------------------
@@ -360,6 +383,14 @@ struct DashboardView: View {
   }
 }
 
+// MARK: Scroll offset preference ---------------------------------------------
+private struct ScrollOffsetKey: PreferenceKey {
+  static var defaultValue: CGFloat = 0
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = nextValue()
+  }
+}
+
 // MARK: Shared background modifier --------------------------------------------
 extension View {
   /// Navy-to-charcoal gradient, ignoring safe-area.
@@ -378,7 +409,8 @@ extension View {
   }
 
   /// Dashboard gradient with subtle center darkening to emphasise the ring.
-  func dashboardBackground() -> some View {
+  /// Optional parallax offset lets the background track scroll motion.
+  func dashboardBackground(parallaxOffset: CGFloat = 0) -> some View {
     background {
       ZStack {
         LinearGradient(
@@ -400,6 +432,7 @@ extension View {
         )
         .blendMode(.multiply)
       }
+      .offset(y: parallaxOffset * 0.25)
       .ignoresSafeArea()
     }
   }
