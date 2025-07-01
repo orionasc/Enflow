@@ -417,6 +417,9 @@ struct DayView: View {
     }
     .navigationBarBackButtonHidden(true)
     .onAppear { Task { await load() } }
+    .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
+      Task { await load() }
+    }
     .onReceive(timer) { now = $0 }
     .enflowBackground()
   }

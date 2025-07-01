@@ -167,6 +167,9 @@ struct TrendsView: View {
             }
         }
         .task { await loadData() }
+        .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
+            Task { await loadData() }
+        }
     }
 
     /// Full data reload (chart + summary)
@@ -213,6 +216,7 @@ struct TrendsView: View {
 
     /// Fetch only chart data.
     private func loadChartData() async {
+        print("[Trends] mode: \(DataModeManager.shared.currentDataMode)")
         // Determine how many days back based on the period
         let days: Int = {
             switch period {

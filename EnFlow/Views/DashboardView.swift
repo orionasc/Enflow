@@ -93,6 +93,9 @@ struct DashboardView: View {
     .navigationBarTitleDisplayMode(.inline)
     .environmentObject(engine)  // ring-pulse observer
     .task { await loadData() }
+    .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
+      Task { await loadData() }
+    }
   }
 
   // MARK: TODAY PAGE ----------------------------------------------------------

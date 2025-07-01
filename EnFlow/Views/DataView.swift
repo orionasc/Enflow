@@ -17,7 +17,7 @@ struct DataView: View {
     @State private var endDate: Date = Date()
     @State private var range: DataRange = .week
     @State private var isLoading = false
-    @AppStorage("useSimulatedHealthData") private var useSimulatedHealthData = false
+    @ObservedObject private var dataMode = DataModeManager.shared
     @Environment(\.dismiss) private var dismiss
 
     /// Sorted list of dates that have either health or calendar data
@@ -56,10 +56,10 @@ struct DataView: View {
                         .padding(.vertical, 4)
                     }
                 }
-                Toggle("Use Simulated Health Data", isOn: $useSimulatedHealthData)
-                    .onChange(of: useSimulatedHealthData) { _ in
-                        Task { await loadHealth() }
-                    }
+                Toggle("Use Simulated Health Data", isOn: Binding(
+                    get: { dataMode.isSimulated() },
+                    set: { DataModeManager.shared.setMode($0 ? .simulated : .real) }
+                ))
 
                 Toggle("Show Calendar Events", isOn: $showCalendarEvents)
                     .onChange(of: showCalendarEvents) { val in
@@ -93,6 +93,12 @@ struct DataView: View {
         }
         .sheet(isPresented: $showDateSheet) { dateRangeSheet }
         .task { await loadHealth() }
+        .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
+            Task {
+                await loadHealth()
+                if showCalendarEvents { await loadCalendar() }
+            }
+        }
         .enflowBackground()
     }
 
