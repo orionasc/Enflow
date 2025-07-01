@@ -20,6 +20,8 @@ struct EnergyRingView: View {
     var summaryDate: Date = Date()
     /// Overall size for the ring (default 180 for full display)
     var size: CGFloat = 180
+    /// Show the small info button that brings up the explainer sheet
+    var showInfoButton: Bool = true
 
     // ───────── Engine + State ──────────────────────────────────────
     @ObservedObject private var engine = EnergySummaryEngine.shared
@@ -121,20 +123,22 @@ struct EnergyRingView: View {
                     .transition(.scale.combined(with: .opacity))
             }
 
-            // — Info button (top-right) —
-            VStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        showExplanation = true
-                    } label: {
-                        Image(systemName: "info.circle")
-                            .font(.headline)
-                            .foregroundColor(.white.opacity(0.5))
+            if showInfoButton {
+                // — Info button (top-right) —
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showExplanation = true
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .font(.headline)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding(6)
                     }
-                    .padding(6)
+                    Spacer()
                 }
-                Spacer()
             }
         }
         .frame(width: size, height: size)
