@@ -18,7 +18,7 @@ struct CalendarRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Dropdown Header with centered Insights button + mode menu
+            // Dropdown header with trailing Insights button and mode menu
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
                 Button(action: { showInsights = true }) {
@@ -63,7 +63,6 @@ struct CalendarRootView: View {
                     )
                 }
                 .foregroundColor(.white)
-                Spacer(minLength: 0)
             }
             .padding(.top, 12)
             .padding(.horizontal, 20)
