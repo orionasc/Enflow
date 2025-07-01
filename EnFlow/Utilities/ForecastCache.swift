@@ -84,4 +84,11 @@ final class ForecastCache {
         guard !vals.isEmpty else { return nil }
         return vals.reduce(0, +) / Double(vals.count)
     }
+
+    func clearAllCachedData() {
+        waves.removeAll()
+        accuracy.removeAll()
+        forecasts.removeAll()
+        persist()
+    }
 }

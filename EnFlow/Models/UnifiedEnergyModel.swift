@@ -19,6 +19,8 @@ final class UnifiedEnergyModel {
                  calendarEvents: [CalendarEvent],
                  profile: UserProfile? = nil) -> DayEnergySummary {
 
+        print("[UnifiedEnergyModel] mode: \(DataModeManager.shared.currentDataMode)")
+
         let summary = summaryEngine.summarize(day: date,
                                               healthEvents: healthEvents,
                                               calendarEvents: calendarEvents,

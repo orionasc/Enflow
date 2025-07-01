@@ -11,8 +11,8 @@ final class HealthDataPipeline: ObservableObject {
 
     private let store = HKHealthStore()
     private let calendar = Calendar.current
-    private var useSimulated: Bool {
-        UserDefaults.standard.bool(forKey: "useSimulatedHealthData")
+    private var isSimulated: Bool {
+        DataModeManager.shared.isSimulated()
     }
 
     private init() {}
@@ -47,7 +47,7 @@ final class HealthDataPipeline: ObservableObject {
     /// Returns an array of `HealthEvent` objects (one per day) going `daysBack` into the past.
     @MainActor
     func fetchDailyHealthEvents(daysBack: Int = 7) async -> [HealthEvent] {
-        if useSimulated {
+        if isSimulated {
             return SimulatedHealthLoader.shared.load(daysBack: daysBack)
         }
 
@@ -186,7 +186,7 @@ final class HealthDataPipeline: ObservableObject {
     /// Returns today\'s step count as an integer value.
     @MainActor
     func stepsToday() async -> Int {
-        if useSimulated {
+        if isSimulated {
             return SimulatedHealthLoader.shared.load(daysBack: 1).first?.steps ?? 0
         }
 

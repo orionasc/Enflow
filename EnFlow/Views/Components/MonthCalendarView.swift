@@ -94,6 +94,9 @@ struct MonthCalendarView: View {
                         }
                 )
                 .task(id: displayMonth) { await loadEnergy() }
+                .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
+                    Task { await loadEnergy() }
+                }
 
                 // Floating “Monthly Trends” button (raised above tab bar)
                 VStack {

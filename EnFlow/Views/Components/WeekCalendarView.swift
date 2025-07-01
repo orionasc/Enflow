@@ -170,6 +170,9 @@ struct WeekCalendarView: View {
                     }
             )
             .task { await loadWeekData() }
+            .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
+                Task { await loadWeekData() }
+            }
             .enflowBackground()
         }
     }
