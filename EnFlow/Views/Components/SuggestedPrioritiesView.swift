@@ -79,7 +79,8 @@ struct SuggestedPrioritiesView: View {
             } label: {
               Image(systemName: "info.circle")
                 .font(.headline)
-                .padding(8)
+                // Smaller padding so the embossed background matches other info buttons
+                .padding(4)
             }
             .buttonStyle(.embossedInfo)
           }
