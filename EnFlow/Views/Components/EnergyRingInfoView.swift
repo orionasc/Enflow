@@ -21,7 +21,7 @@ struct EnergyRingInfoView: View {
                 .cornerRadius(20)
                 .padding()
             }
-            .navigationTitle("Understanding Your Energy Rings")
+            .navigationTitle("Your Energy Score")
             .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showMore) { NavigationStack { MeetSolView() } }
             .enflowBackground()
@@ -40,7 +40,7 @@ struct EnergyRingInfoView: View {
 
     private func ringExample(score: Double, label: String) -> some View {
         VStack(spacing: 4) {
-            EnergyRingView(score: score, size: 60)
+            EnergyRingView(score: score, size: 60, showInfoButton: false)
             Text(label)
                 .font(.caption)
         }
