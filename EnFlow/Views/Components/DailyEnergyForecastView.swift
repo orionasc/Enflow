@@ -13,6 +13,7 @@ struct DailyEnergyForecastView: View {
     @State private var activeIndex: Int? = nil
     @State private var tooltipWidth: CGFloat = 0
     @State private var dragging = false
+    @State private var graphWidth: CGFloat = 0
     
     private let calendar = Calendar.current
     
@@ -125,32 +126,35 @@ struct DailyEnergyForecastView: View {
                         .animation(.easeInOut(duration: 0.25), value: activeIndex)
                         .transition(.opacity)
                 }
+                Color.clear
+                    .onAppear { graphWidth = width }
+                    .onChange(of: width) { graphWidth = $0 }
             }
-            .frame(height: 80)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        dragging = true
-                        let x = min(max(0, value.location.x), width)
-                        let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
-                        if idx != activeIndex {
-                            activeIndex = idx
-                        }
-                    }
-                    .onEnded { _ in
-                        dragging = false
-                        withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
-                    }
-            )
-#if !os(iOS)
-            .onHover { inside in
-                if !inside && !dragging {
-                    activeIndex = nil
-                }
-            }
-#endif
         }
+        .frame(height: 80)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    dragging = true
+                    let x = min(max(0, value.location.x), graphWidth)
+                    let idx = Int(round(x / graphWidth * CGFloat(max(values.count - 1, 1))))
+                    if idx != activeIndex {
+                        activeIndex = idx
+                    }
+                }
+                .onEnded { _ in
+                    dragging = false
+                    withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
+                }
+        )
+#if !os(iOS)
+        .onHover { inside in
+            if !inside && !dragging {
+                activeIndex = nil
+            }
+        }
+#endif
     }
 
     private func average(_ vals: [Double]) -> Double {
