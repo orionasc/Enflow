@@ -106,7 +106,8 @@ struct DashboardView: View {
             EnergyRingView(
               score: missingTodayData ? nil : summary.overallEnergyScore,
               explainers: summary.explainers,
-              summaryDate: summary.date
+              summaryDate: summary.date,
+              animateFromZero: true
             )
             if stepsToday > 1000000 {
               Text("Steps today: \(stepsToday)")
