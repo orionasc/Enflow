@@ -8,18 +8,19 @@ struct DailyEnergyForecastView: View {
     let startHour: Int
     /// Hour to highlight with a pulsing dot. Nil to disable.
     let highlightHour: Int?
+    
     @State private var pulse = false
     @State private var activeIndex: Int? = nil
     @State private var tooltipWidth: CGFloat = 0
-
+    
     private let calendar = Calendar.current
-
+    
     init(values: [Double], startHour: Int = 7, highlightHour: Int? = nil) {
         self.values = values
         self.startHour = startHour
         self.highlightHour = highlightHour
     }
-
+    
     var body: some View {
         GeometryReader { proxy in
             let count = values.count
@@ -27,136 +28,121 @@ struct DailyEnergyForecastView: View {
             let height = proxy.size.height
 
             ZStack {
-
-            // points for smoothed path
-            let clamped = values.map { min(max($0, 0), 1) }
-            let points = (0..<count).map { i -> CGPoint in
-                let x = width * CGFloat(i) / CGFloat(max(count - 1, 1))
-                let y = height * (1 - CGFloat(clamped[i]))
-                return CGPoint(x: x, y: y)
-            }
-            let path = smoothPath(points)
-            let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-
-            // gradient line with a subtle glow
-            ColorPalette.verticalEnergyGradient
-                .mask(path.stroke(style: stroke))
-                .overlay(
-                    // soft glow following the curve
-                    ColorPalette.verticalEnergyGradient
-                        .mask(
-                            path.stroke(
-                                style: StrokeStyle(lineWidth: 6,
-                                                   lineCap: .round,
-                                                   lineJoin: .round)
-                            )
-                        )
-                        .blur(radius: 3)
-                        .opacity(0.7)
-                )
-                .overlay(
-                    ColorPalette.gradient(for: average(clamped) * 100)
-                        .mask(path.stroke(style: stroke))
-                        .blendMode(.overlay)
-                )
-
-            if let h = highlightHour, h >= startHour, h < startHour + count {
-                let idx = h - startHour
-                let pt = points[idx]
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 8, height: 8)
+                let clamped = values.map { min(max($0, 0), 1) }
+                let points = (0..<count).map { i -> CGPoint in
+                    let x = width * CGFloat(i) / CGFloat(max(count - 1, 1))
+                    let y = height * (1 - CGFloat(clamped[i]))
+                    return CGPoint(x: x, y: y)
+                }
+                let path = smoothPath(points)
+                let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                
+                ColorPalette.verticalEnergyGradient
+                    .mask(path.stroke(style: stroke))
                     .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.8), lineWidth: 2)
-                            .scaleEffect(pulse ? 1.6 : 1)
-                            .opacity(pulse ? 0 : 1)
+                        ColorPalette.verticalEnergyGradient
+                            .mask(path.stroke(style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)))
+                            .blur(radius: 3)
+                            .opacity(0.7)
                     )
-                    .position(pt)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
-                            pulse.toggle()
+                    .overlay(
+                        ColorPalette.gradient(for: average(clamped) * 100)
+                            .mask(path.stroke(style: stroke))
+                            .blendMode(.overlay)
+                    )
+                
+                if let h = highlightHour, h >= startHour, h < startHour + count {
+                    let idx = h - startHour
+                    let pt = points[idx]
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 8, height: 8)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.8), lineWidth: 2)
+                                .scaleEffect(pulse ? 1.6 : 1)
+                                .opacity(pulse ? 0 : 1)
+                        )
+                        .position(pt)
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
+                                pulse.toggle()
+                            }
+                        }
+                }
+
+                ForEach(Array(stride(from: 0, to: count, by: 2)), id: \.self) { idx in
+                    let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
+                    Text(hourLabel(startHour + idx))
+                        .font(.system(size: 8))
+                        .foregroundColor(.secondary)
+                        .position(x: x, y: height + 10)
+                }
+
+                ForEach(significantPeaksAndTroughs(), id: \.self) { idx in
+                    let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
+                    Path { p in
+                        p.move(to: CGPoint(x: x, y: 0))
+                        p.addLine(to: CGPoint(x: x, y: height))
+                    }
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .white.opacity(0.5), location: 0.5),
+                                .init(color: .clear, location: 1)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
+                }
+
+                if let idx = activeIndex {
+                    let point = points[idx]
+                    let score = Int(clamped[idx] * 100)
+                    let label = hourLabel(startHour + idx)
+
+                    Path { p in
+                        p.move(to: point)
+                        p.addLine(to: CGPoint(x: point.x, y: point.y - 18))
+                    }
+                    .stroke(Color.white.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [2]))
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 6, height: 6)
+                        .position(point)
+
+                    TooltipBubble(hour: label, score: score)
+                        .background(GeometryReader { g in
+                            Color.clear.onAppear { tooltipWidth = g.size.width }
+                        })
+                        .position(x: clamp(point.x, lower: tooltipWidth / 2, upper: width - tooltipWidth / 2),
+                                  y: point.y - 28)
+                        .animation(.easeInOut(duration: 0.25), value: activeIndex)
+                        .transition(.opacity)
+                }
+            }
+            .frame(height: 80)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let x = min(max(0, value.location.x), width)
+                        let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
+                        if idx != activeIndex {
+                            activeIndex = idx
                         }
                     }
-            }
-
-            // hour labels
-            ForEach(Array(stride(from: 0, to: count, by: 2)), id: \.self) { idx in
-                let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
-                Text(hourLabel(startHour + idx))
-                    .font(.system(size: 8))
-                    .foregroundColor(.secondary)
-                    .position(x: x, y: height + 10)
-            }
-
-            // peak/trough indicators
-            ForEach(significantPeaksAndTroughs(), id: \.self) { idx in
-                let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
-                Path { p in
-                    p.move(to: CGPoint(x: x, y: 0))
-                    p.addLine(to: CGPoint(x: x, y: height))
-                }
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .white.opacity(0.5), location: 0.5),
-                            .init(color: .clear, location: 1)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 1
-                )
-            }
-
-            // ───────── Tooltip overlay ─────────────────────────
-            if let idx = activeIndex {
-                let point = points[idx]
-                let score = Int(clamped[idx] * 100)
-                let label = hourLabel(startHour + idx)
-
-                // vertical guide line
-                Path { p in
-                    p.move(to: point)
-                    p.addLine(to: CGPoint(x: point.x, y: point.y - 18))
-                }
-                .stroke(Color.white.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [2]))
-
-                // selection dot
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 6, height: 6)
-                    .position(point)
-
-                // tooltip bubble
-                TooltipBubble(hour: label, score: score)
-                    .background(GeometryReader { g in
-                        Color.clear.onAppear { tooltipWidth = g.size.width }
-                    })
-                    .position(x: clamp(point.x, lower: tooltipWidth / 2, upper: width - tooltipWidth / 2),
-                              y: point.y - 28)
-                    .animation(.easeInOut(duration: 0.25), value: activeIndex)
-                    .transition(.opacity)
-            }
-        }
-        .frame(height: 80)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    let x = min(max(0, value.location.x), width)
-                    let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
-                    if idx != activeIndex {
-                        activeIndex = idx
+                    .onEnded { _ in
+                        withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
                     }
-                }
-                .onEnded { _ in
-                    withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
-                }
-        )
-        .onHover { inside in
-            if !inside { activeIndex = nil }
+            )
+            .onHover { inside in
+                if !inside { activeIndex = nil }
+            }
         }
     }
 
@@ -190,7 +176,7 @@ struct DailyEnergyForecastView: View {
         guard pts.count > 1 else { return path }
         path.move(to: pts[0])
         for i in 1..<pts.count {
-            let prev = pts[i-1]
+            let prev = pts[i - 1]
             let curr = pts[i]
             let dx = curr.x - prev.x
             let c1 = CGPoint(x: prev.x + dx * 0.6, y: prev.y)
