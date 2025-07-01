@@ -34,9 +34,22 @@ struct DailyEnergyForecastView: View {
             let path = smoothPath(points)
             let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
 
-            // gradient line
+            // gradient line with a subtle glow
             ColorPalette.verticalEnergyGradient
                 .mask(path.stroke(style: stroke))
+                .overlay(
+                    // soft glow following the curve
+                    ColorPalette.verticalEnergyGradient
+                        .mask(
+                            path.stroke(
+                                style: StrokeStyle(lineWidth: 6,
+                                                   lineCap: .round,
+                                                   lineJoin: .round)
+                            )
+                        )
+                        .blur(radius: 3)
+                        .opacity(0.7)
+                )
                 .overlay(
                     ColorPalette.gradient(for: average(clamped) * 100)
                         .mask(path.stroke(style: stroke))
