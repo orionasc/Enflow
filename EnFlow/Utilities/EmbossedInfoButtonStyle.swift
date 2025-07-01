@@ -5,7 +5,8 @@ struct EmbossedInfoButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(.white.opacity(0.7))
-            .padding(6)
+            // Tighter padding so the embossed circle hugs the icon
+            .padding(4)
             .background(
                 Circle()
                     .fill(Color.white.opacity(0.15))
