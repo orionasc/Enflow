@@ -90,7 +90,7 @@ struct DayView: View {
           EnergyRingView(
             score: overallScore,
             summaryDate: currentDate,
-            size: 100
+            size: 150
           )
           VStack(alignment: .center, spacing: 12) {
             labeledMiniRing(title: "Morning", value: parts?.morning)
