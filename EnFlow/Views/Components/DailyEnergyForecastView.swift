@@ -12,6 +12,7 @@ struct DailyEnergyForecastView: View {
     @State private var pulse = false
     @State private var activeIndex: Int? = nil
     @State private var tooltipWidth: CGFloat = 0
+    @State private var dragging = false
     
     private let calendar = Calendar.current
     
@@ -130,6 +131,7 @@ struct DailyEnergyForecastView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        dragging = true
                         let x = min(max(0, value.location.x), width)
                         let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
                         if idx != activeIndex {
@@ -137,12 +139,17 @@ struct DailyEnergyForecastView: View {
                         }
                     }
                     .onEnded { _ in
+                        dragging = false
                         withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
                     }
             )
+#if !os(iOS)
             .onHover { inside in
-                if !inside { activeIndex = nil }
+                if !inside && !dragging {
+                    activeIndex = nil
+                }
             }
+#endif
         }
     }
 
