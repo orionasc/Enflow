@@ -48,7 +48,7 @@ final class HealthDataPipeline: ObservableObject {
     @MainActor
     func fetchDailyHealthEvents(daysBack: Int = 7) async -> [HealthEvent] {
         if useSimulated {
-            return SimulatedHealthLoader.loadSimulatedHealthEvents(daysBack: daysBack)
+            return SimulatedHealthLoader.shared.load(daysBack: daysBack)
         }
 
         let today = calendar.startOfDay(for: Date())
@@ -187,7 +187,7 @@ final class HealthDataPipeline: ObservableObject {
     @MainActor
     func stepsToday() async -> Int {
         if useSimulated {
-            return SimulatedHealthLoader.loadSimulatedHealthEvents(daysBack: 1).first?.steps ?? 0
+            return SimulatedHealthLoader.shared.load(daysBack: 1).first?.steps ?? 0
         }
 
         let start = calendar.startOfDay(for: Date())
