@@ -308,12 +308,14 @@ struct DayView: View {
             .rotationEffect(.degrees(-90))
             .frame(width: 32, height: 32)
           Text("\(Int(v))")
-            .font(.caption2.bold())
+            .font(Font.system(.caption2, design: .rounded).weight(.bold))
             .foregroundColor(.white)
+            .shadow(color: ColorPalette.color(for: v).opacity(0.8), radius: 2)
         } else {
           Text("--")
-            .font(.caption2.bold())
+            .font(Font.system(.caption2, design: .rounded).weight(.bold))
             .foregroundColor(.white.opacity(0.6))
+            .shadow(color: .white.opacity(0.3), radius: 1.5)
         }
       }
       Text(title)
