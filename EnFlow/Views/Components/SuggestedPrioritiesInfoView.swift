@@ -25,6 +25,7 @@ struct SuggestedPrioritiesInfoView: View {
             .navigationTitle("How Priorities Are Picked")
             .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showProfileQuiz) { NavigationStack { UserProfileQuizView() } }
+            .enflowBackground()
         }
     }
 
