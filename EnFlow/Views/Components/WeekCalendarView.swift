@@ -13,6 +13,9 @@ struct WeekCalendarView: View {
     @State private var dayScores: [Double?] = Array(repeating: nil, count: 7)
     @State private var events: [CalendarEvent] = []
     @State private var selectedDay: Date? = nil
+    @State private var now = Date()
+
+    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private let calendar = Calendar.current
     private let hours = Array(4..<24)   // 4 AM … 11 PM
@@ -101,8 +104,8 @@ struct WeekCalendarView: View {
                                         if energyMatrix[day][hIndex] != nil {
                                             LinearGradient(
                                                 gradient: Gradient(stops: [
-                                                    .init(color: ColorPalette.color(for: energyPct).opacity(0.2), location: 0),
-                                                    .init(color: ColorPalette.color(for: nextEnergyPct).opacity(0.2), location: 1)
+                                                    .init(color: ColorPalette.color(for: energyPct).opacity(0.35), location: 0),
+                                                    .init(color: ColorPalette.color(for: nextEnergyPct).opacity(0.35), location: 1)
                                                 ]),
                                                 startPoint: .top,
                                                 endPoint: .bottom
@@ -142,6 +145,7 @@ struct WeekCalendarView: View {
                             }
                         }
                     }
+                    .overlay(timeIndicator, alignment: .topLeading)
                     .padding(.horizontal, 4)
                     .padding(.bottom, 40)
                 }
@@ -173,6 +177,7 @@ struct WeekCalendarView: View {
             .onReceive(NotificationCenter.default.publisher(for: .didChangeDataMode)) { _ in
                 Task { await loadWeekData() }
             }
+            .onReceive(timer) { now = $0 }
             .enflowBackground()
         }
     }
@@ -239,6 +244,21 @@ struct WeekCalendarView: View {
         return max(rowHeight, rowHeight * CGFloat(hours))
     }
 
+    @ViewBuilder
+    private var timeIndicator: some View {
+        let startHour = hours.first ?? 0
+        let hour = calendar.component(.hour, from: now)
+        let minute = calendar.component(.minute, from: now)
+        if hour >= startHour && hour <= hours.last ?? 23 && calendar.isDateInToday(now) {
+            let idx = hour - startHour
+            let offset = rowHeight * CGFloat(idx) + rowHeight * CGFloat(minute) / 60
+            Rectangle()
+                .fill(Color.orange)
+                .frame(height: 2)
+                .offset(y: offset)
+        }
+    }
+
     private func loadWeekData() async {
         var matrix = Array(
             repeating: Array(repeating: Double?.none, count: hours.count),
@@ -273,7 +293,10 @@ struct WeekCalendarView: View {
                                                                   healthEvents: dayHealth,
                                                                   calendarEvents: dayEvents,
                                                                   profile: profile)
-                    if summary.coverageRatio < 0.3 {
+                    if calendar.isDateInToday(day) {
+                        matrix[d] = Array(summary.hourlyWaveform[4...23])
+                        scores[d] = summary.overallEnergyScore
+                    } else if summary.coverageRatio < 0.3 {
                         matrix[d] = Array(repeating: nil, count: hours.count)
                         scores[d] = nil
                     } else {

@@ -368,7 +368,8 @@ struct DayView: View {
                                                     calendarEvents: dayEvents,
                                                     profile: profile)
     forecast = summary.hourlyWaveform
-    showHeatMap = summary.coverageRatio >= 0.3 && currentDate <= startOfToday
+    showHeatMap = currentDate <= startOfToday &&
+                 (summary.coverageRatio >= 0.3 || calendar.isDateInToday(currentDate))
     if showHeatMap {
       overallScore = summary.overallEnergyScore
     } else {
