@@ -26,6 +26,8 @@ struct DailyEnergyForecastView: View {
             let width = proxy.size.width
             let height = proxy.size.height
 
+            ZStack {
+
             // points for smoothed path
             let clamped = values.map { min(max($0, 0), 1) }
             let points = (0..<count).map { i -> CGPoint in
