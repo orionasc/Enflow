@@ -30,7 +30,7 @@ struct EnergyLineChartView: View {
                         .blendMode(.overlay)
                 )
         }
-        .frame(height: 60)
+        .frame(minHeight: 80, idealHeight: 120)
     }
 
     private func average(_ values: [Double]) -> Double {
