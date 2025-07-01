@@ -2,6 +2,7 @@ import SwiftUI
 
 struct EnergyLineChartView: View {
     let values: [Double] // expects 24 values 0–1
+    @State private var activeIndex: Int? = nil
 
     var body: some View {
         GeometryReader { proxy in
@@ -29,6 +30,38 @@ struct EnergyLineChartView: View {
                         .mask(waveform.stroke(style: stroke))
                         .blendMode(.overlay)
                 )
+                .overlay(alignment: .topLeading) {
+                    if let idx = activeIndex {
+                        let point = points[idx]
+                        Path { p in
+                            p.move(to: point)
+                            p.addLine(to: CGPoint(x: point.x, y: point.y - 16))
+                        }
+                        .stroke(Color.white.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [2]))
+
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 6, height: 6)
+                            .position(point)
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let x = min(max(0, value.location.x), width)
+                            let idx = Int(round(x / width * CGFloat(max(count - 1, 1))))
+                            if idx != activeIndex {
+                                activeIndex = idx
+                            }
+                        }
+                        .onEnded { _ in
+                            withAnimation(.easeOut(duration: 0.2)) { activeIndex = nil }
+                        }
+                )
+                .onHover { inside in
+                    if !inside { activeIndex = nil }
+                }
         }
         .frame(minHeight: 80, idealHeight: 120)
     }
