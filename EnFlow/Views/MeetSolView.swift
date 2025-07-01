@@ -109,7 +109,7 @@ struct MeetSolView: View {
                 Text("Sol doesn’t just reflect your current energy — it forecasts what’s ahead.")
                     .font(.body)
                 EnergyLineChartView(values: sampleWave)
-                    .frame(height: 60)
+                    .frame(minHeight: 80, idealHeight: 120)
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Uses your past 7–14 days of biometric data", systemImage: "clock.arrow.circlepath")
                     Label("Applies circadian modeling to adjust by time of day", systemImage: "sunrise.fill")
