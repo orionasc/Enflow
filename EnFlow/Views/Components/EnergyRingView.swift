@@ -96,8 +96,8 @@ struct EnergyRingView: View {
                                         .white.opacity(0.6),
                                         .white.opacity(0.0)
                                     ]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                                    startPoint: .bottom,
+                                    endPoint: .top
                                 )
                                 .rotationEffect(.degrees(30))
                                 .offset(x: shimmerPhase * 250)
@@ -112,7 +112,7 @@ struct EnergyRingView: View {
                         
                     }
                     .onAppear {
-                        withAnimation(.linear(duration: 2.4).repeatForever(autoreverses: false)) {
+                        withAnimation(.linear(duration: 6.4).repeatForever(autoreverses: false)) {
                             shimmerPhase = 1
                         }
                     }
