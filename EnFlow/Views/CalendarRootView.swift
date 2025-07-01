@@ -64,7 +64,8 @@ struct CalendarRootView: View {
             // Dynamic View Injection
             switch mode {
             case .day:
-                DayView(date: Date())
+                // Use startOfDay to ensure DayView loads energy correctly
+                DayView(date: Calendar.current.startOfDay(for: Date()))
                     .transition(.opacity)
             case .week:
                 WeekCalendarView()
