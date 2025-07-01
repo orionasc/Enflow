@@ -80,7 +80,7 @@ struct DashboardView: View {
     // Notch shim
     .safeAreaInset(edge: .top) { Spacer().frame(height: 0) }
 
-    .enflowBackground()
+    .dashboardBackground()
     .navigationBarTitleDisplayMode(.inline)
     .environmentObject(engine)  // ring-pulse observer
     .task { await loadData() }
@@ -372,6 +372,33 @@ extension View {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
       )
+      .ignoresSafeArea()
+    }
+  }
+
+  /// Dashboard gradient with subtle center darkening to emphasise the ring.
+  func dashboardBackground() -> some View {
+    background {
+      ZStack {
+        LinearGradient(
+          gradient: Gradient(colors: [
+            Color(red: 0.05, green: 0.08, blue: 0.20),  // deep navy
+            Color(red: 0.12, green: 0.12, blue: 0.12),  // charcoal
+          ]),
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        )
+        RadialGradient(
+          gradient: Gradient(colors: [
+            Color.black.opacity(0.25),
+            Color.clear
+          ]),
+          center: .center,
+          startRadius: 0,
+          endRadius: 300
+        )
+        .blendMode(.multiply)
+      }
       .ignoresSafeArea()
     }
   }
