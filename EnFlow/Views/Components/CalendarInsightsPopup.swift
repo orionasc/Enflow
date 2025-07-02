@@ -2,30 +2,65 @@ import SwiftUI
 
 /// Compact popup displaying calendar-related insights.
 struct CalendarInsightsPopup: View {
-    @ObservedObject var viewModel: CalendarInsightsViewModel
-    @Environment(\.dismiss) private var dismiss
+    /// Patterns requiring GPT summaries.
+    let patterns: [DetectedPattern]
+    /// Dismissal handler provided by the sheet presenter.
+    var dismiss: () -> Void
+
+    /// Loaded insight texts.
+    @State private var insights: [String] = []
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .topTrailing) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(viewModel.insights, id: \.self) { line in
+                        Text("Energy Insights")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 4)
+                        ForEach(insights, id: \.self) { line in
                             InsightBannerView(text: line)
                         }
                     }
                     .padding()
                 }
                 Button("Close") { dismiss() }
+                    .buttonStyle(.bordered)
                     .padding()
             }
             .frame(width: proxy.size.width * 0.9)
-            .frame(height: proxy.size.height * 0.45)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
             .cornerRadius(20)
             .shadow(radius: 20)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .enflowBackground()
+        }
+        .task { await loadInsights() }
+    }
+
+    /// Generates summaries for all detected patterns in parallel.
+    @MainActor
+    private func loadInsights() async {
+        guard !patterns.isEmpty else { return }
+
+        var seen = Set<String>()
+
+        await withTaskGroup(of: String.self) { group in
+            for pattern in patterns {
+                group.addTask { await generateGPTInsight(from: pattern) }
+            }
+
+            for await raw in group {
+                let text = raw == "Insight not available." ?
+                    "Insight unavailable for this pattern." : raw
+                if seen.insert(text).inserted {
+                    insights.append(text)
+                }
+            }
         }
     }
 }
