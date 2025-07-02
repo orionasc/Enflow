@@ -13,11 +13,22 @@ struct UserProfileQuizView: View {
                     Toggle("Use Sleep Aid", isOn: $profile.usesSleepAid)
                     Toggle("Screens Before Bed", isOn: $profile.screensBeforeBed)
                     Toggle("Regular Meals", isOn: $profile.mealsRegular)
-                    Picker("Most Energy [Self Report]", selection: $profile.chronotype) {
-                        ForEach(UserProfile.Chronotype.allCases) { c in
-                            Text(c.rawValue.capitalized).tag(c)
+                    HStack {
+                        Picker("Most Energy [Self Report]", selection: $profile.chronotype) {
+                            ForEach(UserProfile.Chronotype.selectableCases) { c in
+                                Text(c.rawValue.capitalized).tag(c)
+                            }
+                        }
+                        Button {
+                            profile.chronotype = .none
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
                         }
                     }
+                    Text("When do you feel you have the most energy?")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
 
                 Section("Caffeine") {
