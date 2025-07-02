@@ -53,6 +53,11 @@ struct DayEnergyInsightsView: View {
                         HStack {
                             Text("Event Impact")
                                 .font(.headline)
+                            Image(systemName: "bolt.arrow.up.circle.fill")
+                                .foregroundColor(.yellow)
+                                .brightness(0.3)
+                                .saturation(1.8)
+                                .shadow(color: Color.yellow.opacity(0.8), radius: 4)
                             Spacer()
                             if !showEventImpact {
                                 Text("\(events.count) events today")
@@ -95,6 +100,7 @@ struct DayEnergyInsightsView: View {
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 
@@ -127,17 +133,32 @@ private struct EnergyImpactEventRow: View {
 
         var color: Color {
             switch self {
-            case .boost: return .green
-            case .drain: return .red
-            case .neutral: return .gray
+            case .boost: return .yellow
+            case .drain: return .cyan
+            case .neutral: return Color.green.opacity(0.4)
             case .insufficient: return .gray
+            }
+        }
+
+        var brightness: Double {
+            switch self {
+            case .boost, .drain: return 0.3
+            default: return 0.0
+            }
+        }
+
+        var saturation: Double {
+            switch self {
+            case .boost: return 1.8
+            case .drain: return 1.5
+            default: return 1.0
             }
         }
 
         var icon: String {
             switch self {
             case .boost: return "bolt.arrow.up"
-            case .drain: return "battery.25"
+            case .drain: return "arrow.down.circle.fill"
             case .neutral: return "equal.circle"
             case .insufficient: return "questionmark"
             }
@@ -168,6 +189,9 @@ private struct EnergyImpactEventRow: View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: impact.icon)
                 .foregroundColor(impact.color)
+                .brightness(impact.brightness)
+                .saturation(impact.saturation)
+                .shadow(color: impact.color.opacity(0.8), radius: 3)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -179,16 +203,26 @@ private struct EnergyImpactEventRow: View {
             }
             Spacer()
             Text(impact.label)
-                .font(.caption2.bold())
+                .font(.caption2.weight(.semibold))
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
-                .background(impact.color.opacity(0.2))
-                .clipShape(Capsule())
+                .background(
+                    Capsule()
+                        .fill(impact.color.opacity(0.2))
+                )
         }
         .padding(8)
         .frame(minHeight: 60)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            Rectangle()
+                .fill(impact.color)
+                .brightness(impact.brightness)
+                .saturation(impact.saturation)
+                .frame(width: 3),
+            alignment: .leading
+        )
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 }
