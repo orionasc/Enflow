@@ -109,12 +109,12 @@ struct DayView: View {
   // MARK: ─ Page 2: 24-hour Overview ───────────────────────────
   private var overviewPage: some View {
     ScrollView {
-        VStack(spacing: 85) {
+        VStack(spacing: 40) {
 
-        EnergyRingView(
-          score: overallScore,
-          summaryDate: currentDate,
-          size: 100
+        DayEnergyInsightsView(
+          forecast: forecast,
+          events: events,
+          date: currentDate
         )
 
         ThreePartForecastView(parts: parts)
