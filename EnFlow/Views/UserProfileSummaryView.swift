@@ -4,10 +4,11 @@ import SwiftUI
 struct UserProfileSummaryView: View {
     @State private var profile: UserProfile = UserProfileStore.load()
     @State private var showEdit = false
-    @State private var showStory = false
     @State private var storyText = ""
     @State private var isLoadingStory = false
     @State private var showDebug = false
+    @State private var showInfoAlert = false
+    @State private var infoMessage = ""
     @ObservedObject private var dataMode = DataModeManager.shared
 
     // Goal checkboxes persisted via AppStorage
@@ -24,16 +25,23 @@ struct UserProfileSummaryView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                Text("User Profile")
+                    .font(.largeTitle.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
                 headerSection
                 overviewCards
+                sectionTitle("Energy Score", info: "Your daily average, based on sleep, movement, and recovery.")
                 energyProfile
+                sectionTitle("Goals", info: "Choose what you'd like to improve.")
                 goalsSection
+                sectionTitle("My Energy Story", info: "A personalized reflection of your energy patterns over time.")
                 storySection
                 debugSection
             }
             .padding()
         }
-        .navigationTitle("User")
+        .navigationTitle("User Profile")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Edit") { showEdit = true }
@@ -43,7 +51,9 @@ struct UserProfileSummaryView: View {
         .sheet(isPresented: $showEdit, onDismiss: { profile = UserProfileStore.load(); Task { await loadAverages() } }) {
             UserProfileQuizView()
         }
-        .sheet(isPresented: $showStory) { storyModal }
+        .alert("Info", isPresented: $showInfoAlert, actions: {}) {
+            Text(infoMessage)
+        }
         .enflowBackground()
     }
 
@@ -58,12 +68,28 @@ struct UserProfileSummaryView: View {
                         .opacity(0.6)
                         .frame(width: 140, height: 140)
                 }
-                EnergyRingView(score: avgScore, size: 120, showInfoButton: false)
-                Image(systemName: "person.circle.fill")
+                Image(systemName: "person.circle")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 80, height: 80)
-                    .foregroundColor(.white)
+                    .foregroundColor(.white.opacity(0.4))
+                    .zIndex(0)
+                EnergyRingView(score: avgScore, size: 120, showInfoButton: false, showValueLabel: false)
+                    .zIndex(1)
+                if let sc = avgScore {
+                    Text("\(Int(sc))")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(6)
+                        .background(
+                            Circle()
+                                .fill(
+                                    RadialGradient(gradient: Gradient(colors: [Color.black.opacity(0.4), .clear]), center: .center, startRadius: 0, endRadius: 40)
+                                )
+                                .blur(radius: 2)
+                        )
+                        .zIndex(2)
+                }
             }
             .onTapGesture { showEdit = true }
         }
@@ -71,17 +97,39 @@ struct UserProfileSummaryView: View {
 
     private var overviewCards: some View {
         VStack(spacing: 16) {
+            sectionTitle("Sleep", info: "Edit your wake and bed times plus other habits.")
             sleepCard
+            sectionTitle("Caffeine", info: "Track your daily caffeine intake.")
             caffeineCard
+            sectionTitle("Activity", info: "Your weekly exercise goal.")
             exerciseCard
         }
     }
 
     private var sleepCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Wake: \(time(profile.typicalWakeTime))", systemImage: "sunrise.fill")
-            Label("Bed: \(time(profile.typicalSleepTime))", systemImage: "moon.fill")
-            Label("Chronotype: \(profile.chronotype.rawValue.capitalized)", systemImage: "clock")
+            DatePicker("Wake", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .onChange(of: profile.typicalWakeTime) { _ in save() }
+            DatePicker("Bed", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .onChange(of: profile.typicalSleepTime) { _ in save() }
+            HStack {
+                Picker("Most Energy [Self-Reported]", selection: $profile.chronotype) {
+                    ForEach(UserProfile.Chronotype.allCases) { c in
+                        Text(c.rawValue.capitalized).tag(c)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: profile.chronotype) { _ in save() }
+                Button {
+                    infoMessage = "This helps us understand when you feel at your best."
+                    showInfoAlert = true
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .buttonStyle(.plain)
+            }
             Toggle("Sleep Aid", isOn: $profile.usesSleepAid).onChange(of: profile.usesSleepAid) { _ in save() }
             Toggle("Screens Before Bed", isOn: $profile.screensBeforeBed).onChange(of: profile.screensBeforeBed) { _ in save() }
             Toggle("Regular Meals", isOn: $profile.mealsRegular).onChange(of: profile.mealsRegular) { _ in save() }
@@ -107,7 +155,7 @@ struct UserProfileSummaryView: View {
         VStack(alignment: .leading, spacing: 8) {
             Stepper("Weekly Goal: \(profile.exerciseFrequency)x", value: $profile.exerciseFrequency, in: 0...14)
                 .onChange(of: profile.exerciseFrequency) { _ in save() }
-            Text("You're meeting your target!")
+            Text("Consistent activity pattern")
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }
@@ -141,24 +189,33 @@ struct UserProfileSummaryView: View {
     }
 
     private var storySection: some View {
-        Button("View My Energy Story") { Task { await loadStory() } }
-            .buttonStyle(.borderedProminent)
-    }
-
-    private var storyModal: some View {
-        NavigationStack {
-            ScrollView {
-                if isLoadingStory {
-                    ProgressView().padding()
-                } else {
-                    Text(storyText).padding()
+        VStack(alignment: .leading, spacing: 8) {
+            if isLoadingStory {
+                ProgressView()
+            } else if storyText.isEmpty {
+                Text("Your story is just beginning... We’ll uncover your energy rhythm soon.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            } else {
+                Text(storyText)
+            }
+            HStack {
+                Button("Refresh Story") { Task { await loadStory() } }
+                    .buttonStyle(.bordered)
+                Spacer()
+                NavigationLink(destination: MeetSolView()) {
+                    Text("Go to Sol View")
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Color.accentColor.opacity(0.2))
+                        .clipShape(Capsule())
                 }
             }
-            .navigationTitle("Energy Story")
-            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { showStory = false } } }
-            .presentationDetents([.medium, .large])
         }
+        .onAppear { if storyText.isEmpty { Task { await loadStory() } } }
+        .cardStyle()
     }
+
 
     private var debugSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -178,7 +235,6 @@ struct UserProfileSummaryView: View {
                 }
             }
             NavigationLink { DataView() } label: { Label("Data", systemImage: "chart.bar") }
-            NavigationLink { MeetSolView() } label: { Label("Sol: Our Energy Model", systemImage: "sun.max.fill") }
         }
         .cardStyle()
     }
@@ -187,6 +243,24 @@ struct UserProfileSummaryView: View {
     private func time(_ d: Date) -> String {
         let fmt = DateFormatter(); fmt.timeStyle = .short
         return fmt.string(from: d)
+    }
+
+    private func sectionTitle(_ text: String, info: String? = nil) -> some View {
+        HStack(spacing: 4) {
+            Text(text)
+                .font(.title3.bold())
+            if let info {
+                Button {
+                    infoMessage = info
+                    showInfoAlert = true
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func save() {
@@ -232,7 +306,6 @@ struct UserProfileSummaryView: View {
     }
 
     private func loadStory() async {
-        showStory = true
         isLoadingStory = true
         let prompt = """
 Generate a friendly but insightful summary of the user's weekly energy profile based on the following input:
