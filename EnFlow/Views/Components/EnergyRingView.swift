@@ -24,6 +24,8 @@ struct EnergyRingView: View {
     var size: CGFloat = 180
     /// Show the info button that presents additional details
     var showInfoButton: Bool = true
+    /// Show the numeric score label in the center
+    var showValueLabel: Bool = true
 
     // ───────── Engine + State ──────────────────────────────────────
     @ObservedObject private var engine = EnergySummaryEngine.shared
@@ -177,37 +179,41 @@ struct EnergyRingView: View {
 
 
                 // — Label —
-                VStack(spacing: 4) {
-                    Text("\(Int(sc))")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .shadow(color: ColorPalette.color(for: sc).opacity(0.8), radius: 4)
-                    Text(status)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .applyIf(isSupercharged && shimmer) { view in
-                    view
-                        .scaleEffect(showLabel ? 1 : 0.8)
-                        .opacity(showLabel ? 1 : 0)
-                        .onAppear {
-                            withAnimation(.easeOut(duration: 0.6)) { showLabel = true }
-                        }
+                if showValueLabel {
+                    VStack(spacing: 4) {
+                        Text("\(Int(sc))")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .shadow(color: ColorPalette.color(for: sc).opacity(0.8), radius: 4)
+                        Text(status)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .applyIf(isSupercharged && shimmer) { view in
+                        view
+                            .scaleEffect(showLabel ? 1 : 0.8)
+                            .opacity(showLabel ? 1 : 0)
+                            .onAppear {
+                                withAnimation(.easeOut(duration: 0.6)) { showLabel = true }
+                            }
+                    }
                 }
             } else {
                 Circle()
                     .stroke(Color.gray.opacity(0.3), lineWidth: 20)
 
-                VStack(spacing: 4) {
-                    Text("--")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                        .shadow(color: .white.opacity(0.4), radius: 3)
-                    Text(status)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white.opacity(0.6))
+                if showValueLabel {
+                    VStack(spacing: 4) {
+                        Text("--")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
+                            .shadow(color: .white.opacity(0.4), radius: 3)
+                        Text(status)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                 }
             }
 
