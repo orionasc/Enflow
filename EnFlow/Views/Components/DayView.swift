@@ -2,6 +2,7 @@
 //  EnFlow — Updated Day Calendar with optional back button
 
 import SwiftUI
+import EnergyForecastModel
 
 struct DayView: View {
   // ───────── Inputs ─────────────────────────────────────────
@@ -384,22 +385,24 @@ struct DayView: View {
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
     let profile = UserProfileStore.load()
 
-    let summary: DayEnergySummary
-    if currentDate < startOfToday {
-      summary = EnergySummaryEngine.shared.summarize(day: currentDate,
-                                                     healthEvents: healthList,
-                                                     calendarEvents: dayEvents,
-                                                     profile: profile)
-    } else {
-      summary = UnifiedEnergyModel.shared.summary(for: currentDate,
-                                                  healthEvents: healthList,
-                                                  calendarEvents: dayEvents,
-                                                  profile: profile)
-    }
+    let summary = UnifiedEnergyModel.shared.summary(
+      for: currentDate,
+      healthEvents: healthList,
+      calendarEvents: dayEvents,
+      profile: profile
+    )
 
-    if summary.coverageRatio < 0.3 && currentDate < startOfToday {
-      forecast = []
+    if currentDate < startOfToday {
+      // full historical forecast only
+      let hist = EnergyForecastModel.shared.forecast(
+        for: currentDate,
+        health: healthList,
+        events: dayEvents,
+        profile: profile
+      )
+      forecast = hist?.values ?? []
     } else {
+      // today/future unchanged
       forecast = summary.hourlyWaveform
     }
     showHeatMap = currentDate <= startOfToday &&
