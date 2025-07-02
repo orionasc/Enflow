@@ -2,7 +2,6 @@
 //  EnFlow — Updated Day Calendar with optional back button
 
 import SwiftUI
-import EnergyForecastModel
 
 struct DayView: View {
   // ───────── Inputs ─────────────────────────────────────────
@@ -394,13 +393,14 @@ struct DayView: View {
 
     if currentDate < startOfToday {
       // full historical forecast only
-      let hist = EnergyForecastModel.shared.forecast(
+      let model = EnergyForecastModel()
+      let hist = model.forecast(
         for: currentDate,
         health: healthList,
         events: dayEvents,
         profile: profile
       )
-      forecast = hist?.values ?? []
+      forecast = hist.values
     } else {
       // today/future unchanged
       forecast = summary.hourlyWaveform
