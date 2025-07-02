@@ -190,9 +190,10 @@ struct DayView: View {
           .frame(width: 6, height: rowHeight)
           .padding(.trailing, 4)
           .overlay(
-            Group {
-              if forecasted { DotPatternOverlay(color: baseColor).clipShape(Capsule()) }
-            }
+            DotPatternOverlay(color: baseColor)
+              .clipShape(Capsule())
+              .opacity(forecasted ? 1 : 0)
+              .animation(.easeInOut(duration: 0.3), value: forecasted)
           )
       } else {
         Capsule().fill(Color.clear)
@@ -230,8 +231,10 @@ struct DayView: View {
               endPoint: .bottom
             )
           }
-          if forecasted && showEnergy {
+          if showEnergy {
             DotPatternOverlay(color: baseColor)
+              .opacity(forecasted ? 1 : 0)
+              .animation(.easeInOut(duration: 0.3), value: forecasted)
           }
         }
         .frame(maxHeight: .infinity)
