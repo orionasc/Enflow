@@ -147,6 +147,10 @@ struct EnergyRingView: View {
                                         .trim(from: 0, to: CGFloat(ringProgress))
                                         .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round))
                                         .rotationEffect(.degrees(-90))
+                                        // Feather the mask edges so the shimmer
+                                        // fades smoothly as it travels across
+                                        // the ring without hard cutoffs.
+                                        .blur(radius: 3)
                                 )
                             )
                     }
