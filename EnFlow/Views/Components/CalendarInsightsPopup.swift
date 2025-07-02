@@ -9,6 +9,8 @@ struct CalendarInsightsPopup: View {
 
     /// Loaded insight texts.
     @State private var insights: [String] = []
+    /// Fallback text shown if GPT doesn't return a summary.
+    private let fallbackMessage = "EnFlow is working on your predictions, stay tuned for updates!..."
 
     var body: some View {
         GeometryReader { proxy in
@@ -19,8 +21,18 @@ struct CalendarInsightsPopup: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.bottom, 4)
-                        ForEach(insights, id: \.self) { line in
-                            InsightBannerView(text: line)
+                        if insights.isEmpty {
+                            InsightBannerView(
+                                text: fallbackMessage,
+                                icon: "hourglass"
+                            )
+                        } else {
+                            ForEach(insights, id: \.self) { line in
+                                InsightBannerView(
+                                    text: line,
+                                    icon: line == fallbackMessage ? "hourglass" : "lightbulb"
+                                )
+                            }
                         }
                     }
                     .padding()
@@ -55,8 +67,8 @@ struct CalendarInsightsPopup: View {
             }
 
             for await raw in group {
-                let text = raw == "Insight not available." ?
-                    "Insight unavailable for this pattern." : raw
+                let text = raw == fallbackMessage ?
+                    fallbackMessage : raw
                 if seen.insert(text).inserted {
                     insights.append(text)
                 }
