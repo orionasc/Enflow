@@ -267,7 +267,7 @@ struct WeekCalendarView: View {
         var scores = Array(repeating: Double?.none, count: 7)
 
         let health = await HealthDataPipeline.shared
-            .fetchDailyHealthEvents(daysBack: 7)
+            .fetchDailyHealthEvents(daysBack: 60)
         let allEvents = await CalendarDataPipeline.shared
             .fetchEvents(
                 start: startOfWeek,

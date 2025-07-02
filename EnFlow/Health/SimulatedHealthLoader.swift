@@ -15,15 +15,15 @@ final class SimulatedHealthLoader {
         return (0..<daysBack).compactMap { offset -> HealthEvent? in
             guard let day = cal.date(byAdding: .day, value: -offset, to: today) else { return nil }
 
-            let steps = Int(clampedNormal(mean: 8000, sd: 1500, minValue: 4000, maxValue: 11000, using: &rng))
-            let hrv = clampedNormal(mean: 70, sd: 7, minValue: 55, maxValue: 85, using: &rng)
-            let resting = clampedNormal(mean: 63, sd: 3, minValue: 58, maxValue: 70, using: &rng)
-            let sleepHours = clampedNormal(mean: 7.5, sd: 0.4, minValue: 6.5, maxValue: 8.5, using: &rng)
-            let deepRatio = clampedNormal(mean: 0.2, sd: 0.04, minValue: 0.1, maxValue: 0.3, using: &rng)
-            let remRatio = clampedNormal(mean: 0.25, sd: 0.04, minValue: 0.15, maxValue: 0.35, using: &rng)
-            let latency = clampedNormal(mean: 15, sd: 5, minValue: 5, maxValue: 40, using: &rng)
-            let efficiency = clampedNormal(mean: 85, sd: 5, minValue: 75, maxValue: 95, using: &rng)
-            let activeEnergy = clampedNormal(mean: 850, sd: 80, minValue: 700, maxValue: 1000, using: &rng)
+            let steps = Int(clampedNormal(mean: 8000, sd: 3000, minValue: 2000, maxValue: 13000, using: &rng))
+            let hrv = clampedNormal(mean: 65, sd: 20, minValue: 20, maxValue: 120, using: &rng)
+            let resting = clampedNormal(mean: 62, sd: 10, minValue: 45, maxValue: 90, using: &rng)
+            let sleepHours = clampedNormal(mean: 7.0, sd: 1.5, minValue: 4.0, maxValue: 9.0, using: &rng)
+            let deepRatio = clampedNormal(mean: 0.18, sd: 0.08, minValue: 0.05, maxValue: 0.3, using: &rng)
+            let remRatio = clampedNormal(mean: 0.22, sd: 0.08, minValue: 0.1, maxValue: 0.4, using: &rng)
+            let latency = clampedNormal(mean: 20, sd: 10, minValue: 5, maxValue: 60, using: &rng)
+            let efficiency = clampedNormal(mean: 80, sd: 15, minValue: 50, maxValue: 100, using: &rng)
+            let activeEnergy = clampedNormal(mean: 800, sd: 250, minValue: 400, maxValue: 1200, using: &rng)
 
             let deep = sleepHours * 60 * deepRatio
             let rem = sleepHours * 60 * remRatio
