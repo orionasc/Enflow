@@ -16,7 +16,7 @@ struct UserProfileSummaryView: View {
     @AppStorage("goal_reduceDips") private var goalDips = false
     @AppStorage("goal_boostMorning") private var goalMorning = false
     @AppStorage("goal_reduceCaffeine") private var goalCaffeine = false
-    @AppStorage("goal_increaseAccuracy") private var goalAccuracy = false
+    @State private var pulseSol = false
 
     // 7-day averages
     @State private var avgScore: Double? = nil
@@ -25,10 +25,6 @@ struct UserProfileSummaryView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Text("Average Daily Energy:")
-                    .font(.title)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
                 headerSection
                 overviewCards
                 sectionTitle("Energy Score", info: "Your daily average, based on sleep, movement, and recovery.")
@@ -37,6 +33,7 @@ struct UserProfileSummaryView: View {
                 goalsSection
                 sectionTitle("My Energy Story", info: "A personalized reflection of your energy patterns over time.")
                 storySection
+                solPillButton
                 debugSection
             }
             .padding()
@@ -59,7 +56,9 @@ struct UserProfileSummaryView: View {
 
     // MARK: – Sections
     private var headerSection: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Daily Energy Score")
+                .font(.subheadline.weight(.medium))
             ZStack {
                 if let sc = avgScore {
                     Circle()
@@ -108,31 +107,34 @@ struct UserProfileSummaryView: View {
 
     private var sleepCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            DatePicker("Wake", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
-                .labelsHidden()
-                .onChange(of: profile.typicalWakeTime) { _ in save() }
-            DatePicker("Bed", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
-                .labelsHidden()
-                .onChange(of: profile.typicalSleepTime) { _ in save() }
             HStack {
-                Picker("Most Energy [Self-Reported]", selection: $profile.chronotype) {
+                Text("Wake Time")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                DatePicker("", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                    .onChange(of: profile.typicalWakeTime) { _ in save() }
+            }
+            HStack {
+                Text("Bed Time")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                DatePicker("", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                    .onChange(of: profile.typicalSleepTime) { _ in save() }
+            }
+            HStack(alignment: .center) {
+                Text("Self-Reported Peak Energy")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Picker("", selection: $profile.chronotype) {
                     ForEach(UserProfile.Chronotype.allCases) { c in
                         Text(c.rawValue.capitalized).tag(c)
                     }
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: profile.chronotype) { _ in save() }
-                Button {
-                    infoMessage = "When do you feel most energized during the day?"
-                    showInfoAlert = true
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(.plain)
             }
-            Toggle("Sleep Aid", isOn: $profile.usesSleepAid).onChange(of: profile.usesSleepAid) { _ in save() }
-            Toggle("Screens Before Bed", isOn: $profile.screensBeforeBed).onChange(of: profile.screensBeforeBed) { _ in save() }
-            Toggle("Regular Meals", isOn: $profile.mealsRegular).onChange(of: profile.mealsRegular) { _ in save() }
         }
         .cardStyle()
     }
@@ -153,8 +155,15 @@ struct UserProfileSummaryView: View {
 
     private var exerciseCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Stepper("Weekly Goal: \(profile.exerciseFrequency)x", value: $profile.exerciseFrequency, in: 0...14)
+            HStack {
+                Text("Exercise")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Stepper(value: $profile.exerciseFrequency, in: 0...14) {
+                    Text("\(profile.exerciseFrequency)x/week")
+                }
                 .onChange(of: profile.exerciseFrequency) { _ in save() }
+            }
             Text("Consistent activity pattern")
                 .font(.footnote)
                 .foregroundColor(.secondary)
@@ -183,7 +192,6 @@ struct UserProfileSummaryView: View {
             Toggle("Reduce Afternoon Dips", isOn: $goalDips)
             Toggle("Boost Morning Energy", isOn: $goalMorning)
             Toggle("Reduce Caffeine Reliance", isOn: $goalCaffeine)
-            Toggle("Increase Prediction Accuracy", isOn: $goalAccuracy)
         }
         .cardStyle()
     }
@@ -197,19 +205,11 @@ struct UserProfileSummaryView: View {
                     .font(.body)
                     .foregroundColor(.secondary)
             } else {
-                Text(storyText)
+                Text(verbatim: storyText)
             }
             HStack {
                 Button("Refresh Story") { Task { await loadStory() } }
                     .buttonStyle(.bordered)
-                Spacer()
-                NavigationLink(destination: MeetSolView()) {
-                    Text("Go to Sol View")
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(Color.accentColor.opacity(0.2))
-                        .clipShape(Capsule())
-                }
             }
         }
         .onAppear { if storyText.isEmpty { Task { await loadStory() } } }
@@ -237,6 +237,29 @@ struct UserProfileSummaryView: View {
             NavigationLink { DataView() } label: { Label("Data", systemImage: "chart.bar") }
         }
         .cardStyle()
+    }
+
+    private var solPillButton: some View {
+        NavigationLink(destination: MeetSolView()) {
+            Label("Sol", systemImage: "sun.max.fill")
+                .font(.body.bold())
+                .padding(.horizontal, 32)
+                .padding(.vertical, 12)
+                .background(
+                    Capsule().fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                )
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
+                .scaleEffect(pulseSol ? 1.03 : 1)
+        }
+        .buttonStyle(.plain)
+        .onAppear { withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { pulseSol.toggle() } }
     }
 
     // MARK: – Helpers
@@ -320,7 +343,8 @@ Generate a friendly but insightful summary of the user's weekly energy profile b
 """
         do {
             let text = try await OpenAIManager.shared.generateInsight(prompt: prompt)
-            storyText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleaned = text.replacingOccurrences(of: "\"", with: "")
+            storyText = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
         } catch {
             storyText = "Unable to load story."
         }
