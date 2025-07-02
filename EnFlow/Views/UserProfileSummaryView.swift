@@ -42,7 +42,7 @@ struct UserProfileSummaryView: View {
                 energyProfile
                 sectionTitle("Goals", info: "Choose what you'd like to improve.")
                 goalsSection
-                sectionTitle("My Energy Story", info: "A personalized reflection of your energy patterns over time.")
+                sectionTitle("Your Energy Story", info: "A personalized reflection of your energy patterns over time.")
                 storySection
                 solNotesSection
                 debugSection
