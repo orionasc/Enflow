@@ -4,6 +4,14 @@ import Foundation
 struct DayEnergyInsightsView: View {
     let forecast: [Double]
     let events: [CalendarEvent]
+    /// Events shown in the "Event Impact" section after filtering out
+    /// all-day events and ones longer than six hours.
+    private var impactEvents: [CalendarEvent] {
+        events.filter { ev in
+            !ev.isAllDay &&
+            ev.endTime.timeIntervalSince(ev.startTime) <= 6 * 3600
+        }
+    }
     let date: Date
     
     @State private var showEventImpact: Bool
@@ -14,7 +22,13 @@ struct DayEnergyInsightsView: View {
         self.forecast = forecast
         self.events = events
         self.date = date
-        _showEventImpact = State(initialValue: events.count < 3)
+        // Show the section by default only when a small number of
+        // qualifying events exist.
+        let filtered = events.filter { ev in
+            !ev.isAllDay &&
+            ev.endTime.timeIntervalSince(ev.startTime) <= 6 * 3600
+        }
+        _showEventImpact = State(initialValue: filtered.count < 3)
     }
     
     private var peakHour: Int? {
@@ -52,7 +66,7 @@ struct DayEnergyInsightsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                if !events.isEmpty {
+                if !impactEvents.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Button(action: { withAnimation(.easeInOut) { showEventImpact.toggle() } }) {
                             HStack {
@@ -65,16 +79,16 @@ struct DayEnergyInsightsView: View {
                                     .shadow(color: Color.yellow.opacity(0.8), radius: 4)
                                 Spacer()
                                 if !showEventImpact {
-                                    Text("\(events.count) events today")
+                                    Text("\(impactEvents.count) events today")
                                         .foregroundColor(.secondary)
                                 }
                                 Image(systemName: "chevron.down")
                                     .rotationEffect(.degrees(showEventImpact ? 0 : -90))
                             }
                         }
-                        
+
                         if showEventImpact {
-                            ForEach(events) { ev in
+                            ForEach(impactEvents) { ev in
                                 EnergyImpactEventRow(event: ev, forecast: forecast)
                             }
                         }
