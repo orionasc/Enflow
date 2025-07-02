@@ -242,10 +242,12 @@ final class EnergyForecastModel: ObservableObject {
     guard let p = profile else { return circadianBoost }
     let wake = calendar.component(.hour, from: p.typicalWakeTime)
     var shift = wake - 7
-    switch p.chronotype {
-    case .morning: shift -= 1
-    case .evening: shift += 1
-    default: break
+    if let ct = p.chronotype {
+      switch ct {
+      case .morning: shift -= 1
+      case .evening: shift += 1
+      default: break
+      }
     }
     let n = circadianBoost.count
     let offset = ((shift % n) + n) % n

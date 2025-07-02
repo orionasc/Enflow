@@ -15,7 +15,7 @@ struct UserProfileQuizView: View {
                     Toggle("Regular Meals", isOn: $profile.mealsRegular)
                     Picker("Most Energy [Self Report]", selection: $profile.chronotype) {
                         ForEach(UserProfile.Chronotype.allCases) { c in
-                            Text(c.rawValue.capitalized).tag(c)
+                            Text(c.rawValue.capitalized).tag(Optional(c))
                         }
                     }
                 }

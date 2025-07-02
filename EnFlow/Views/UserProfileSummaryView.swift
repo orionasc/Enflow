@@ -145,12 +145,20 @@ struct UserProfileSummaryView: View {
                 Spacer()
                 Picker("", selection: $profile.chronotype) {
                     ForEach(UserProfile.Chronotype.allCases) { c in
-                        Text(c.rawValue.capitalized).tag(c)
+                        Text(c.rawValue.capitalized).tag(Optional(c))
                     }
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: profile.chronotype) { _ in save() }
+                Button(action: { profile.chronotype = nil; save() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+                .padding(.leading, 4)
             }
+            Text("When do you feel you have the most energy?")
+                .font(.footnote)
+                .foregroundColor(.secondary)
         }
         .cardStyle()
     }
@@ -365,13 +373,14 @@ struct UserProfileSummaryView: View {
 
     private func loadStory() async {
         isLoadingStory = true
+        let chrono = profile.chronotype?.rawValue ?? "unknown"
         let prompt = """
 OUTPUT PLAIN TEXT FORMATTING ONLY. NO MARKDOWN. Generate a friendly but insightful summary of the user's weekly energy profile based on the following input:
-- Chronotype: \(profile.chronotype.rawValue)
+- Chronotype: \(chrono)
 - Wake/Sleep Time: \(time(profile.typicalWakeTime)) - \(time(profile.typicalSleepTime))
 - Exercise frequency: \(profile.exerciseFrequency)
 - Caffeine habits: \(profile.caffeineMgPerDay)mg — morning: \(profile.caffeineMorning), afternoon: \(profile.caffeineAfternoon), evening: \(profile.caffeineEvening)
-- Most energetic time of day (user-reported): \(profile.chronotype.rawValue)
+- Most energetic time of day (user-reported): \(chrono)
 - Weekly forecasted energy scores (morning/afternoon/evening)
 - Weekly calculated energy scores (morning/afternoon/evening)
 - System-generated insights:

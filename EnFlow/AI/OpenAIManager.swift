@@ -59,7 +59,9 @@ final class OpenAIManager {
         var parts: [String] = []
         parts.append("wake \(fmt.string(from: profile.typicalWakeTime))")
         parts.append("sleep \(fmt.string(from: profile.typicalSleepTime))")
-        parts.append("chronotype \(profile.chronotype.rawValue)")
+        if let ct = profile.chronotype {
+            parts.append("chronotype \(ct.rawValue)")
+        }
         parts.append("caffeine \(profile.caffeineMgPerDay)mg M:\(profile.caffeineMorning) A:\(profile.caffeineAfternoon) E:\(profile.caffeineEvening)")
         parts.append("exercise \(profile.exerciseFrequency)/wk")
         if let notes = profile.notes, !notes.isEmpty { parts.append("notes: \(notes)") }

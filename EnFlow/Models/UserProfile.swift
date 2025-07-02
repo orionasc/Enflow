@@ -18,7 +18,7 @@ struct UserProfile: Codable, Equatable {
     var usesSleepAid: Bool
     var screensBeforeBed: Bool
     var mealsRegular: Bool
-    var chronotype: Chronotype
+    var chronotype: Chronotype?
     var lastUpdated: Date
     var notes: String?
 }
@@ -39,7 +39,7 @@ extension UserProfile {
             usesSleepAid: false,
             screensBeforeBed: true,
             mealsRegular: true,
-            chronotype: .Afternoon,
+            chronotype: nil,
             lastUpdated: Date(),
             notes: nil
         )
@@ -48,8 +48,9 @@ extension UserProfile {
     func debugSummary() -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "h:mm a"
+        let chrono = chronotype?.rawValue ?? "N/A"
         return "Caffeine: \(caffeineMgPerDay)mg/day (M:\(caffeineMorning), A:\(caffeineAfternoon), E:\(caffeineEvening)). " +
         "Wake \(fmt.string(from: typicalWakeTime)), Sleep \(fmt.string(from: typicalSleepTime)), " +
-        "Exercise \(exerciseFrequency)x/week, Chronotype \(chronotype.rawValue)."
+        "Exercise \(exerciseFrequency)x/week, Chronotype \(chrono)."
     }
 }

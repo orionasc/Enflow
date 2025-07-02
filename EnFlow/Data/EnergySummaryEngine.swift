@@ -252,10 +252,12 @@ final class EnergySummaryEngine: ObservableObject {
         if !p.mealsRegular { bias -= 2 }
         if p.exerciseFrequency >= 5 { bias += 3 }
         if p.exerciseFrequency <= 1 { bias -= 3 }
-        switch p.chronotype {
-        case .morning: bias += 2
-        case .evening: bias -= 2
-        default: break
+        if let ct = p.chronotype {
+            switch ct {
+            case .morning: bias += 2
+            case .evening: bias -= 2
+            default: break
+            }
         }
         return min(max(0, shifted + bias), 100)
     }
