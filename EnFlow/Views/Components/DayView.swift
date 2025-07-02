@@ -154,6 +154,7 @@ struct DayView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(hourMarkers, alignment: .topLeading)
         .overlay(timeIndicator, alignment: .topLeading)
+        .overlay(eventsLayer, alignment: .topLeading)
       } else {
         Text("No Data")
           .font(.headline)
@@ -173,9 +174,6 @@ struct DayView: View {
     let fade = fadeFactor(for: hour)
     let baseColor = ColorPalette.color(for: energy * 100)
     let nextColor = ColorPalette.color(for: nextEnergy * 100)
-    let evs = events.filter {
-      calendar.component(.hour, from: $0.startTime) == hour
-    }
     HStack(spacing: 0) {
       if showEnergy {
         Capsule()
@@ -235,22 +233,6 @@ struct DayView: View {
           if forecasted && showEnergy {
             DotPatternOverlay(color: baseColor)
           }
-          ForEach(evs) { ev in
-            let startMinute = calendar.component(.minute, from: ev.startTime)
-            let minuteOffset = rowHeight * CGFloat(startMinute) / 60
-            RoundedRectangle(cornerRadius: 6)
-              .fill(.ultraThinMaterial)
-              .frame(height: eventHeight(from: ev))
-              .overlay(
-                Text(ev.eventTitle)
-                  .font(.caption2.bold())
-                  .padding(4)
-                  .multilineTextAlignment(.leading)
-                  .frame(maxWidth: .infinity, alignment: .leading),
-                alignment: .topLeading
-              )
-              .offset(y: minuteOffset)
-          }
         }
         .frame(maxHeight: .infinity)
       }
@@ -262,8 +244,10 @@ struct DayView: View {
   }
 
   private func eventHeight(from ev: CalendarEvent) -> CGFloat {
-    let hours = ev.endTime.timeIntervalSince(ev.startTime) / 3600
-    return max(rowHeight, rowHeight * CGFloat(hours))
+    let duration = ev.endTime.timeIntervalSince(ev.startTime) / 3600
+    let gaps = floor(duration)
+    let height = rowHeight * CGFloat(duration) + CGFloat(gaps)
+    return max(rowHeight, height)
   }
 
   private func fadeFactor(for hour: Int) -> Double {
@@ -299,6 +283,31 @@ struct DayView: View {
           path.addLine(to: CGPoint(x: width, y: y))
           ctx.stroke(path, with: .color(Color.white.opacity(0.1)), lineWidth: 0.5)
         }
+      }
+    }
+  }
+
+  private var eventsLayer: some View {
+    GeometryReader { proxy in
+      let xOffset: CGFloat = 6 + 4 + 46 + 6
+      ForEach(events) { ev in
+        let startHr = calendar.component(.hour, from: ev.startTime)
+        let startMin = calendar.component(.minute, from: ev.startTime)
+        let offsetY = (rowHeight + 1) * CGFloat(startHr) + rowHeight * CGFloat(startMin) / 60
+        let width = proxy.size.width - xOffset
+        RoundedRectangle(cornerRadius: 6)
+          .fill(.ultraThinMaterial)
+          .frame(width: width, height: eventHeight(from: ev))
+          .overlay(
+            Text(ev.eventTitle)
+              .font(.caption2.bold())
+              .padding(4)
+              .multilineTextAlignment(.leading)
+              .frame(maxWidth: .infinity, alignment: .leading),
+            alignment: .topLeading
+          )
+          .offset(x: xOffset, y: offsetY)
+          .zIndex(1)
       }
     }
   }
