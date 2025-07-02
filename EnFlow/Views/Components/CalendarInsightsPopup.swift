@@ -10,7 +10,7 @@ struct CalendarInsightsPopup: View {
     /// Loaded insight texts.
     @State private var insights: [String] = []
     /// Fallback text shown if GPT doesn't return a summary.
-    private let fallbackMessage = "EnFlow is working on your predictions, stay tuned for updates!..."
+    private let fallbackMessage = "EnFlow is working on your predictions, stay tuned for updates!"
 
     var body: some View {
         GeometryReader { proxy in

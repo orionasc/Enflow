@@ -25,6 +25,6 @@ func generateGPTInsight(from pattern: DetectedPattern) async -> String {
         )
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     } catch {
-        return "EnFlow is working on your predictions, stay tuned for updates!..."
+        return "EnFlow is working on your predictions, stay tuned for updates!"
     }
 }
