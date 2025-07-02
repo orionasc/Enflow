@@ -366,7 +366,16 @@ struct UserProfileSummaryView: View {
     private func loadStory() async {
         isLoadingStory = true
         let prompt = """
-OUTPUT PLAIN TEXT FORMATTING ONLY. NO MARKDOWN. Generate a friendly but insightful summary of the user's weekly energy profile based on the following input:
+GPT RULES:
+1. Output should be engaging, mildly witty, or insightful — not just a summary of stats.
+2. Highlight correlations, inconsistencies, or trends across behaviors.
+3. Suggest questions or patterns the user might not have noticed.
+4. Allow personality to emerge (e.g., “You seem to crash right after caffeine... suspicious.”)
+5. If data is limited, reflect on potential — not absence (e.g., “Your EnFlow Energy Story is just beginning. Think of this as the prequel.”)
+6. DO NOT use markdown, emojis, or bullet points. Output plain text in full sentences.
+7. Be concise but not dry.
+
+DATA:
 - Chronotype: \(profile.chronotype.rawValue)
 - Wake/Sleep Time: \(time(profile.typicalWakeTime)) - \(time(profile.typicalSleepTime))
 - Exercise frequency: \(profile.exerciseFrequency)
