@@ -29,7 +29,7 @@ You can grant permissions during onboarding or later from the Settings screen.
 
 ## Editing Your User Profile
 
-From the **User** tab you can view your saved habits and tap **Edit Profile** to update them. The quiz collects sleep, caffeine and activity routines. Your answers are stored locally in `UserProfile.json` and influence energy forecasts. Revisit the quiz anytime to keep recommendations fresh.
+Open the **User** tab to adjust your habits directly. Caffeine intake, wake and sleep times and other preferences can be changed inline. Use the **Additional Notes** section to provide any extra context for Sol – these notes are bundled with your data when requesting GPT insights.
 
 ## Testing & Troubleshooting
 

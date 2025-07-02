@@ -3,7 +3,6 @@ import SwiftUI
 /// Redesigned User tab acting as a personal hub for energy behaviour.
 struct UserProfileSummaryView: View {
     @State private var profile: UserProfile = UserProfileStore.load()
-    @State private var showEdit = false
     @State private var storyText = ""
     @State private var isLoadingStory = false
     @State private var showDebug = false
@@ -45,21 +44,13 @@ struct UserProfileSummaryView: View {
                 goalsSection
                 sectionTitle("My Energy Story", info: "A personalized reflection of your energy patterns over time.")
                 storySection
-                solPillButton
+                solNotesSection
                 debugSection
             }
             .padding()
         }
         .navigationTitle("User Profile")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") { showEdit = true }
-            }
-        }
         .task { await loadAverages() }
-        .sheet(isPresented: $showEdit, onDismiss: { profile = UserProfileStore.load(); Task { await loadAverages() } }) {
-            UserProfileQuizView()
-        }
         .alert("Info", isPresented: $showInfoAlert, actions: {}) {
             Text(infoMessage)
         }
@@ -116,7 +107,6 @@ struct UserProfileSummaryView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .onTapGesture { showEdit = true }
         }
     }
 
@@ -167,7 +157,10 @@ struct UserProfileSummaryView: View {
 
     private var caffeineCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Intake: \(profile.caffeineMgPerDay)mg", systemImage: "cup.and.saucer.fill")
+            Stepper(value: $profile.caffeineMgPerDay, in: 0...1000, step: 10) {
+                Label("Intake: \(profile.caffeineMgPerDay)mg", systemImage: "cup.and.saucer.fill")
+            }
+            .onChange(of: profile.caffeineMgPerDay) { _ in save() }
             Toggle("Morning", isOn: $profile.caffeineMorning).onChange(of: profile.caffeineMorning) { _ in save() }
             Toggle("Afternoon", isOn: $profile.caffeineAfternoon).onChange(of: profile.caffeineAfternoon) { _ in save() }
             Toggle("Evening", isOn: $profile.caffeineEvening).onChange(of: profile.caffeineEvening) { _ in save() }
@@ -265,27 +258,43 @@ struct UserProfileSummaryView: View {
         .cardStyle()
     }
 
-    private var solPillButton: some View {
-        NavigationLink(destination: MeetSolView()) {
-            Label("Sol", systemImage: "sun.max.fill")
-                .font(.body.bold())
-                .padding(.horizontal, 32)
-                .padding(.vertical, 12)
-                .background(
-                    Capsule().fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.orange, Color.yellow]),
-                            startPoint: .leading,
-                            endPoint: .trailing
+    private var solNotesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            NavigationLink(destination: MeetSolView()) {
+                Label("Sol", systemImage: "sun.max.fill")
+                    .font(.body.bold())
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule().fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
                     )
-                )
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
-                .scaleEffect(pulseSol ? 1.03 : 1)
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
+                    .scaleEffect(pulseSol ? 1.03 : 1)
+            }
+            .buttonStyle(.plain)
+            .onAppear { withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { pulseSol.toggle() } }
+
+            TextEditor(text: Binding(
+                get: { profile.notes ?? "" },
+                set: { profile.notes = $0; save() }
+            ))
+            .frame(minHeight: 80)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.secondary.opacity(0.3))
+            )
+            Text("Additional Notes for Sol")
+                .font(.footnote)
+                .foregroundColor(.secondary)
         }
-        .buttonStyle(.plain)
-        .onAppear { withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { pulseSol.toggle() } }
+        .cardStyle()
     }
 
     // MARK: – Helpers
