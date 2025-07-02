@@ -20,6 +20,7 @@ struct UserProfileSummaryView: View {
     // 7-day averages
     @State private var avgScore: Double? = nil
     @State private var avgParts: EnergyForecastModel.EnergyParts? = nil
+    @State private var daysOfData: Int = 0
 
     /// Classification label + icon based on the average score
     private var classification: (label: String, icon: String) {
@@ -192,15 +193,17 @@ struct UserProfileSummaryView: View {
 
     private var energyProfile: some View {
         VStack(alignment: .leading, spacing: 12) {
+            ThreePartForecastView(parts: avgParts)
+
             if let parts = avgParts {
-                ThreePartForecastView(parts: parts)
-                let best = bestWindow(from: parts)
-                Text("Best energy in \(best)")
+                Text("Best energy in \(bestWindow(from: parts))")
                     .font(.caption)
                     .foregroundColor(.secondary)
-            } else {
-                ThreePartForecastView(parts: nil)
             }
+
+            Text("7-day average for each period")
+                .font(.footnote)
+                .foregroundColor(.secondary)
         }
         .cardStyle()
     }
@@ -355,11 +358,14 @@ struct UserProfileSummaryView: View {
             }
         }
         avgScore = scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count)
-        if !m.isEmpty {
+        daysOfData = m.count
+        if m.count >= 3 {
             avgParts = EnergyForecastModel.EnergyParts(
-                morning: m.reduce(0, +)/Double(m.count),
-                afternoon: a.reduce(0, +)/Double(a.count),
-                evening: e.reduce(0, +)/Double(e.count))
+                morning: m.reduce(0, +) / Double(m.count),
+                afternoon: a.reduce(0, +) / Double(a.count),
+                evening: e.reduce(0, +) / Double(e.count))
+        } else {
+            avgParts = nil
         }
     }
 

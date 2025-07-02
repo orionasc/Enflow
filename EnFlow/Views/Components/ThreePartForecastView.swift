@@ -18,19 +18,17 @@ struct ThreePartForecastView: View {
 
   var body: some View {
     HStack(spacing: spacing) {
-      ring(title: "Morning", value: parts?.morning, startHour: 5)
-      ring(title: "Afternoon", value: parts?.afternoon, startHour: 12)
-      ring(title: "Evening", value: parts?.evening, startHour: 17)
+      ring(title: "Morning", value: parts?.morning)
+      ring(title: "Afternoon", value: parts?.afternoon)
+      ring(title: "Evening", value: parts?.evening)
     }
     .frame(maxWidth: .infinity)
     .saturation(desaturate ? 0.6 : 1.0)
   }
 
   @ViewBuilder
-  private func ring(title: String, value: Double?, startHour: Int) -> some View {
-    let currentHour = Calendar.current.component(.hour, from: Date())
-    let isAvailable = currentHour >= startHour
-
+  private func ring(title: String, value: Double?) -> some View {
+    
     VStack(spacing: 6) {
       ZStack {
         Circle()
@@ -42,7 +40,7 @@ struct ThreePartForecastView: View {
           )
           .frame(width: ringSize, height: ringSize)
 
-        if isAvailable, let val = value {
+        if let val = value {
           Circle()
             .trim(from: 0, to: CGFloat(val / 100))
             .stroke(
@@ -72,11 +70,15 @@ struct ThreePartForecastView: View {
         }
       }
 
-      if isAvailable, let val = value {
+      if let val = value {
         Text(status(for: val))
           .font(.caption2)
           .fontWeight(.medium)
           .foregroundColor(ColorPalette.color(for: val))
+      } else {
+        Text("More data needed")
+          .font(.caption2)
+          .foregroundColor(.secondary)
       }
     }
     .frame(width: ringSize, height: ringSize + 24)

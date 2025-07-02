@@ -296,9 +296,9 @@ struct DashboardView: View {
     func slices(from wave: [Double]) -> EnergyForecastModel.EnergyParts {
       func avg(_ s: ArraySlice<Double>) -> Double { s.reduce(0, +) / Double(s.count) * 100 }
       return EnergyForecastModel.EnergyParts(
-        morning: avg(wave[0..<8]),
-        afternoon: avg(wave[8..<16]),
-        evening: avg(wave[16..<24])
+        morning: avg(wave[6..<12]),
+        afternoon: avg(wave[12..<18]),
+        evening: avg(wave[18..<24])
       )
     }
     let tParts = slices(from: tSummary.hourlyWaveform)

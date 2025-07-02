@@ -133,9 +133,9 @@ final class EnergyForecastModel: ObservableObject {
     guard let wave = forecast(for: date, health: health, events: events, profile: profile)?.values else { return nil }
     func avg(_ s: ArraySlice<Double>) -> Double { s.reduce(0, +) / Double(s.count) * 100.0 }
     return EnergyParts(
-      morning: avg(wave[0..<8]),
-      afternoon: avg(wave[8..<16]),
-      evening: avg(wave[16..<24]))
+      morning: avg(wave[6..<12]),
+      afternoon: avg(wave[12..<18]),
+      evening: avg(wave[18..<24]))
   }
 
 
