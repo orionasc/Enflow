@@ -25,8 +25,8 @@ struct UserProfileSummaryView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Text("User Profile")
-                    .font(.largeTitle.bold())
+                Text("Average Daily Energy:")
+                    .font(.title)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 8)
                 headerSection
@@ -123,7 +123,7 @@ struct UserProfileSummaryView: View {
                 .pickerStyle(.segmented)
                 .onChange(of: profile.chronotype) { _ in save() }
                 Button {
-                    infoMessage = "This helps us understand when you feel at your best."
+                    infoMessage = "When do you feel most energized during the day?"
                     showInfoAlert = true
                 } label: {
                     Image(systemName: "info.circle")
