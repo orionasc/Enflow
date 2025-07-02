@@ -35,12 +35,17 @@ struct DayEnergyInsightsView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let peak = peakHour {
-                insightRow(icon: "arrow.up", color: .yellow, title: "Peak", hour: peak, score: Int(forecast[peak]*100))
-            }
-            if let low = lowHour {
-                insightRow(icon: "arrow.down", color: .blue, title: "Low", hour: low, score: Int(forecast[low]*100))
+        if forecast.isEmpty {
+            Text("No energy data available for this day.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        } else {
+            VStack(alignment: .leading, spacing: 16) {
+                if let peak = peakHour {
+                    insightRow(icon: "arrow.up", color: .yellow, title: "Peak", hour: peak, score: Int(forecast[peak]*100))
+                }
+                if let low = lowHour {
+                    insightRow(icon: "arrow.down", color: .blue, title: "Low", hour: low, score: Int(forecast[low]*100))
             } else {
                 Text("No low point during the active day.")
                     .font(.subheadline)

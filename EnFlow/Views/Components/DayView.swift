@@ -120,12 +120,19 @@ struct DayView: View {
         ThreePartForecastView(parts: parts)
         Text("24-Hour Energy Graph")
           .font(.title2.weight(.medium))
-        DailyEnergyForecastView(
-          values: forecast,
-          startHour: 0,
-          highlightHour: isToday ? calendar.component(.hour, from: now) : nil
-        )
-          .frame(height: 220)
+
+        if forecast.isEmpty {
+          Text("No data available")
+            .frame(maxWidth: .infinity, minHeight: 220)
+            .foregroundColor(.secondary)
+        } else {
+          DailyEnergyForecastView(
+            values: forecast,
+            startHour: 0,
+            highlightHour: isToday ? calendar.component(.hour, from: now) : nil
+          )
+            .frame(height: 220)
+        }
       }
       .padding()
       .padding(.bottom, 30)
@@ -368,11 +375,24 @@ struct DayView: View {
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
     let profile = UserProfileStore.load()
 
-    let summary = UnifiedEnergyModel.shared.summary(for: currentDate,
-                                                    healthEvents: healthList,
-                                                    calendarEvents: dayEvents,
-                                                    profile: profile)
-    forecast = summary.hourlyWaveform
+    let summary: DayEnergySummary
+    if currentDate < startOfToday {
+      summary = EnergySummaryEngine.shared.summarize(day: currentDate,
+                                                     healthEvents: healthList,
+                                                     calendarEvents: dayEvents,
+                                                     profile: profile)
+    } else {
+      summary = UnifiedEnergyModel.shared.summary(for: currentDate,
+                                                  healthEvents: healthList,
+                                                  calendarEvents: dayEvents,
+                                                  profile: profile)
+    }
+
+    if summary.coverageRatio < 0.3 && currentDate < startOfToday {
+      forecast = []
+    } else {
+      forecast = summary.hourlyWaveform
+    }
     showHeatMap = currentDate <= startOfToday &&
                  (summary.coverageRatio >= 0.3 || calendar.isDateInToday(currentDate))
     if showHeatMap {
