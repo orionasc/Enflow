@@ -145,13 +145,23 @@ struct UserProfileSummaryView: View {
                     .font(.subheadline.weight(.medium))
                 Spacer()
                 Picker("", selection: $profile.chronotype) {
-                    ForEach(UserProfile.Chronotype.allCases) { c in
+                    ForEach(UserProfile.Chronotype.selectableCases) { c in
                         Text(c.rawValue.capitalized).tag(c)
                     }
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: profile.chronotype) { _ in save() }
+                Button {
+                    profile.chronotype = .none
+                    save()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
             }
+            Text("When do you feel you have the most energy?")
+                .font(.footnote)
+                .foregroundColor(.secondary)
         }
         .cardStyle()
     }

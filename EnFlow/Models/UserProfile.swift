@@ -2,10 +2,15 @@ import Foundation
 
 struct UserProfile: Codable, Equatable {
     enum Chronotype: String, CaseIterable, Identifiable, Codable {
+        case none
         case morning
         case Afternoon
         case evening
         var id: String { rawValue }
+
+        /// Options presented to the user. Excludes the `none` case used when
+        /// the chronotype is cleared.
+        static var selectableCases: [Chronotype] { [.morning, .Afternoon, .evening] }
     }
 
     var caffeineMgPerDay: Int
