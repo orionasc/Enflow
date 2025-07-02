@@ -129,7 +129,6 @@ struct DayView: View {
       }
       .padding()
       .padding(.bottom, 30)
-      .padding(.top, 80)
 
     }
   }
