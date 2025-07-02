@@ -49,7 +49,7 @@ struct CalendarInsightsPopup: View {
             .cornerRadius(20)
             .shadow(radius: 20)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .enflowBackground()
+            .background(Color.clear.ignoresSafeArea())
         }
         .task { await loadInsights() }
     }
