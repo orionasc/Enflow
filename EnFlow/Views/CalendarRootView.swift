@@ -22,13 +22,12 @@ struct CalendarRootView: View {
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
                 Button(action: { showInsights = true }) {
-                    Text("Insights")
-                        .font(.subheadline.weight(.semibold))
+                    Image(systemName: "lightbulb.fill")
+                        .font(.headline)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
+                        .padding(8)
                         .background(
-                            Capsule().fill(
+                            Circle().fill(
                                 LinearGradient(
                                     colors: [Color.yellow, Color.orange],
                                     startPoint: .leading,
