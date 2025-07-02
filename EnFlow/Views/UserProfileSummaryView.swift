@@ -22,6 +22,18 @@ struct UserProfileSummaryView: View {
     @State private var avgScore: Double? = nil
     @State private var avgParts: EnergyForecastModel.EnergyParts? = nil
 
+    /// Classification label + icon based on the average score
+    private var classification: (label: String, icon: String) {
+        guard let score = avgScore else { return ("--", "questionmark") }
+        switch score {
+        case ..<60:  return ("Needs Work", "exclamationmark.triangle.fill")
+        case 60..<70: return ("Moderate", "figure.walk.circle.fill")
+        case 70..<80: return ("Great", "hand.thumbsup.fill")
+        case 80..<90: return ("Excellent", "star.fill")
+        default:      return ("Superhuman", "bolt.fill")
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -57,37 +69,51 @@ struct UserProfileSummaryView: View {
     // MARK: – Sections
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Your Daily Average Energy")
+            Text("Your 7-Day Average Energy")
                 .font(.headline)
-            ZStack {
-                if let sc = avgScore {
-                    Circle()
-                        .fill(ColorPalette.color(for: sc))
-                        .blur(radius: 20)
-                        .opacity(0.6)
-                        .frame(width: 140, height: 140)
+            HStack(alignment: .center, spacing: 16) {
+                ZStack {
+                    if let sc = avgScore {
+                        Circle()
+                            .fill(ColorPalette.color(for: sc))
+                            .blur(radius: 20)
+                            .opacity(0.6)
+                            .frame(width: 140, height: 140)
+                    }
+                    Image(systemName: "person.circle")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.white.opacity(0.4))
+                        .zIndex(0)
+                    EnergyRingView(score: avgScore, size: 120, showInfoButton: false, showValueLabel: false)
+                        .zIndex(1)
+                    if let sc = avgScore {
+                        Text("\(Int(sc))")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(6)
+                            .background(
+                                Circle()
+                                    .fill(
+                                        RadialGradient(gradient: Gradient(colors: [Color.black.opacity(0.4), .clear]), center: .center, startRadius: 0, endRadius: 40)
+                                    )
+                                    .blur(radius: 2)
+                            )
+                            .zIndex(2)
+                    }
                 }
-                Image(systemName: "person.circle")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
-                    .foregroundColor(.white.opacity(0.4))
-                    .zIndex(0)
-                EnergyRingView(score: avgScore, size: 120, showInfoButton: false, showValueLabel: false)
-                    .zIndex(1)
-                if let sc = avgScore {
-                    Text("\(Int(sc))")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .padding(6)
-                        .background(
-                            Circle()
-                                .fill(
-                                    RadialGradient(gradient: Gradient(colors: [Color.black.opacity(0.4), .clear]), center: .center, startRadius: 0, endRadius: 40)
-                                )
-                                .blur(radius: 2)
-                        )
-                        .zIndex(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: classification.icon)
+                            .foregroundColor(ColorPalette.color(for: avgScore ?? 0))
+                        Text(classification.label)
+                            .font(.title3.bold())
+                            .foregroundColor(ColorPalette.color(for: avgScore ?? 0))
+                    }
+                    Text("Based on the last week of sleep, activity and recovery.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
             }
             .onTapGesture { showEdit = true }
