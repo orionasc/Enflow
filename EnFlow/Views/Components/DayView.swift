@@ -400,7 +400,7 @@ struct DayView: View {
         events: dayEvents,
         profile: profile
       )
-      forecast = hist.values
+        forecast = hist!.values
     } else {
       // today/future unchanged
       forecast = summary.hourlyWaveform

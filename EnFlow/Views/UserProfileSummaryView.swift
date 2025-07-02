@@ -57,8 +57,8 @@ struct UserProfileSummaryView: View {
     // MARK: – Sections
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Daily Energy Score")
-                .font(.subheadline.weight(.medium))
+            Text("Your Daily Average Energy")
+                .font(.headline)
             ZStack {
                 if let sc = avgScore {
                     Circle()
@@ -124,7 +124,7 @@ struct UserProfileSummaryView: View {
                     .onChange(of: profile.typicalSleepTime) { _ in save() }
             }
             HStack(alignment: .center) {
-                Text("Self-Reported Peak Energy")
+                Text("Peak Energy")
                     .font(.subheadline.weight(.medium))
                 Spacer()
                 Picker("", selection: $profile.chronotype) {
@@ -145,7 +145,7 @@ struct UserProfileSummaryView: View {
             Toggle("Morning", isOn: $profile.caffeineMorning).onChange(of: profile.caffeineMorning) { _ in save() }
             Toggle("Afternoon", isOn: $profile.caffeineAfternoon).onChange(of: profile.caffeineAfternoon) { _ in save() }
             Toggle("Evening", isOn: $profile.caffeineEvening).onChange(of: profile.caffeineEvening) { _ in save() }
-            Text("1 cup ≈ 95mg")
+            Text("1 cup of coffee ≈ 95mg")
                 .font(.footnote).foregroundColor(.secondary)
             Text("Afternoon caffeine correlated with sleep disruption")
                 .font(.footnote).foregroundColor(.secondary)
@@ -331,7 +331,7 @@ struct UserProfileSummaryView: View {
     private func loadStory() async {
         isLoadingStory = true
         let prompt = """
-Generate a friendly but insightful summary of the user's weekly energy profile based on the following input:
+OUTPUT PLAIN TEXT FORMATTING ONLY. NO MARKDOWN. Generate a friendly but insightful summary of the user's weekly energy profile based on the following input:
 - Chronotype: \(profile.chronotype.rawValue)
 - Wake/Sleep Time: \(time(profile.typicalWakeTime)) - \(time(profile.typicalSleepTime))
 - Exercise frequency: \(profile.exerciseFrequency)
