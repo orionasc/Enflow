@@ -262,7 +262,7 @@ struct UserProfileSummaryView: View {
     }
 
     private var solNotesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 8) {
             NavigationLink(destination: MeetSolView()) {
                 Label("Sol", systemImage: "sun.max.fill")
                     .font(.body.bold())
@@ -289,6 +289,8 @@ struct UserProfileSummaryView: View {
                 set: { profile.notes = $0; save() }
             ))
             .frame(minHeight: 80)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.secondary.opacity(0.3))
@@ -297,7 +299,8 @@ struct UserProfileSummaryView: View {
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }
-        .cardStyle()
+        .frame(maxWidth: .infinity)
+        .cardStyle(tint: 100)
     }
 
     // MARK: – Helpers
