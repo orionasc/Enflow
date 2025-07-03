@@ -420,14 +420,48 @@ DATA:
 - System-generated insights:
 """
         do {
-            let text = try await OpenAIManager.shared.generateInsight(prompt: prompt)
-            let cleaned = text.replacingOccurrences(of: "\"", with: "")
-            storyText = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = try await generateEnergyStoryWithRetry(prompt: prompt)
+            storyText = text
         } catch {
             storyText = "Unable to load story."
         }
         isLoadingStory = false
         showWritingIndicator = false
+    }
+
+    /// Detect potential truncation or incomplete text
+    private func isLikelyCutOff(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let minLength = 250
+        let softEndings = [",", "and", "but", "or", "so", "because", "although", "if", "when", "while"]
+
+        guard trimmed.count > 50 else { return true }
+
+        if trimmed.count < minLength || softEndings.contains(where: { trimmed.lowercased().hasSuffix($0) }) {
+            return true
+        }
+
+        return false
+    }
+
+    /// Re-request the GPT story if the response seems truncated
+    private func generateEnergyStoryWithRetry(prompt: String, maxAttempts: Int = 3) async throws -> String {
+        var attempt = 0
+        var result: String = ""
+
+        repeat {
+            attempt += 1
+            let rawText = try await OpenAIManager.shared.generateInsight(prompt: prompt)
+            let cleaned = rawText.replacingOccurrences(of: "\"", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            result = cleaned
+
+            if !isLikelyCutOff(cleaned) {
+                return cleaned
+            }
+
+        } while attempt < maxAttempts
+
+        return result
     }
 }
 
