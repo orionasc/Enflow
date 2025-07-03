@@ -8,6 +8,8 @@ struct DailyEnergyForecastView: View {
     let startHour: Int
     /// Hour to highlight with a pulsing dot. Nil to disable.
     let highlightHour: Int?
+    /// Render the line with a dotted stroke for forecast styling.
+    var dotted: Bool = false
     
     @State private var pulse = false
     @State private var activeIndex: Int? = nil
@@ -16,11 +18,12 @@ struct DailyEnergyForecastView: View {
     @State private var graphWidth: CGFloat = 0
     
     private let calendar = Calendar.current
-    
-    init(values: [Double], startHour: Int = 7, highlightHour: Int? = nil) {
+
+    init(values: [Double], startHour: Int = 7, highlightHour: Int? = nil, dotted: Bool = false) {
         self.values = values
         self.startHour = startHour
         self.highlightHour = highlightHour
+        self.dotted = dotted
     }
     
     var body: some View {
@@ -37,13 +40,14 @@ struct DailyEnergyForecastView: View {
                     return CGPoint(x: x, y: y)
                 }
                 let path = smoothPath(points)
-                let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                let dash: [CGFloat] = dotted ? [2, 3] : []
+                let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round, dash: dash)
                 
                 ColorPalette.verticalEnergyGradient
                     .mask(path.stroke(style: stroke))
                     .overlay(
                         ColorPalette.verticalEnergyGradient
-                            .mask(path.stroke(style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)))
+                    .mask(path.stroke(style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round, dash: dash)))
                             .blur(radius: 3)
                             .opacity(0.7)
                     )
