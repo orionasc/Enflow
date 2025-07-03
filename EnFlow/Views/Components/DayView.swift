@@ -24,6 +24,10 @@ struct DayView: View {
   private let rowHeight: CGFloat = 32
   private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   private var isToday: Bool { calendar.isDateInToday(currentDate) }
+  private var isTomorrow: Bool {
+    guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: Date())) else { return false }
+    return calendar.isDate(currentDate, inSameDayAs: tomorrow)
+  }
 
   // ───────── Init ───────────────────────────────────────────
   init(date: Date, showBackButton: Bool = false) {
@@ -129,7 +133,8 @@ struct DayView: View {
           DailyEnergyForecastView(
             values: forecast,
             startHour: 0,
-            highlightHour: isToday ? calendar.component(.hour, from: now) : nil
+            highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
+            dotted: isTomorrow
           )
             .frame(height: 220)
         }
