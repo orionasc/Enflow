@@ -16,6 +16,7 @@ struct UserProfileSummaryView: View {
     @AppStorage("goal_boostMorning") private var goalMorning = false
     @AppStorage("goal_reduceCaffeine") private var goalCaffeine = false
     @State private var pulseSol = false
+    @State private var showWritingIndicator = false
 
     // 7-day averages
     @State private var avgScore: Double? = nil
@@ -231,13 +232,21 @@ struct UserProfileSummaryView: View {
     private var storySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if isLoadingStory {
-                ProgressView()
+                if showWritingIndicator {
+                    Text("Still writing…")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .transition(.opacity)
+                } else {
+                    ProgressView()
+                }
             } else if storyText.isEmpty {
                 Text("Your story is just beginning... We’ll uncover your energy rhythm soon.")
                     .font(.body)
                     .foregroundColor(.secondary)
             } else {
                 Text(verbatim: storyText)
+                    .transition(.opacity)
             }
             HStack {
                 Button("Refresh Story") { Task { await loadStory() } }
@@ -246,6 +255,7 @@ struct UserProfileSummaryView: View {
         }
         .onAppear { if storyText.isEmpty { Task { await loadStory() } } }
         .cardStyle()
+        .animation(.easeInOut, value: storyText)
     }
 
 
@@ -384,6 +394,10 @@ struct UserProfileSummaryView: View {
 
     private func loadStory() async {
         isLoadingStory = true
+        showWritingIndicator = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            if isLoadingStory { showWritingIndicator = true }
+        }
         let prompt = """
 GPT RULES:
 1. Output should be engaging, mildly witty, or insightful — not just a summary of stats.
@@ -393,6 +407,7 @@ GPT RULES:
 5. If data is limited, reflect on potential — not absence (e.g., “Your EnFlow Energy Story is just beginning. Think of this as the prequel.”)
 6. DO NOT use markdown, emojis, or bullet points. Output plain text in full sentences.
 7. Be concise but not dry.
+8. YOU MUST COMPLETE THE RESPONSE. DO NOT END MID-THOUGHT OR MID-SENTENCE. Make sure your output is a fully formed response, at least 3–5 paragraphs if data is available. If unsure how to end, wrap with a clean final reflection (e.g., "Let’s see how this evolves over time.")
 
 DATA:
 - Chronotype: \(profile.chronotype.rawValue)
@@ -412,6 +427,7 @@ DATA:
             storyText = "Unable to load story."
         }
         isLoadingStory = false
+        showWritingIndicator = false
     }
 }
 

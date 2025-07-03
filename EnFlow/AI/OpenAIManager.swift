@@ -39,6 +39,21 @@ private func promptHash(system: String?, user: String) -> String {
     "\(system ?? "nil")|\(user)"
 }
 
+/// Heuristic check for truncated GPT output
+private func responseLooksCutoff(_ text: String) -> Bool {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return false }
+
+    // Incomplete punctuation or conjunction endings
+    let lower = trimmed.lowercased()
+    if [",", ";", ":"].contains(where: { trimmed.hasSuffix($0) }) { return true }
+    if [" and", " but", " or", " because"].contains(where: { lower.hasSuffix($0) }) { return true }
+
+    if let last = trimmed.last, !".!?\"”".contains(last) { return true }
+
+    return false
+}
+
 // ──────────────────────────────────────────────────────────────
 // MARK: – Manager
 // ──────────────────────────────────────────────────────────────
@@ -97,13 +112,33 @@ final class OpenAIManager {
                          cacheId: String? = nil,
                          maxTokens: Int = 180,
                          temperature: Double = 0.6) async throws -> String {
-        try await chatCompletion(
+        // First attempt normally (may hit cache)
+        var text = try await chatCompletion(
             system: systemPrompt,
             user:   prompt,
             cacheId: cacheId,
             maxTokens: maxTokens,
-            temperature: temperature
+            temperature: temperature,
+            presencePenalty: 0
         )
+
+        // If the response looks truncated, retry with a higher token limit
+        if responseLooksCutoff(text) {
+            text = try await chatCompletion(
+                system: systemPrompt,
+                user:   prompt,
+                cacheId: nil,                 // bypass cached truncated entry
+                maxTokens: max(800, maxTokens),
+                temperature: 0.7,
+                presencePenalty: 0.4
+            )
+
+            // Replace cached value with the complete text
+            let id = cacheId ?? promptHash(system: systemPrompt, user: prompt)
+            gptCache[id] = CachedEntry(date: Date(), text: text)
+        }
+
+        return text
     }
 
     /// Runs all prompts in parallel; preserves order.
@@ -123,7 +158,8 @@ final class OpenAIManager {
                         user:   p.prompt,
                         cacheId: cacheId,
                         maxTokens: 60,
-                        temperature: 0.7
+                        temperature: 0.7,
+                        presencePenalty: 0
                     )
                   
                     let txt: String = {
@@ -162,7 +198,8 @@ final class OpenAIManager {
                                 user: String,
                                 cacheId: String?,
                                 maxTokens: Int,
-                                temperature: Double) async throws -> String {
+                                temperature: Double,
+                                presencePenalty: Double) async throws -> String {
 
         let key = cacheId ?? promptHash(system: system, user: user)
 
@@ -186,7 +223,8 @@ final class OpenAIManager {
             "model": model,
             "messages": messages,
             "max_tokens": maxTokens,
-            "temperature": temperature
+            "temperature": temperature,
+            "presence_penalty": presencePenalty
         ]
 
         var req = URLRequest(url: endpoint)
