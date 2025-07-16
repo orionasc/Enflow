@@ -70,6 +70,11 @@ final class ForecastCache {
         forecasts[key(for: date)]
     }
 
+    func removeForecast(for date: Date) {
+        forecasts.removeValue(forKey: key(for: date))
+        persist()
+    }
+
     func saveForecast(_ forecast: DayEnergyForecast) {
         forecasts[key(for: forecast.date)] = forecast
         persist()

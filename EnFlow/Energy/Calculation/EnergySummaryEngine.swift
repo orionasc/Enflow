@@ -102,6 +102,27 @@ final class EnergySummaryEngine: ObservableObject {
         let hRows = healthEvents.filter { $0.date       >= start && $0.date < end }
         let cRows = calendarEvents.filter { $0.startTime >= start && $0.startTime < end }
 
+        // Eligibility check -------------------------------------------------
+        if let h = hRows.first, !isEnergyEligible(h) {
+            let missing = missingRequiredMetrics(h)
+            let debug = "missing: \(missing.map { $0.rawValue }.joined(separator: ","))"
+            return DayEnergySummary(
+                date: start,
+                overallEnergyScore: 0,
+                mentalEnergy: 0,
+                physicalEnergy: 0,
+                sleepEfficiency: 0,
+                coverageRatio: Double(h.availableMetrics.count) / Double(MetricType.allCases.count),
+                confidence: 0,
+                warning: "Insufficient health data",
+                debugInfo: debug,
+                hourlyWaveform: Array(repeating: 0, count: 24),
+                topBoosters: [],
+                topDrainers: [],
+                explainers: []
+            )
+        }
+
         // Sub-scores with fallback logic
         let mental   = computeMentalEnergy(from: hRows.first)
         let physical = computePhysicalEnergy(from: hRows.first)
