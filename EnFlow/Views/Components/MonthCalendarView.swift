@@ -246,7 +246,7 @@ struct MonthCalendarView: View {
                                                            healthEvents: dayHealth,
                                                            calendarEvents: dayEvents,
                                                            profile: profile)
-            if summary.coverageRatio >= 0.3 {
+            if summary.warning != "Insufficient health data" {
                 results[date] = summary.overallEnergyScore
             }
         }
