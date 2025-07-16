@@ -43,7 +43,16 @@ final class UnifiedEnergyModel {
 
         if calendar.isDateInToday(date) {
             let hr = calendar.component(.hour, from: now)
-            for i in hr..<24 { blended[i] = forecast.values[i] }
+            let blendWidth = 3
+            let end = min(23, hr + blendWidth)
+            for i in hr..<24 {
+                if i <= end {
+                    let t = Double(i - hr) / Double(blendWidth)
+                    blended[i] = (1 - t) * summary.hourlyWaveform[i] + t * forecast.values[i]
+                } else {
+                    blended[i] = forecast.values[i]
+                }
+            }
         } else if date > calendar.startOfDay(for: now) {
             blended = forecast.values
         }
