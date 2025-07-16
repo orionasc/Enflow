@@ -221,17 +221,6 @@ final class EnergySummaryEngine: ObservableObject {
         return max(0, min(1, (mean - lo) / (hi - lo)))
     }
 
-    /// Simple min–max normalisation
-    private func norm(_ v: Double, _ lo: Double, _ hi: Double) -> Double {
-        guard hi > lo else { return 0.5 }
-        return max(0.0, min(1.0, (v - lo) / (hi - lo)))
-    }
-
-    /// Activity score peaks near personal mean step count (placeholder logic)
-    private func activityScore(steps: Int, mean: Int = 8000, sd: Int = 3000) -> Double {
-        let z = Double(steps - mean) / Double(sd)
-        return exp(-0.5 * z * z)
-    }
 
     /// Adjusts raw 0–100 scores so that ~50 maps near 70 while
     /// preserving variability and applying profile bias.
