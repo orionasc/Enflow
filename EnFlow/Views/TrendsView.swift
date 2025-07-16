@@ -243,6 +243,9 @@ struct TrendsView: View {
 
             let profile = UserProfileStore.load()
             let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: h, calendarEvents: ev, profile: profile)
+            if summary.warning == "Insufficient health data" {
+                continue
+            }
             actual.append(summary)
 
             var fWave = ForecastCache.shared.forecast(for: day)?.values

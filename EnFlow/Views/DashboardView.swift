@@ -141,7 +141,7 @@ struct DashboardView: View {
         }
 
         // — Daily 7 AM‒7 PM line graph —
-        if let wave = todaySummary?.hourlyWaveform {
+        if let wave = todaySummary?.hourlyWaveform, !missingTodayData {
           let slice = Array(wave[7...19])
           VStack(alignment: .leading, spacing: 8) {
             Text("Daily Energy Forecast")
@@ -206,7 +206,7 @@ struct DashboardView: View {
         .help("Forecast accuracy lower than today’s")
         .frame(maxWidth: .infinity)
 
-        if let wave = tomorrowSummary?.hourlyWaveform {
+        if let wave = tomorrowSummary?.hourlyWaveform, !missingTomorrowData {
           VStack(alignment: .leading, spacing: 8) {
             Text("24-Hour Energy Forecast")
               .font(.headline)
@@ -288,9 +288,8 @@ struct DashboardView: View {
         events: eventsTomorrow,
         profile: profile)?.confidenceScore ?? 0
 
-    let todayHealth = healthList.first { cal.isDate($0.date, inSameDayAs: today) }
-    let noToday = !(todayHealth?.hasSamples ?? false)
-    let noTomorrow = forecastConf == 0
+    let noToday = tSummary.warning == "Insufficient health data"
+    let noTomorrow = tmSummary.warning == "Insufficient health data"
 
     // 3-part slices
     func slices(from wave: [Double]) -> EnergyForecastModel.EnergyParts {

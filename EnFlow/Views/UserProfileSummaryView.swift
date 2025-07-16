@@ -375,13 +375,15 @@ struct UserProfileSummaryView: View {
         for i in 0..<7 {
             guard let day = cal.date(byAdding: .day, value: -i, to: cal.startOfDay(for: Date())) else { continue }
             let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: health, calendarEvents: events, profile: profile)
-            scores.append(summary.overallEnergyScore)
-            if let part = model.threePartEnergy(for: day, health: health, events: events, profile: profile) {
-                m.append(part.morning); a.append(part.afternoon); e.append(part.evening)
+            if summary.warning != "Insufficient health data" {
+                scores.append(summary.overallEnergyScore)
+                if let part = model.threePartEnergy(for: day, health: health, events: events, profile: profile) {
+                    m.append(part.morning); a.append(part.afternoon); e.append(part.evening)
+                }
             }
         }
         avgScore = scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count)
-        daysOfData = m.count
+        daysOfData = scores.count
         if m.count >= 3 {
             avgParts = EnergyForecastModel.EnergyParts(
                 morning: m.reduce(0, +) / Double(m.count),

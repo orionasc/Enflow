@@ -400,7 +400,6 @@ struct DayView: View {
     )
 
     if currentDate < startOfToday {
-      // full historical forecast only
       let model = EnergyForecastModel()
       let hist = model.forecast(
         for: currentDate,
@@ -408,13 +407,17 @@ struct DayView: View {
         events: dayEvents,
         profile: profile
       )
-        forecast = hist!.values
+      forecast = hist?.values ?? []
     } else {
-      // today/future unchanged
       forecast = summary.hourlyWaveform
     }
+
+    if summary.warning == "Insufficient health data" {
+      forecast = []
+    }
+
     showHeatMap = currentDate <= startOfToday &&
-                 (summary.coverageRatio >= 0.3 || calendar.isDateInToday(currentDate))
+                 summary.warning != "Insufficient health data"
     if showHeatMap {
       overallScore = summary.overallEnergyScore
     } else {

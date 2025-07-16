@@ -293,10 +293,7 @@ struct WeekCalendarView: View {
                                                                   healthEvents: dayHealth,
                                                                   calendarEvents: dayEvents,
                                                                   profile: profile)
-                    if calendar.isDateInToday(day) {
-                        matrix[d] = Array(summary.hourlyWaveform[4...23])
-                        scores[d] = summary.overallEnergyScore
-                    } else if summary.coverageRatio < 0.3 {
+                    if summary.warning == "Insufficient health data" {
                         matrix[d] = Array(repeating: nil, count: hours.count)
                         scores[d] = nil
                     } else {
