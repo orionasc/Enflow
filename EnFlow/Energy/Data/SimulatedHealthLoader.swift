@@ -18,6 +18,7 @@ final class SimulatedHealthLoader {
             let steps = Int(clampedNormal(mean: 8000, sd: 3000, minValue: 2000, maxValue: 13000, using: &rng))
             let hrv = clampedNormal(mean: 65, sd: 20, minValue: 20, maxValue: 120, using: &rng)
             let resting = clampedNormal(mean: 62, sd: 10, minValue: 45, maxValue: 90, using: &rng)
+            let avgHR = clampedNormal(mean: 75, sd: 12, minValue: 50, maxValue: 120, using: &rng)
             let sleepHours = clampedNormal(mean: 7.0, sd: 1.5, minValue: 4.0, maxValue: 9.0, using: &rng)
             let deepRatio = clampedNormal(mean: 0.18, sd: 0.08, minValue: 0.05, maxValue: 0.3, using: &rng)
             let remRatio = clampedNormal(mean: 0.22, sd: 0.08, minValue: 0.1, maxValue: 0.4, using: &rng)
@@ -27,20 +28,24 @@ final class SimulatedHealthLoader {
 
             let deep = sleepHours * 60 * deepRatio
             let rem = sleepHours * 60 * remRatio
+            let inBed = sleepHours * 60 + clampedNormal(mean: 30, sd: 10, minValue: 10, maxValue: 90, using: &rng)
 
             var metrics: Set<MetricType> = [
                 .stepCount,
-                .restingHR,
                 .activeEnergyBurned,
+                .heartRate,
+                .restingHR,
                 .heartRateVariabilitySDNN,
                 .sleepEfficiency,
                 .sleepLatency,
                 .deepSleep,
-                .remSleep
+                .remSleep,
+                .timeInBed
             ]
 
             // Randomly drop required metrics to simulate missing data
             if Int.random(in: 0..<4, using: &rng) == 0 { metrics.remove(.stepCount) }
+            if Int.random(in: 0..<5, using: &rng) == 0 { metrics.remove(.heartRate) }
             if Int.random(in: 0..<5, using: &rng) == 0 { metrics.remove(.restingHR) }
             if Int.random(in: 0..<5, using: &rng) == 0 { metrics.remove(.activeEnergyBurned) }
 
@@ -48,10 +53,12 @@ final class SimulatedHealthLoader {
                 date: day,
                 hrv: hrv,
                 restingHR: resting,
+                heartRate: avgHR,
                 sleepEfficiency: efficiency,
                 sleepLatency: latency,
                 deepSleep: deep,
                 remSleep: rem,
+                timeInBed: inBed,
                 steps: steps,
                 calories: activeEnergy,
                 availableMetrics: metrics,

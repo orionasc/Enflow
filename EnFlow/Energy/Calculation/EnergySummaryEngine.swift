@@ -51,10 +51,12 @@ struct HealthEvent {
     let date: Date
     let hrv: Double                 // ms
     let restingHR: Double           // bpm
+    let heartRate: Double           // bpm
     let sleepEfficiency: Double     // %
     let sleepLatency: Double        // min
     let deepSleep: Double           // min
     let remSleep: Double            // min
+    let timeInBed: Double           // min
     let steps: Int
     let calories: Double            // kcal
 
@@ -145,7 +147,12 @@ final class EnergySummaryEngine: ObservableObject {
 
         let available = hRows.first?.availableMetrics ?? []
         let coverage = Double(available.count) / Double(MetricType.allCases.count)
-        let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
+        let required: Set<MetricType> = [
+            .stepCount,
+            .activeEnergyBurned,
+            .heartRate,
+            .timeInBed
+        ]
         var warning: String? = nil
         var confidence: Double = 0.6
         if required.isSubset(of: available) == false {
