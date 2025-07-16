@@ -154,10 +154,34 @@ final class EnergyForecastModel: ObservableObject {
     guard let h, h.hasSamples else { return nil }
 
     // --- Normalised inputs (0–1) ------------------------------------------
-    let sleepEff = norm(h.sleepEfficiency, 60, 100)  // %
-    let hrvScore = norm(h.hrv, 20, 120)  // ms
-    let restHRInv = 1.0 - norm(h.restingHR, 40, 100)  // bpm (lower is better)
-    let deepREM = norm(h.deepSleep + h.remSleep, 60, 300)  // minutes
+    let sleepEff: Double
+    if h.availableMetrics.contains(.sleepEfficiency) {
+      sleepEff = norm(h.sleepEfficiency, 60, 100)
+    } else if h.availableMetrics.contains(.timeInBed) {
+      sleepEff = norm(h.timeInBed, 300, 540) // minutes
+    } else {
+      sleepEff = 0.5
+    }
+
+    let hrvScore = h.availableMetrics.contains(.heartRateVariabilitySDNN) ?
+      norm(h.hrv, 20, 120) : 0.5
+
+    let restHRInv: Double
+    if h.availableMetrics.contains(.restingHR) {
+      restHRInv = 1.0 - norm(h.restingHR, 40, 100)
+    } else if h.availableMetrics.contains(.heartRate) {
+      restHRInv = 1.0 - norm(h.heartRate, 50, 120)
+    } else {
+      restHRInv = 0.5
+    }
+
+    let deepREM: Double
+    if h.availableMetrics.contains(.deepSleep) || h.availableMetrics.contains(.remSleep) {
+      deepREM = norm(h.deepSleep + h.remSleep, 60, 300)
+    } else {
+      deepREM = 0.5
+    }
+
     let actBal = activityScore(steps: h.steps)  // z-score proximity
 
     // --- Weighted composite (literature-based) ----------------------------

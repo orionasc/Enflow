@@ -208,6 +208,8 @@ struct OnboardingAndSettingsView: View {
         let readTypes: Set<HKObjectType> = [
             .quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
             .quantityType(forIdentifier: .restingHeartRate)!,
+            .quantityType(forIdentifier: .heartRate)!,
+            .quantityType(forIdentifier: .activeEnergyBurned)!,
             .quantityType(forIdentifier: .stepCount)!
         ]
 

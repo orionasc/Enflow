@@ -141,12 +141,14 @@ struct DataView: View {
             if let h = event {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Steps: \(h.steps)")
+                    Text("Avg HR: \(Int(h.heartRate)) bpm")
                     Text("HRV: \(Int(h.hrv)) ms")
                     Text("Resting HR: \(Int(h.restingHR)) bpm")
                     Text("Sleep Eff: \(Int(h.sleepEfficiency)) %")
                     Text("Sleep Latency: \(Int(h.sleepLatency)) min")
                     Text("Deep Sleep: \(Int(h.deepSleep)) min")
                     Text("REM Sleep: \(Int(h.remSleep)) min")
+                    Text("Time in Bed: \(Int(h.timeInBed)) min")
                     Text("Calories: \(Int(h.calories)) kcal")
                 }
                 .font(.caption)

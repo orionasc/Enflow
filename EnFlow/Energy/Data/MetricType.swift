@@ -4,10 +4,12 @@ import Foundation
 enum MetricType: String, CaseIterable, Codable {
     // Required
     case stepCount
-    case restingHR
     case activeEnergyBurned
+    case heartRate
+    case timeInBed
 
     // Optional
+    case restingHR
     case heartRateVariabilitySDNN
     case appleExerciseTime
     case vo2Max
