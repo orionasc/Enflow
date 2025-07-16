@@ -104,7 +104,7 @@ final class EnergyForecastModel: ObservableObject {
 
     wave = smooth(wave)
 
-    let missingRequired = missingRequiredMetrics(hSample)
+    let missingRequired = Set(missingRequiredMetrics(hSample))
     let missing = Set(MetricType.allCases).subtracting(hSample.availableMetrics)
     var confidence = 0.2
     if history.count >= 7 { confidence = 0.8 } else if history.count >= 3 { confidence = 0.4 }
