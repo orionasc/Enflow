@@ -104,12 +104,11 @@ final class EnergyForecastModel: ObservableObject {
 
     wave = smooth(wave)
 
-    let missingRequired = Set(missingRequiredMetrics(hSample))
     let missing = Set(MetricType.allCases).subtracting(hSample.availableMetrics)
     var confidence = 0.2
     if history.count >= 7 { confidence = 0.8 } else if history.count >= 3 { confidence = 0.4 }
 
-    wave = applySleepFloor(to: wave, profile: profile, missing: missingRequired, confidence: confidence)
+    wave = applySleepFloor(to: wave, profile: profile, available: hSample.availableMetrics, confidence: confidence)
     wave = adjustAmplitude(of: wave, base: adjustedBase, confidence: confidence)
 
     let score = wave.reduce(0, +) / Double(wave.count) * 100.0
@@ -197,7 +196,7 @@ final class EnergyForecastModel: ObservableObject {
     guard !valid.isEmpty else { return nil }
     let range = valid.suffix(7)
     let avg = range.reduce(0, +) / Double(range.count)
-    return avg
+    return max(0.3, avg)
   }
 
   // MARK: Helpers -------------------------------------------------------------
@@ -237,9 +236,11 @@ final class EnergyForecastModel: ObservableObject {
   }
 
   /// Forces a low baseline during typical sleep hours when data is limited
-  private func applySleepFloor(to wave: [Double], profile: UserProfile?, missing: Set<MetricType>, confidence: Double) -> [Double] {
+  private func applySleepFloor(to wave: [Double], profile: UserProfile?, available: Set<MetricType>, confidence: Double) -> [Double] {
     guard let p = profile else { return wave }
-    guard confidence < 0.5 || !missing.isEmpty else { return wave }
+    let hasTIB = available.contains(.timeInBed)
+    let hasEff = available.contains(.sleepEfficiency)
+    guard confidence < 0.4 && (!hasTIB || !hasEff) else { return wave }
 
     var result = wave
     let start = calendar.component(.hour, from: p.typicalSleepTime)
