@@ -54,12 +54,22 @@ final class EnergyForecastModel: ObservableObject {
     profile: UserProfile? = nil
   ) -> DayEnergyForecast? {
 
-    if let cached = ForecastCache.shared.forecast(for: date) {
+    if let cached = ForecastCache.shared.forecast(for: date),
+       let h = health.first(where: { calendar.isDate($0.date, inSameDayAs: date) }),
+       isEnergyEligible(h) {
       return cached
+    } else if let h = health.first(where: { calendar.isDate($0.date, inSameDayAs: date) }),
+              !isEnergyEligible(h) {
+      ForecastCache.shared.removeForecast(for: date)
     }
 
     let history = health.filter { $0.date <= date }
     guard let hSample = history.first(where: { calendar.isDate($0.date, inSameDayAs: date) }) ?? history.last else {
+      return nil
+    }
+
+    guard isEnergyEligible(hSample) else {
+      ForecastCache.shared.removeForecast(for: date)
       return nil
     }
 
@@ -94,12 +104,12 @@ final class EnergyForecastModel: ObservableObject {
 
     wave = smooth(wave)
 
-    let required: Set<MetricType> = [.stepCount, .restingHR, .activeEnergyBurned]
-    let missing = required.subtracting(hSample.availableMetrics)
+    let missingRequired = missingRequiredMetrics(hSample)
+    let missing = Set(MetricType.allCases).subtracting(hSample.availableMetrics)
     var confidence = 0.2
     if history.count >= 7 { confidence = 0.8 } else if history.count >= 3 { confidence = 0.4 }
 
-    wave = applySleepFloor(to: wave, profile: profile, missing: missing, confidence: confidence)
+    wave = applySleepFloor(to: wave, profile: profile, missing: missingRequired, confidence: confidence)
     wave = adjustAmplitude(of: wave, base: adjustedBase, confidence: confidence)
 
     let score = wave.reduce(0, +) / Double(wave.count) * 100.0

@@ -28,7 +28,7 @@ final class SimulatedHealthLoader {
             let deep = sleepHours * 60 * deepRatio
             let rem = sleepHours * 60 * remRatio
 
-            let metrics: Set<MetricType> = [
+            var metrics: Set<MetricType> = [
                 .stepCount,
                 .restingHR,
                 .activeEnergyBurned,
@@ -38,6 +38,11 @@ final class SimulatedHealthLoader {
                 .deepSleep,
                 .remSleep
             ]
+
+            // Randomly drop required metrics to simulate missing data
+            if Int.random(in: 0..<4, using: &rng) == 0 { metrics.remove(.stepCount) }
+            if Int.random(in: 0..<5, using: &rng) == 0 { metrics.remove(.restingHR) }
+            if Int.random(in: 0..<5, using: &rng) == 0 { metrics.remove(.activeEnergyBurned) }
 
             return HealthEvent(
                 date: day,
@@ -50,7 +55,7 @@ final class SimulatedHealthLoader {
                 steps: steps,
                 calories: activeEnergy,
                 availableMetrics: metrics,
-                hasSamples: true
+                hasSamples: !metrics.isEmpty
             )
         }.sorted { $0.date < $1.date }
     }

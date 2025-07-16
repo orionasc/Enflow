@@ -26,6 +26,10 @@ final class UnifiedEnergyModel {
                                               calendarEvents: calendarEvents,
                                               profile: profile)
 
+        if summary.warning == "Insufficient health data" {
+            return summary
+        }
+
         guard let forecast = forecastModel.forecast(for: date,
                                                     health: healthEvents,
                                                     events: calendarEvents,
