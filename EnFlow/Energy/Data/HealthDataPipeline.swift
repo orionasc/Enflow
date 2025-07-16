@@ -21,20 +21,22 @@ final class HealthDataPipeline: ObservableObject {
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         // Build as an *array*, then cast to Set for the API call.
         let sampleTypes: [HKSampleType] = [
-            HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
-            HKObjectType.quantityType(forIdentifier: .restingHeartRate),
-            HKObjectType.quantityType(forIdentifier: .heartRate),
-            HKObjectType.quantityType(forIdentifier: .appleExerciseTime),
-            HKObjectType.quantityType(forIdentifier: .vo2Max),
-            HKObjectType.quantityType(forIdentifier: .respiratoryRate),
-            HKObjectType.quantityType(forIdentifier: .walkingHeartRateAverage),
-            HKObjectType.quantityType(forIdentifier: .oxygenSaturation),
-            HKObjectType.quantityType(forIdentifier: .environmentalAudioExposure),
-            HKObjectType.quantityType(forIdentifier: .stepCount),
-            HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
-            HKObjectType.categoryType(forIdentifier: .menstrualFlow),
-            HKObjectType.categoryType(forIdentifier: .mindfulSession)
+            // Required
+                HKObjectType.quantityType(forIdentifier: .stepCount),
+                HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+                HKObjectType.quantityType(forIdentifier: .heartRate),
+                HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+
+                // Optional Enhancers
+                HKObjectType.quantityType(forIdentifier: .restingHeartRate),
+                HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
+                HKObjectType.quantityType(forIdentifier: .respiratoryRate),
+                HKObjectType.quantityType(forIdentifier: .appleExerciseTime),
+                HKObjectType.quantityType(forIdentifier: .walkingHeartRateAverage),
+                HKObjectType.quantityType(forIdentifier: .vo2Max),
+                HKObjectType.categoryType(forIdentifier: .menstrualFlow),
+                HKObjectType.categoryType(forIdentifier: .mindfulSession),
+                HKObjectType.quantityType(forIdentifier: .environmentalAudioExposure)
         ].compactMap { $0 }
 
         let readTypes = Set(sampleTypes)
