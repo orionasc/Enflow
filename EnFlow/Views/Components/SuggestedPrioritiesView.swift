@@ -80,11 +80,14 @@ private struct PriorityCardBodyView: View {
 
 private struct PriorityCardTagList: View {
     let tags: [String]
+
     var body: some View {
-        if tags.isEmpty { EmptyView() } else {
+        if tags.isEmpty {
+            EmptyView()
+        } else {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach(tags, id: \"self\") { tag in
+                    ForEach(tags, id: \.self) { tag in
                         RationaleChip(text: tag)
                     }
                 }

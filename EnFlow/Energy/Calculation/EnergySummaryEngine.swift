@@ -184,9 +184,10 @@ final class EnergySummaryEngine: ObservableObject {
         )
     }
 
-    // ───────── Sub-score helpers ─────────────────────────────────
+    // MARK: – Sub-score helpers
     private func computeMentalEnergy(from event: HealthEvent?) -> Double {
         guard let h = event else { return 50 }
+
         var comps: [Double] = []
         if h.availableMetrics.contains(.remSleep) {
             comps.append(norm(h.remSleep, 0, 180))
@@ -199,14 +200,18 @@ final class EnergySummaryEngine: ObservableObject {
         } else if h.availableMetrics.contains(.restingHR) {
             comps.append(1 - norm(h.restingHR, 40, 100))
         }
+
+        // Fallback when rich sleep/HRV data isn’t available
         if comps.isEmpty {
-            comps.append(activityScore(steps: h.steps))
+            let estSteps = projectedSteps(h.steps, for: h.date, calendar: calendar)
+            comps.append(max(activityScore(steps: estSteps), 0.35))    // floor at 35 %
         }
         return comps.reduce(0, +) / Double(comps.count) * 100
     }
 
     private func computePhysicalEnergy(from event: HealthEvent?) -> Double {
         guard let h = event else { return 50 }
+
         var comps: [Double] = []
         if h.availableMetrics.contains(.deepSleep) {
             comps.append(norm(h.deepSleep, 0, 120))
@@ -219,12 +224,15 @@ final class EnergySummaryEngine: ObservableObject {
         if h.availableMetrics.contains(.sleepEfficiency) {
             comps.append(norm(h.sleepEfficiency, 60, 100))
         }
+
+        // Fallback when nothing else is usable
         if comps.isEmpty {
-            let activity = activityScore(steps: h.steps)
-            comps.append(activity)
+            let estSteps = projectedSteps(h.steps, for: h.date, calendar: calendar)
+            comps.append(max(activityScore(steps: estSteps), 0.35))
         }
         return comps.reduce(0, +) / Double(comps.count) * 100
     }
+
 
     // ───────── Waveform builder ──────────────────────────────────
     private func hourlyWaveform(base: Double,

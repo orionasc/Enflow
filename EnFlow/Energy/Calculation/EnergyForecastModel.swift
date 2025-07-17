@@ -68,6 +68,7 @@ final class EnergyForecastModel: ObservableObject {
     }
 
     let history = health.filter { $0.date <= date }
+    print("[EnergyForecastModel] 🔍 history days for \(date): \(history.count)")
     guard let hSample = history.first(where: { calendar.isDate($0.date, inSameDayAs: date) }) ?? history.last else {
       return nil
     }

@@ -16,14 +16,28 @@ enum ActionUrgencyLevel: String, Codable {
     case low, moderate, high
 }
 
-struct ActionCard: Identifiable, Codable {
-    let id: UUID = UUID()
+struct ActionCard: Identifiable, Codable, Equatable {
+    let id: UUID
     let title: String
     let rationale: String
     let category: ActionCategory
     let urgency: ActionUrgencyLevel
     let tags: [String]
+
+    init(id: UUID = UUID(), title: String, rationale: String, category: ActionCategory, urgency: ActionUrgencyLevel, tags: [String]) {
+        self.id = id
+        self.title = title
+        self.rationale = rationale
+        self.category = category
+        self.urgency = urgency
+        self.tags = tags
+    }
+
+    static func == (lhs: ActionCard, rhs: ActionCard) -> Bool {
+        lhs.id == rhs.id
+    }
 }
+
 
 // MARK: - Main View -------------------------------------------------------------
 struct ActionsView: View {
@@ -155,7 +169,7 @@ struct ActionTagChipsView: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(tags, id: \"self\") { tag in
+                ForEach(tags, id: \.self) { tag in
                     Text(tag)
                         .font(.caption2.bold())
                         .padding(.horizontal, 8)

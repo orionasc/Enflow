@@ -11,3 +11,17 @@ func activityScore(steps: Int, mean: Int = 8000, sd: Int = 3000) -> Double {
     let z = Double(steps - mean) / Double(sd)
     return exp(-0.5 * z * z)
 }
+
+/// Projects a partial-day step count to an estimated full-day total so that
+/// low morning step counts don’t tank energy scores.
+///
+/// • If `date` **is today**, it scales the observed steps by `24 / hoursElapsed`.
+/// • Otherwise it just returns `steps`.
+func projectedSteps(_ steps: Int,
+                    for date: Date,
+                    calendar: Calendar = .current) -> Int {
+    guard calendar.isDateInToday(date) else { return steps }
+    let hours = max(1, calendar.component(.hour, from: Date()))   // avoid /0
+    let projected = Double(steps) / Double(hours) * 24.0
+    return Int(projected.rounded())
+}
