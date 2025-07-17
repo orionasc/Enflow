@@ -84,4 +84,8 @@ final class CalendarDataPipeline: ObservableObject {
         let endDay   = cal.date(byAdding: .day, value: 1, to: startDay) ?? startDay
         return await fetchEvents(start: startDay, end: endDay)
     }
+
+    func clearCache() {
+        // No persistent caching yet; placeholder for future use.
+    }
 }

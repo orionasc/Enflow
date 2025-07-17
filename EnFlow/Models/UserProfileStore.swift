@@ -19,4 +19,8 @@ enum UserProfileStore {
             try? data.write(to: fileURL, options: [.atomic])
         }
     }
+
+    static func resetProfile() {
+        save(UserProfile.default)
+    }
 }
