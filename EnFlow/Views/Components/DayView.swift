@@ -141,17 +141,31 @@ struct DayView: View {
           Text("Energy forecast unavailable – not enough health data for this day")
             .frame(maxWidth: .infinity, minHeight: 220)
             .foregroundColor(.secondary)
-        } else { Group {
+        } else {
+          let profile = UserProfileStore.load()
+          let range = visibleRange(for: profile, default: 0..<24)
+          let slice = energySlice(forecast, range: range)
+          let startHour = range.lowerBound % 24
+          var highlight = isToday ? calendar.component(.hour, from: now) : nil
+          if let h = highlight, range.upperBound > 24 && h < startHour {
+            highlight = h + 24
+          }
+          Group {
             if let summary {
+              let warn = summary.warning != nil || summary.confidence < 0.4
               DailyEnergyForecastView(
-                summary: summary,
-                highlightHour: isToday ? calendar.component(.hour, from: now) : nil
+                values: slice,
+                startHour: startHour,
+                highlightHour: highlight,
+                dotted: warn,
+                showWarning: warn,
+                lowCoverage: summary.coverageRatio < 0.5
               )
             } else {
               DailyEnergyForecastView(
-                values: forecast,
-                startHour: 0,
-                highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
+                values: slice,
+                startHour: startHour,
+                highlightHour: highlight,
                 dotted: isTomorrow || forecastWarning,
                 showWarning: forecastWarning
               )
