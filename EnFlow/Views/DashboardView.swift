@@ -37,6 +37,7 @@ struct DashboardView: View {
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
   @State private var tomorrowForecastWarning = false
+  @State private var tomorrowForecastMessage: String? = nil
   @State private var scrollOffset: CGFloat = 0
 
 
@@ -213,9 +214,9 @@ struct DashboardView: View {
         EnergyRingView(
           score: missingTomorrowData ? nil : tomorrowSummary?.overallEnergyScore,
           dashed: true,
-          desaturate: true
+          desaturate: true,
+          warningMessage: tomorrowForecastMessage
         )
-        .help("Forecast accuracy lower than today’s")
         .frame(maxWidth: .infinity)
 
         if let wave = tomorrowSummary?.hourlyWaveform, !missingTomorrowData {
@@ -229,22 +230,18 @@ struct DashboardView: View {
               .saturation(0.7)
             DailyEnergyForecastView(values: slice,
                                     startHour: startHour,
-                                    showWarning: tomorrowForecastWarning)
+                                    warningMessage: tomorrowForecastMessage)
               .saturation(0.7)
-          }
+        }
         }
 
-        if tomorrowConfidence > 0 && tomorrowConfidence < 0.4 {
-          Text("⚠️ Forecast based on limited history – add more days of data for accuracy")
-            .font(.caption)
-            .foregroundColor(.orange)
-        }
+
 
         ThreePartForecastView(
           parts: tomorrowParts,
           dashed: true,
           desaturate: true,
-          showWarning: tomorrowForecastWarning)
+          warningMessage: tomorrowForecastMessage)
 
         ActionsView()
 
@@ -304,9 +301,18 @@ struct DashboardView: View {
         events: eventsTomorrow,
         profile: profile)
     let forecastConf = fc?.confidenceScore ?? 0
-    let forecastWarn = fc.map { $0.confidenceScore < 0.4 ||
-                                $0.sourceType == .defaultHeuristic ||
-                                $0.debugInfo != nil } ?? false
+    let forecastMsg: String? = {
+      guard let f = fc else { return nil }
+      if let dbg = f.debugInfo { return "Energy forecast used limited data: \(dbg)." }
+      if f.sourceType == .defaultHeuristic {
+        return "Today’s forecast is based on fallback logic due to missing health data."
+      }
+      if f.confidenceScore < 0.4 {
+        return "Limited metrics were available. This forecast may be less accurate."
+      }
+      return nil
+    }()
+    let forecastWarn = forecastMsg != nil
 
     let noToday = tSummary.warning == "Insufficient health data"
     let noTomorrow = tmSummary.warning == "Insufficient health data"
@@ -376,6 +382,7 @@ struct DashboardView: View {
       missingTomorrowData = noTomorrow
       tomorrowConfidence = forecastConf
       tomorrowForecastWarning = forecastWarn
+      tomorrowForecastMessage = forecastMsg
       engine.markRefreshed()  // trigger ring-pulse animation
     }
   }

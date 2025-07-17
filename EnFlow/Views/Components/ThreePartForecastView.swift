@@ -11,8 +11,8 @@ struct ThreePartForecastView: View {
   let parts: EnergyForecastModel.EnergyParts?
   var dashed: Bool = false
   var desaturate: Bool = false
-  /// Display a low-confidence badge
-  var showWarning: Bool = false
+  /// Optional warning message displayed via icon
+  var warningMessage: String? = nil
 
   private let ringSize: CGFloat = 80
   private let lineWidth: CGFloat = 6
@@ -27,16 +27,8 @@ struct ThreePartForecastView: View {
     .frame(maxWidth: .infinity)
     .saturation(desaturate ? 0.6 : 1.0)
     .overlay(alignment: .topTrailing) {
-      if showWarning {
-        HStack(spacing: 4) {
-          Image(systemName: "exclamationmark.triangle.fill")
-          Text("Limited data")
-        }
-        .font(.caption2.bold())
-        .foregroundColor(.yellow)
-        .padding(4)
-        .background(.ultraThinMaterial, in: Capsule())
-        .help("Limited data today — energy estimates may be less accurate.")
+      if let msg = warningMessage {
+        WarningIconButton(message: msg)
       }
     }
   }
