@@ -100,7 +100,7 @@ struct EnergyRingDemoPage: View {
             LinearGradient(colors: [Color.black, Color(#colorLiteral(red: 0.129, green: 0.129, blue: 0.157, alpha: 1))], startPoint: .top, endPoint: .bottom)
             VStack(spacing: 40) {
                 Spacer(minLength: 80)
-                EnergyRingView(score: demoScore, shimmer: true, animateFromZero: true)
+                EnergyRingView(score: demoScore,  animateFromZero: true, shimmer: true)
                     .frame(width: 200, height: 200)
                     .animation(.spring(response: 0.6, dampingFraction: 0.8), value: demoScore)
 
@@ -335,7 +335,7 @@ struct EarlyTesterPage: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                Text("Thanks for being one of the first to try EnFlow. Some things may still be rough around the edges, but we’re working hard to improve every day. Your feedback makes this possible!")
+                Text("Thanks for being one of the first to try EnFlow. Some things may still be rough around the edges, but we’re working hard to improve the app every day. Your feedback is much appreciated!")
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white.opacity(0.9))
                     .padding(.horizontal)
