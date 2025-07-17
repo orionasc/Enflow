@@ -20,6 +20,7 @@ struct DayView: View {
   @State private var forecastSource: DayEnergyForecast.SourceType? = nil
   @State private var forecastInfo: String? = nil
   @State private var showForecastInfo = false
+  @State private var forecastWarning = false
   private enum Page: Int { case schedule, overview }
   @State private var page: Page = .schedule
 
@@ -124,7 +125,7 @@ struct DayView: View {
           date: currentDate
         )
 
-        ThreePartForecastView(parts: parts)
+        ThreePartForecastView(parts: parts, showWarning: forecastWarning)
         HStack(spacing: 4) {
           Text("24-Hour Energy Graph")
             .font(.title2.weight(.medium))
@@ -145,7 +146,8 @@ struct DayView: View {
             values: forecast,
             startHour: 0,
             highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
-            dotted: isTomorrow || forecastSource == .defaultHeuristic
+            dotted: isTomorrow || forecastSource == .defaultHeuristic,
+            showWarning: forecastWarning
           )
             .frame(height: 220)
         }
@@ -426,10 +428,18 @@ struct DayView: View {
       forecast = hist?.values ?? []
       forecastSource = hist?.sourceType
       forecastInfo = hist?.debugInfo
+      if let h = hist {
+        forecastWarning = h.confidenceScore < 0.4 ||
+                          h.sourceType == .defaultHeuristic ||
+                          h.debugInfo != nil
+      } else {
+        forecastWarning = false
+      }
     } else {
       forecast = summary.hourlyWaveform
       forecastSource = nil
       forecastInfo = nil
+      forecastWarning = false
     }
 
     if summary.warning == "Insufficient health data" {

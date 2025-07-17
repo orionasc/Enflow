@@ -10,6 +10,8 @@ struct DailyEnergyForecastView: View {
     let highlightHour: Int?
     /// Render the line with a dotted stroke for forecast styling.
     var dotted: Bool = false
+    /// Show a low-confidence badge in the corner
+    var showWarning: Bool = false
     
     @State private var pulse = false
     @State private var activeIndex: Int? = nil
@@ -19,11 +21,16 @@ struct DailyEnergyForecastView: View {
     
     private let calendar = Calendar.current
 
-    init(values: [Double], startHour: Int = 7, highlightHour: Int? = nil, dotted: Bool = false) {
+    init(values: [Double],
+         startHour: Int = 7,
+         highlightHour: Int? = nil,
+         dotted: Bool = false,
+         showWarning: Bool = false) {
         self.values = values
         self.startHour = startHour
         self.highlightHour = highlightHour
         self.dotted = dotted
+        self.showWarning = showWarning
     }
     
     var body: some View {
@@ -159,6 +166,16 @@ struct DailyEnergyForecastView: View {
             }
         }
 #endif
+        .overlay(alignment: .topTrailing) {
+            if showWarning {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                    .foregroundColor(.yellow)
+                    .padding(4)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .help("Limited data today — energy estimates may be less accurate.")
+            }
+        }
     }
 
     private func average(_ vals: [Double]) -> Double {
