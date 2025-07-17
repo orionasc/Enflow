@@ -11,7 +11,6 @@ struct WeekCalendarView: View {
     )
     // Per-day overall scores matching DayView
     @State private var dayScores: [Double?] = Array(repeating: nil, count: 7)
-    @State private var lowConfidence: [Bool] = Array(repeating: false, count: 7)
     @State private var events: [CalendarEvent] = []
     @State private var selectedDay: Date? = nil
     @State private var now = Date()
@@ -65,7 +64,7 @@ struct WeekCalendarView: View {
                                         .font(.subheadline.bold())
                                         .foregroundColor(.white)
                                     // Score now matches DayView
-                                    energyChip(score: dayScores[day], warning: lowConfidence[day])
+                                    energyChip(score: dayScores[day])
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(6)
@@ -218,13 +217,9 @@ struct WeekCalendarView: View {
             ?? "\(hour)h"
     }
 
-    private func energyChip(score: Double?, warning: Bool) -> some View {
+    private func energyChip(score: Double?) -> some View {
         HStack(spacing: 2) {
             Text(score != nil ? "\(Int(score!))" : "--")
-            if warning {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 8))
-            }
         }
         .font(.caption2.bold())
         .padding(.horizontal, 6)
@@ -272,7 +267,6 @@ struct WeekCalendarView: View {
             count: 7
         )
         var scores = Array(repeating: Double?.none, count: 7)
-        var warnings = Array(repeating: false, count: 7)
 
         let health = await HealthDataPipeline.shared
             .fetchDailyHealthEvents(daysBack: 60)
@@ -304,12 +298,10 @@ struct WeekCalendarView: View {
                     if summary.warning == "Insufficient health data" {
                         matrix[d] = Array(repeating: nil, count: hours.count)
                         scores[d] = nil
-                        warnings[d] = false
                     } else {
                         let wave = summary.hourlyWaveform.count == 24 ? summary.hourlyWaveform : Array(repeating: 0.5, count: 24)
                         matrix[d] = Array(wave[4...23])
                         scores[d] = summary.overallEnergyScore
-                        warnings[d] = summary.confidence < 0.4 || summary.warning != nil || summary.coverageRatio < 0.5
                     }
                     events = allEvents
                 }
@@ -319,7 +311,6 @@ struct WeekCalendarView: View {
         await MainActor.run {
             energyMatrix = matrix
             dayScores = scores
-            lowConfidence = warnings
         }
     }
 }

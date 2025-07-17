@@ -217,14 +217,6 @@ struct MonthCalendarView: View {
                         lineWidth: 2
                     )
             )
-            .overlay(alignment: .topTrailing) {
-                if lowConfidenceMap[date] == true {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption2)
-                        .foregroundColor(.yellow)
-                        .padding(2)
-                }
-            }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .aspectRatio(1, contentMode: .fit)
