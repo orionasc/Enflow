@@ -17,8 +17,7 @@ struct DayView: View {
   @State private var overallScore: Double? = nil
   @State private var showHeatMap = false
   @State private var now = Date()
-  @State private var forecastInfo: String? = nil
-  @State private var showForecastInfo = false
+  @State private var forecastMessage: String? = nil
   @State private var forecastWarning = false
   @State private var summary: DayEnergySummary? = nil
   private enum Page: Int { case schedule, overview }
@@ -98,7 +97,8 @@ struct DayView: View {
           EnergyRingView(
             score: overallScore,
             summaryDate: currentDate,
-            size: 150
+            size: 150,
+            warningMessage: forecastMessage
           )
           VStack(alignment: .center, spacing: 12) {
             labeledMiniRing(title: "Morning", value: parts?.morning)
@@ -125,16 +125,13 @@ struct DayView: View {
             date: currentDate
           )
 
-          ThreePartForecastView(parts: parts, showWarning: forecastWarning)
+          ThreePartForecastView(parts: parts, warningMessage: forecastMessage)
 
           HStack(spacing: 4) {
             Text("Energy Graph")
               .font(.title2.weight(.medium))
-            if forecastWarning && !forecast.isEmpty {
-              Button { showForecastInfo = true } label: {
-                Image(systemName: "info.circle")
-              }
-              .buttonStyle(.embossedInfo)
+            if let msg = forecastMessage, !forecast.isEmpty {
+              WarningIconButton(message: msg)
             }
           }
 
@@ -155,12 +152,13 @@ struct DayView: View {
             Group {
               if let summary {
                 let warn = summary.warning != nil || summary.confidence < 0.4
+                let msg = warn ? forecastMessage : nil
                 DailyEnergyForecastView(
                   values: slice,
                   startHour: startHour,
                   highlightHour: highlight,
                   dotted: warn,
-                  showWarning: warn,
+                  warningMessage: msg,
                   lowCoverage: summary.coverageRatio < 0.5
                 )
               } else {
@@ -169,7 +167,7 @@ struct DayView: View {
                   startHour: startHour,
                   highlightHour: highlight,
                   dotted: isTomorrow || forecastWarning,
-                  showWarning: forecastWarning
+                  warningMessage: forecastMessage
                 )
               }
             }
@@ -178,11 +176,6 @@ struct DayView: View {
         }
         .padding()
         .padding(.bottom, 30)
-        .alert("Limited Data", isPresented: $showForecastInfo) {
-          Button("OK", role: .cancel) {}
-        } message: {
-          Text(forecastInfo ?? "Forecast generated from default heuristics due to missing health data.")
-        }
       }
     }
 
@@ -442,8 +435,14 @@ struct DayView: View {
 
     self.summary = summary
     forecast = summary.hourlyWaveform
-    forecastInfo = summary.warning
-    forecastWarning = summary.confidence < 0.4 || summary.warning != nil
+    var message: String? = nil
+    if summary.warning == "Insufficient health data" {
+      message = "Today’s forecast is based on fallback logic due to missing health data."
+    } else if summary.confidence < 0.4 {
+      message = "Limited metrics were available. This forecast may be less accurate."
+    }
+    forecastMessage = message
+    forecastWarning = message != nil
 
     if summary.warning == "Insufficient health data" {
       forecast = []

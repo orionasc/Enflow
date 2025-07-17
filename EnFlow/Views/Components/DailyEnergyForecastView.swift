@@ -9,8 +9,8 @@ struct DailyEnergyForecastView: View {
     let highlightHour: Int?
     /// Render the line with a dotted stroke for forecast styling.
     var dotted: Bool = false
-    /// Show a low‑confidence badge in the corner.
-    var showWarning: Bool = false
+    /// Optional warning message shown via an info button.
+    var warningMessage: String? = nil
     /// Dim / stripe the graph when coverage is very low.
     var lowCoverage: Bool = false
 
@@ -27,13 +27,13 @@ struct DailyEnergyForecastView: View {
          startHour: Int = 7,
          highlightHour: Int? = nil,
          dotted: Bool = false,
-         showWarning: Bool = false,
+         warningMessage: String? = nil,
          lowCoverage: Bool = false) {
         self.values        = values
         self.startHour     = startHour
         self.highlightHour = highlightHour
         self.dotted        = dotted
-        self.showWarning   = showWarning
+        self.warningMessage = warningMessage
         self.lowCoverage   = lowCoverage
     }
 
@@ -41,9 +41,16 @@ struct DailyEnergyForecastView: View {
         self.values        = summary.hourlyWaveform
         self.startHour     = 0
         self.highlightHour = highlightHour
-        let warn           = summary.warning != nil || summary.confidence < 0.4
-        self.dotted        = warn
-        self.showWarning   = warn
+        let warnMsg: String?
+        if summary.warning == "Insufficient health data" {
+            warnMsg = "Today’s forecast is based on fallback logic due to missing health data."
+        } else if summary.confidence < 0.4 {
+            warnMsg = "Limited metrics were available. This forecast may be less accurate."
+        } else {
+            warnMsg = nil
+        }
+        self.dotted        = warnMsg != nil
+        self.warningMessage = warnMsg
         self.lowCoverage   = summary.coverageRatio < 0.5
     }
 
@@ -217,16 +224,8 @@ struct DailyEnergyForecastView: View {
         }
 #endif
         .overlay(alignment: .topTrailing) {
-            if showWarning {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                    Text("Limited data")
-                }
-                .font(.caption2.bold())
-                .foregroundColor(.yellow)
-                .padding(4)
-                .background(.ultraThinMaterial, in: Capsule())
-                .help("Limited data today — energy estimates may be less accurate.")
+            if let msg = warningMessage {
+                WarningIconButton(message: msg)
             }
         }
     }

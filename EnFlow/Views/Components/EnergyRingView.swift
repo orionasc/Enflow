@@ -26,6 +26,8 @@ struct EnergyRingView: View {
     var showInfoButton: Bool = true
     /// Show the numeric score label in the center
     var showValueLabel: Bool = true
+    /// Optional warning message for low confidence forecasts
+    var warningMessage: String? = nil
 
     // ───────── Engine + State ──────────────────────────────────────
     @ObservedObject private var engine = EnergySummaryEngine.shared
@@ -240,19 +242,22 @@ struct EnergyRingView: View {
                 .transition(.scale.combined(with: .opacity))
             }
 
-            // — Info button (top-right) —
-            if showInfoButton {
-                VStack {
-                    HStack {
-                        Spacer()
+            // — Info & warning buttons (top-right) —
+            VStack {
+                HStack {
+                    if let msg = warningMessage {
+                        WarningIconButton(message: msg)
+                    }
+                    if showInfoButton {
                         Button { showExplanation = true } label: {
                             Image(systemName: "info.circle")
                                 .font(.headline)
                         }
                         .buttonStyle(.embossedInfo)
                     }
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
+                Spacer()
             }
         }
         .frame(width: size, height: size)
