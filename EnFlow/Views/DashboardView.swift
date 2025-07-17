@@ -142,23 +142,30 @@ struct DashboardView: View {
         }
 
         // — Daily line graph —
-        if let wave = todaySummary?.hourlyWaveform, !missingTodayData {
-          let profile = UserProfileStore.load()
-          let range = visibleRange(for: profile, default: 7..<19)
-          let slice = energySlice(wave, range: range)
-          let startHour = range.lowerBound % 24
-          var highlight = Calendar.current.component(.hour, from: Date())
-          if range.upperBound > 24 && highlight < startHour { highlight += 24 }
-          VStack(alignment: .leading, spacing: 8) {
-            Text("Daily Energy Forecast")
-                  .font(.headline)
-            DailyEnergyForecastView(
-              values: slice,
-              startHour: startHour,
-              highlightHour: highlight
-            )
+          if let wave = todaySummary?.hourlyWaveform, !missingTodayData {
+            let profile = UserProfileStore.load()
+            let range = visibleRange(for: profile, default: 7..<19)
+            let slice = energySlice(wave, range: range)
+            let startHour = range.lowerBound % 24
+
+            // Move mutation logic out of ViewBuilder context
+            let currentHour = Calendar.current.component(.hour, from: Date())
+            let highlight = (range.upperBound > 24 && currentHour < startHour)
+              ? currentHour + 24
+              : currentHour
+
+            VStack(alignment: .leading, spacing: 8) {
+              Text("Daily Energy Forecast")
+                .font(.headline)
+              DailyEnergyForecastView(
+                values: slice,
+                startHour: startHour,
+                highlightHour: highlight
+              )
+            }
           }
-        }
+
+
 
         // — Morning / Afternoon / Evening rings —
         ThreePartForecastView(parts: todayParts)
@@ -217,7 +224,7 @@ struct DashboardView: View {
           let slice = energySlice(wave, range: range)
           let startHour = range.lowerBound % 24
           VStack(alignment: .leading, spacing: 8) {
-            Text("24-Hour Energy Forecast")
+            Text("Tomorrow's Energy Forecast")
               .font(.headline)
               .saturation(0.7)
             DailyEnergyForecastView(values: slice,

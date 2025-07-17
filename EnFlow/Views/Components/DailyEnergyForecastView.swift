@@ -3,73 +3,83 @@ import SwiftUI
 struct DailyEnergyForecastView: View {
     /// Energy values for consecutive hours starting at `startHour`.
     let values: [Double]
-    /// First hour represented in `values`. Defaults to 7AM for backward
-    /// compatibility with the dashboard.
+    /// First hour represented in `values`. Defaults to 7 AM for backward‑compat.
     let startHour: Int
     /// Hour to highlight with a pulsing dot. Nil to disable.
     let highlightHour: Int?
     /// Render the line with a dotted stroke for forecast styling.
     var dotted: Bool = false
-    /// Show a low-confidence badge in the corner
+    /// Show a low‑confidence badge in the corner.
     var showWarning: Bool = false
-    /// Dim/stripe the graph when coverage is very low
+    /// Dim / stripe the graph when coverage is very low.
     var lowCoverage: Bool = false
-    
-    @State private var pulse = false
+
+    @State private var pulse         = false
     @State private var activeIndex: Int? = nil
     @State private var tooltipWidth: CGFloat = 0
-    @State private var dragging = false
+    @State private var dragging      = false
     @State private var graphWidth: CGFloat = 0
-    
+
     private let calendar = Calendar.current
 
+    // ─── Initialisers ───────────────────────────────────────────────────────
     init(values: [Double],
          startHour: Int = 7,
          highlightHour: Int? = nil,
          dotted: Bool = false,
          showWarning: Bool = false,
          lowCoverage: Bool = false) {
-        self.values = values
-        self.startHour = startHour
+        self.values        = values
+        self.startHour     = startHour
         self.highlightHour = highlightHour
-        self.dotted = dotted
-        self.showWarning = showWarning
-        self.lowCoverage = lowCoverage
+        self.dotted        = dotted
+        self.showWarning   = showWarning
+        self.lowCoverage   = lowCoverage
     }
 
     init(summary: DayEnergySummary, highlightHour: Int? = nil) {
-        self.values = summary.hourlyWaveform
-        self.startHour = 0
+        self.values        = summary.hourlyWaveform
+        self.startHour     = 0
         self.highlightHour = highlightHour
-        let warn = summary.warning != nil || summary.confidence < 0.4
-        self.dotted = warn
-        self.showWarning = warn
-        self.lowCoverage = summary.coverageRatio < 0.5
+        let warn           = summary.warning != nil || summary.confidence < 0.4
+        self.dotted        = warn
+        self.showWarning   = warn
+        self.lowCoverage   = summary.coverageRatio < 0.5
     }
-    
+
+    // ─── View body ─────────────────────────────────────────────────────────
     var body: some View {
         GeometryReader { proxy in
-            let count = values.count
-            let width = proxy.size.width
+            let count  = values.count
+            let width  = proxy.size.width
             let height = proxy.size.height
 
             ZStack {
+                // Pre‑compute helpers ---------------------------------------------------
                 let clamped = values.map { min(max($0, 0), 1) }
-                let points = (0..<count).map { i -> CGPoint in
+                let points  = (0..<count).map { i -> CGPoint in
                     let x = width * CGFloat(i) / CGFloat(max(count - 1, 1))
                     let y = height * (1 - CGFloat(clamped[i]))
                     return CGPoint(x: x, y: y)
                 }
-                let path = smoothPath(points)
+                let path   = smoothPath(points)
                 let dash: [CGFloat] = dotted ? [2, 3] : []
                 let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round, dash: dash)
-                
+
+                // Gradient energy line -------------------------------------------------
                 Group {
                     ColorPalette.verticalEnergyGradient
                         .mask(path.stroke(style: stroke))
                         .overlay(
                             ColorPalette.verticalEnergyGradient
-                        .mask(path.stroke(style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round, dash: dash)))
+                                .mask(
+                                    path.stroke(
+                                        style: StrokeStyle(lineWidth: 6,
+                                                           lineCap: .round,
+                                                           lineJoin: .round,
+                                                           dash: dash)
+                                    )
+                                )
                                 .blur(radius: 3)
                                 .opacity(0.7)
                         )
@@ -89,29 +99,36 @@ struct DailyEnergyForecastView: View {
                         }
                     }
                 )
-                
-                if var h = highlightHour {
-                    if h < startHour { h += 24 }
+
+                // Highlight dot -------------------------------------------------------
+
+                if let hRaw = highlightHour {
+                    let h = hRaw < startHour ? hRaw + 24 : hRaw
                     if h >= startHour && h < startHour + count {
                         let idx = h - startHour
-                        let pt = points[idx]
+                        let pt  = points[idx]
+
                         Circle()
                             .fill(Color.white)
                             .frame(width: 8, height: 8)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.8), lineWidth: 2)
-                                .scaleEffect(pulse ? 1.6 : 1)
-                                .opacity(pulse ? 0 : 1)
-                        )
-                        .position(pt)
-                        .onAppear {
-                            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
-                                pulse.toggle()
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.8), lineWidth: 2)
+                                    .scaleEffect(pulse ? 1.6 : 1)
+                                    .opacity(pulse ? 0 : 1)
+                            )
+                            .position(pt)
+                            .onAppear {
+                                withAnimation(.easeInOut(duration: 1.2)
+                                    .repeatForever(autoreverses: false)) {
+                                        pulse.toggle()
+                                    }
                             }
-                        }
+                    }
                 }
 
+
+                // X-axis hour labels
                 ForEach(Array(stride(from: 0, to: count, by: 2)), id: \.self) { idx in
                     let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
                     Text(hourLabel((startHour + idx) % 24))
@@ -120,6 +137,7 @@ struct DailyEnergyForecastView: View {
                         .position(x: x, y: height + 10)
                 }
 
+                // Peak / trough guides
                 ForEach(significantPeaksAndTroughs(), id: \.self) { idx in
                     let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
                     Path { p in
@@ -129,9 +147,9 @@ struct DailyEnergyForecastView: View {
                     .stroke(
                         LinearGradient(
                             gradient: Gradient(stops: [
-                                .init(color: .clear, location: 0),
+                                .init(color: .clear,              location: 0),
                                 .init(color: .white.opacity(0.5), location: 0.5),
-                                .init(color: .clear, location: 1)
+                                .init(color: .clear,              location: 1)
                             ]),
                             startPoint: .top,
                             endPoint: .bottom
@@ -140,6 +158,8 @@ struct DailyEnergyForecastView: View {
                     )
                 }
 
+
+                // Interactive tooltip -------------------------------------------------
                 if let idx = activeIndex {
                     let point = points[idx]
                     let score = Int(clamped[idx] * 100)
@@ -157,14 +177,20 @@ struct DailyEnergyForecastView: View {
                         .position(point)
 
                     TooltipBubble(hour: label, score: score)
-                        .background(GeometryReader { g in
-                            Color.clear.onAppear { tooltipWidth = g.size.width }
-                        })
-                        .position(x: clamp(point.x, lower: tooltipWidth / 2, upper: width - tooltipWidth / 2),
-                                  y: point.y - 28)
+                        .background(
+                            GeometryReader { g in
+                                Color.clear.onAppear { tooltipWidth = g.size.width }
+                            }
+                        )
+                        .position(
+                            x: clamp(point.x, lower: tooltipWidth / 2, upper: width - tooltipWidth / 2),
+                            y: point.y - 28
+                        )
                         .animation(.easeInOut(duration: 0.25), value: activeIndex)
                         .transition(.opacity)
                 }
+
+                // Track width changes for drag mapping -------------------------------
                 Color.clear
                     .onAppear { graphWidth = width }
                     .onChange(of: width) { graphWidth = $0 }
@@ -178,9 +204,7 @@ struct DailyEnergyForecastView: View {
                     dragging = true
                     let x = min(max(0, value.location.x), graphWidth)
                     let idx = Int(round(x / graphWidth * CGFloat(max(values.count - 1, 1))))
-                    if idx != activeIndex {
-                        activeIndex = idx
-                    }
+                    if idx != activeIndex { activeIndex = idx }
                 }
                 .onEnded { _ in
                     dragging = false
@@ -189,9 +213,7 @@ struct DailyEnergyForecastView: View {
         )
 #if !os(iOS)
         .onHover { inside in
-            if !inside && !dragging {
-                activeIndex = nil
-            }
+            if !inside && !dragging { activeIndex = nil }
         }
 #endif
         .overlay(alignment: .topTrailing) {
@@ -209,6 +231,7 @@ struct DailyEnergyForecastView: View {
         }
     }
 
+    // ─── Math helpers ─────────────────────────────────────────────────────---
     private func average(_ vals: [Double]) -> Double {
         guard !vals.isEmpty else { return 0.5 }
         return vals.reduce(0, +) / Double(vals.count)
@@ -227,7 +250,7 @@ struct DailyEnergyForecastView: View {
             let prev = values[i - 1]
             let curr = values[i]
             let next = values[i + 1]
-            let isPeak = curr > prev && curr > next && curr - min(prev, next) > threshold
+            let isPeak   = curr > prev && curr > next && curr - min(prev, next) > threshold
             let isTrough = curr < prev && curr < next && max(prev, next) - curr > threshold
             if isPeak || isTrough { result.append(i) }
         }
@@ -241,9 +264,9 @@ struct DailyEnergyForecastView: View {
         for i in 1..<pts.count {
             let prev = pts[i - 1]
             let curr = pts[i]
-            let dx = curr.x - prev.x
-            let c1 = CGPoint(x: prev.x + dx * 0.6, y: prev.y)
-            let c2 = CGPoint(x: curr.x - dx * 0.6, y: curr.y)
+            let dx   = curr.x - prev.x
+            let c1   = CGPoint(x: prev.x + dx * 0.6, y: prev.y)
+            let c2   = CGPoint(x: curr.x - dx * 0.6, y: curr.y)
             path.addCurve(to: curr, control1: c1, control2: c2)
         }
         return path
@@ -254,6 +277,7 @@ struct DailyEnergyForecastView: View {
     }
 }
 
+// ─── Tooltip ---------------------------------------------------------------
 private struct TooltipBubble: View {
     let hour: String
     let score: Int

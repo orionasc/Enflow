@@ -115,76 +115,76 @@ struct DayView: View {
   }
 
   // MARK: ─ Page 2: 24-hour Overview ───────────────────────────
-  private var overviewPage: some View {
-    ScrollView {
+    private var overviewPage: some View {
+      ScrollView {
         VStack(spacing: 40) {
 
-        DayEnergyInsightsView(
-          forecast: forecast,
-          events: events,
-          date: currentDate
-        )
+          DayEnergyInsightsView(
+            forecast: forecast,
+            events: events,
+            date: currentDate
+          )
 
-        ThreePartForecastView(parts: parts, showWarning: forecastWarning)
-        HStack(spacing: 4) {
-          Text("24-Hour Energy Graph")
-            .font(.title2.weight(.medium))
-          if forecastWarning && !forecast.isEmpty {
-            Button { showForecastInfo = true } label: {
-              Image(systemName: "info.circle")
-            }
-            .buttonStyle(.embossedInfo)
-          }
-        }
+          ThreePartForecastView(parts: parts, showWarning: forecastWarning)
 
-        if forecast.isEmpty {
-          Text("Energy forecast unavailable – not enough health data for this day")
-            .frame(maxWidth: .infinity, minHeight: 220)
-            .foregroundColor(.secondary)
-        } else {
-          let profile = UserProfileStore.load()
-          let range = visibleRange(for: profile, default: 0..<24)
-          let slice = energySlice(forecast, range: range)
-          let startHour = range.lowerBound % 24
-          var highlight = isToday ? calendar.component(.hour, from: now) : nil
-          if let h = highlight, range.upperBound > 24 && h < startHour {
-            highlight = h + 24
-          }
-          Group {
-            if let summary {
-              let warn = summary.warning != nil || summary.confidence < 0.4
-              DailyEnergyForecastView(
-                values: slice,
-                startHour: startHour,
-                highlightHour: highlight,
-                dotted: warn,
-                showWarning: warn,
-                lowCoverage: summary.coverageRatio < 0.5
-              )
-            } else {
-              DailyEnergyForecastView(
-                values: slice,
-                startHour: startHour,
-                highlightHour: highlight,
-                dotted: isTomorrow || forecastWarning,
-                showWarning: forecastWarning
-              )
+          HStack(spacing: 4) {
+            Text("Energy Graph")
+              .font(.title2.weight(.medium))
+            if forecastWarning && !forecast.isEmpty {
+              Button { showForecastInfo = true } label: {
+                Image(systemName: "info.circle")
+              }
+              .buttonStyle(.embossedInfo)
             }
           }
-          .frame(height: 220)
 
+          if forecast.isEmpty {
+            Text("Energy forecast unavailable – not enough health data for this day")
+              .frame(maxWidth: .infinity, minHeight: 220)
+              .foregroundColor(.secondary)
+          } else {
+            let profile = UserProfileStore.load()
+            let range = visibleRange(for: profile, default: 0..<24)
+            let slice = energySlice(forecast, range: range)
+            let startHour = range.lowerBound % 24
+            let baseHighlight = isToday ? calendar.component(.hour, from: now) : nil
+            let highlight = (baseHighlight != nil && range.upperBound > 24 && baseHighlight! < startHour)
+              ? baseHighlight! + 24
+              : baseHighlight
+
+            Group {
+              if let summary {
+                let warn = summary.warning != nil || summary.confidence < 0.4
+                DailyEnergyForecastView(
+                  values: slice,
+                  startHour: startHour,
+                  highlightHour: highlight,
+                  dotted: warn,
+                  showWarning: warn,
+                  lowCoverage: summary.coverageRatio < 0.5
+                )
+              } else {
+                DailyEnergyForecastView(
+                  values: slice,
+                  startHour: startHour,
+                  highlightHour: highlight,
+                  dotted: isTomorrow || forecastWarning,
+                  showWarning: forecastWarning
+                )
+              }
+            }
+            .frame(height: 220)
+          }
+        }
+        .padding()
+        .padding(.bottom, 30)
+        .alert("Limited Data", isPresented: $showForecastInfo) {
+          Button("OK", role: .cancel) {}
+        } message: {
+          Text(forecastInfo ?? "Forecast generated from default heuristics due to missing health data.")
         }
       }
-      .padding()
-      .padding(.bottom, 30)
-      .alert("Limited Data", isPresented: $showForecastInfo) {
-        Button("OK", role: .cancel) {}
-      } message: {
-        Text(forecastInfo ?? "Forecast generated from default heuristics due to missing health data.")
-      }
-
     }
-  }
 
   // MARK: ─ Timeline with multi-hour blocks ────────────────────
   private var timeline: some View {
