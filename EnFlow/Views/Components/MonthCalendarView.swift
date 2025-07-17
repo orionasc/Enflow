@@ -252,10 +252,10 @@ struct MonthCalendarView: View {
            let dayHealth = allHealth.filter { calendar.isDate($0.date, inSameDayAs: date) }
            let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
             let profile = UserProfileStore.load()
-            let summary = UnifiedEnergyModel.shared.summary(for: date,
-                                                           healthEvents: dayHealth,
-                                                           calendarEvents: dayEvents,
-                                                           profile: profile)
+            let summary = SummaryProvider.summary(for: date,
+                                                 healthEvents: dayHealth,
+                                                 calendarEvents: dayEvents,
+                                                 profile: profile)
             if summary.warning != "Insufficient health data" {
                 results[date] = summary.overallEnergyScore
                 warnings[date] = summary.confidence < 0.4 || summary.warning != nil || summary.coverageRatio < 0.5

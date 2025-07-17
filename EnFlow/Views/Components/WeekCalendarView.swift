@@ -297,16 +297,17 @@ struct WeekCalendarView: View {
                     let dayHealth = health.filter { calendar.isDate($0.date, inSameDayAs: day) }
                    let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: day) }
                     let profile = UserProfileStore.load()
-                    let summary = UnifiedEnergyModel.shared.summary(for: day,
-                                                                  healthEvents: dayHealth,
-                                                                  calendarEvents: dayEvents,
-                                                                  profile: profile)
+                    let summary = SummaryProvider.summary(for: day,
+                                                          healthEvents: dayHealth,
+                                                          calendarEvents: dayEvents,
+                                                          profile: profile)
                     if summary.warning == "Insufficient health data" {
                         matrix[d] = Array(repeating: nil, count: hours.count)
                         scores[d] = nil
                         warnings[d] = false
                     } else {
-                        matrix[d] = Array(summary.hourlyWaveform[4...23])
+                        let wave = summary.hourlyWaveform.count == 24 ? summary.hourlyWaveform : Array(repeating: 0.5, count: 24)
+                        matrix[d] = Array(wave[4...23])
                         scores[d] = summary.overallEnergyScore
                         warnings[d] = summary.confidence < 0.4 || summary.warning != nil || summary.coverageRatio < 0.5
                     }

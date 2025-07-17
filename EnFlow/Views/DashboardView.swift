@@ -273,12 +273,12 @@ struct DashboardView: View {
     let profile = UserProfileStore.load()
 
     // Daily summaries blended with forecast
-    let tSummary = UnifiedEnergyModel.shared.summary(
+    let tSummary = SummaryProvider.summary(
       for: today,
       healthEvents: healthList,
       calendarEvents: eventsToday,
       profile: profile)
-    let tmSummary = UnifiedEnergyModel.shared.summary(
+    let tmSummary = SummaryProvider.summary(
       for: tomorrow,
       healthEvents: healthList,
       calendarEvents: eventsTomorrow,

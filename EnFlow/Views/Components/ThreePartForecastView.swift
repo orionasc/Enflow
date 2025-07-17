@@ -28,12 +28,15 @@ struct ThreePartForecastView: View {
     .saturation(desaturate ? 0.6 : 1.0)
     .overlay(alignment: .topTrailing) {
       if showWarning {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .font(.caption2)
-          .foregroundColor(.yellow)
-          .padding(4)
-          .background(.ultraThinMaterial, in: Circle())
-          .help("Limited data today — energy estimates may be less accurate.")
+        HStack(spacing: 4) {
+          Image(systemName: "exclamationmark.triangle.fill")
+          Text("Limited data")
+        }
+        .font(.caption2.bold())
+        .foregroundColor(.yellow)
+        .padding(4)
+        .background(.ultraThinMaterial, in: Capsule())
+        .help("Limited data today — energy estimates may be less accurate.")
       }
     }
   }
