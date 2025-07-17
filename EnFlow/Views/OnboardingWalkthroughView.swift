@@ -23,11 +23,11 @@ struct OnboardingWalkthroughView: View {
     var body: some View {
         TabView(selection: $pageIndex) {
             WelcomePage(mg: mg).tag(0)
-            EnergyRingDemoPage().tag(1)
-            WaveformDemoPage().tag(2)
-            SyncTipsPage().tag(3)
-            ExpectationsPage().tag(4)
-            MeetSolPage().tag(5)
+            MeetSolPage().tag(1)
+            EnergyRingDemoPage().tag(2)
+            WaveformDemoPage().tag(3)
+            SyncTipsPage().tag(4)
+            ExpectationsPage().tag(5)
             EarlyTesterPage(onFinish: completeOnboarding).tag(6)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
@@ -48,7 +48,21 @@ struct WelcomePage: View {
     @State private var pulse = false
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(#colorLiteral(red: 0.984, green: 0.749, blue: 0.141, alpha: 1)), Color(#colorLiteral(red: 0.925, green: 0.286, blue: 0.6, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
+            TimelineView(.animation(minimumInterval: 1/20)) { context in
+                let t = context.date.timeIntervalSinceReferenceDate / 6
+                let x = 0.5 + 0.1 * cos(t)
+                let y = 0.5 + 0.1 * sin(t)
+                RadialGradient(
+                    colors: [
+                        Color(#colorLiteral(red: 0.984, green: 0.749, blue: 0.141, alpha: 1)),
+                        Color(#colorLiteral(red: 0.925, green: 0.286, blue: 0.6, alpha: 1))
+                    ],
+                    center: .init(x: x, y: y),
+                    startRadius: 40,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
+            }
 
             VStack(spacing: 28) {
                 Spacer()
@@ -77,13 +91,13 @@ struct WelcomePage: View {
                     .padding(.horizontal)
 
                 Spacer()
-                Image(systemName: "chevron.down")
+                Image(systemName: "chevron.right")
                     .font(.title)
                     .foregroundColor(.white.opacity(0.7))
                     .opacity(0.8)
                     .padding(.bottom, 40)
             }
-            .padding()
+            .padding(.horizontal)
         }
     }
 }
@@ -92,17 +106,25 @@ struct WelcomePage: View {
 struct EnergyRingDemoPage: View {
     @State private var demoScore: Double = 25
     @State private var index = 0
+    private let demoTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     private let demoScores: [Double] = [25, 65, 95]
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color.black, Color(#colorLiteral(red: 0.129, green: 0.129, blue: 0.157, alpha: 1))], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
             VStack(spacing: 40) {
                 Spacer(minLength: 80)
                 EnergyRingView(score: demoScore,  animateFromZero: true, shimmer: true)
                     .frame(width: 200, height: 200)
+                    .clipShape(Circle())
                     .animation(.spring(response: 0.6, dampingFraction: 0.8), value: demoScore)
+
+                Text("Low / Moderate / Supercharged represent how ready your body and mind feel. Watch the ring shift as your energy improves.")
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
 
                 Text("Tap below to explore different energy states")
                     .foregroundColor(.white.opacity(0.8))
@@ -124,21 +146,32 @@ struct EnergyRingDemoPage: View {
                 }
                 Spacer()
             }
+            .onReceive(demoTimer) { _ in
+                withAnimation {
+                    index = (index + 1) % demoScores.count
+                    demoScore = demoScores[index]
+                }
+            }
         }
     }
 }
 
 // MARK: ‑‑‑ PAGE 3 — Waveform Demo ‑‑‑
 struct WaveformDemoPage: View {
-    enum Slice: String, CaseIterable { case morning, afternoon, evening }
-    @State private var slice: Slice = .morning
+    @State private var drawWave = false
 
-    // Placeholder synthetic wave — replace with realistic sample if desired
-    private let fullWave: [Double] = (0..<24).map { i in 0.5 + 0.35 * sin(Double(i)/3) }
+    private var sampleWave: [Double] {
+        let count = 240
+        return (0..<count).map { i in
+            let x = Double(i) / Double(count - 1) * .pi * 2
+            return 0.5 + 0.4 * sin(x)
+        }
+    }
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.05, green: 0.08, blue: 0.2, alpha: 1)), Color(#colorLiteral(red: 0.12, green: 0.12, blue: 0.12, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
 
             VStack(spacing: 28) {
                 Spacer(minLength: 40)
@@ -146,39 +179,23 @@ struct WaveformDemoPage: View {
                     .font(.title.bold())
                     .foregroundColor(.white)
 
-                DailyEnergyForecastView(values: currentSlice, startHour: startHour)
+                DailyEnergyForecastView(values: sampleWave, startHour: 0)
                     .frame(height: 140)
                     .padding(.horizontal)
-                    // TODO: animate path draw‑in using trim from 0→1
+                    .mask(
+                        Rectangle()
+                            .scaleEffect(x: drawWave ? 1 : 0, anchor: .leading)
+                            .animation(.easeOut(duration: 1.5), value: drawWave)
+                    )
+                    .onAppear { drawWave = true }
 
-                Picker("", selection: $slice) {
-                    ForEach(Slice.allCases, id: \ .self) { s in
-                        Text(s.rawValue.capitalized).tag(s)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 40)
-                .onChange(of: slice) { _ in UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
-
-                Text(sliceDescription)
+                Text("Your energy waveform is a continuous view of how your mind and body tend to rise, peak, and wind down throughout the day. The more you use EnFlow, the more personal and accurate this becomes.")
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
+
                 Spacer()
             }
-        }
-    }
-
-    private var startHour: Int { slice == .morning ? 6 : slice == .afternoon ? 12 : 18 }
-    private var currentSlice: [Double] {
-        let range = startHour..<(startHour+8)
-        return Array(fullWave[range])
-    }
-    private var sliceDescription: String {
-        switch slice {
-        case .morning: return "Morning energy often reflects your sleep quality and baseline recovery."
-        case .afternoon: return "Afternoon energy is heavily shaped by workload and caffeine timing."
-        case .evening: return "Evening energy shows lingering stress and how well you wind down."
         }
     }
 }
@@ -188,6 +205,7 @@ struct SyncTipsPage: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.08, green: 0.09, blue: 0.18, alpha: 1)), Color(#colorLiteral(red: 0.04, green: 0.05, blue: 0.1, alpha: 1))], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
             VStack(spacing: 24) {
                 Spacer(minLength: 40)
                 Text("How We Sync With You")
@@ -239,6 +257,18 @@ private struct SyncCard: View {
     }
 }
 
+private struct ScreenshotPlaceholder: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .fill(Color.white.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(Color.white.opacity(0.2))
+            )
+            .shadow(radius: 8)
+    }
+}
+
 // MARK: ‑‑‑ PAGE 5 — Expectations ‑‑‑
 struct ExpectationsPage: View {
     @State private var screenshotIndex = 0
@@ -247,16 +277,21 @@ struct ExpectationsPage: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.05, green: 0.08, blue: 0.2, alpha: 1)), Color(#colorLiteral(red: 0.12, green: 0.12, blue: 0.12, alpha: 1))], startPoint: .topLeading, endPoint: .bottom)
+                .ignoresSafeArea()
             VStack(spacing: 28) {
                 Text("What Can I Expect?")
                     .font(.title.bold())
                     .foregroundColor(.yellow)
 
+                Text("EnFlow helps you track energy, surface actionable nudges, and detect patterns across time — all built around your calendar and wearable inputs.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal)
+
                 TabView(selection: $screenshotIndex) {
-                    // TODO: replace Color placeholders with actual screenshots
-                    Color.orange.tag(0)
-                    Color.blue.tag(1)
-                    Color.purple.tag(2)
+                    ForEach(0..<3) { idx in
+                        ScreenshotPlaceholder().tag(idx)
+                    }
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 .frame(height: 280)
@@ -293,7 +328,8 @@ struct MeetSolPage: View {
 
     var body: some View {
         ZStack {
-            RadialGradient(colors: [Color.yellow.opacity(0.6), Color.orange.opacity(0.3)], center: .center, startRadius: 40, endRadius: 400).ignoresSafeArea()
+            RadialGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]), center: .center, startRadius: 20, endRadius: 500)
+                .ignoresSafeArea()
             VStack(spacing: 24) {
                 Spacer(minLength: 60)
                 Image(systemName: "sun.max.fill")
@@ -307,6 +343,13 @@ struct MeetSolPage: View {
                 Text("Meet Sol")
                     .font(.largeTitle.bold())
                     .foregroundColor(.white)
+                Text("Sol is your adaptive energy assistant.")
+                    .foregroundColor(.white.opacity(0.9))
+                Text("In future updates, Sol will become interactive — a chatbot that understands your needs and can even help you reschedule, adjust plans, or nudge you toward better recovery.")
+                    .font(.callout)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal)
                 Text(facts[factIndex])
                     .font(.title3)
                     .foregroundColor(.white.opacity(0.9))
@@ -314,7 +357,7 @@ struct MeetSolPage: View {
                     .padding(.horizontal)
                 Spacer()
             }
-            .padding()
+            .padding(.horizontal)
         }
     }
 }
@@ -327,6 +370,7 @@ struct EarlyTesterPage: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.15, green: 0.12, blue: 0.32, alpha: 1)), Color(#colorLiteral(red: 0.03, green: 0.04, blue: 0.08, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
             VStack(spacing: 28) {
                 Spacer(minLength: 60)
                 Text("You’re an Early Tester ✨")
@@ -339,6 +383,12 @@ struct EarlyTesterPage: View {
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white.opacity(0.9))
                     .padding(.horizontal)
+
+                Text("The accuracy of your forecasts depends on how often you wear your wearable. You don’t have to wear it to sleep — but we highly recommend wearing it consistently for at least a week to train Sol well.")
+                    .font(.footnote)
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
 
                 Text("After you explore, first visit Settings → Profile to fill out your habits — it helps Sol personalize your forecasts.")
                     .font(.footnote)
