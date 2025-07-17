@@ -36,6 +36,7 @@ struct DashboardView: View {
   @State private var missingTodayData = false
   @State private var missingTomorrowData = false
   @State private var tomorrowConfidence: Double = 0
+  @State private var tomorrowForecastWarning = false
   @State private var scrollOffset: CGFloat = 0
 
 
@@ -211,7 +212,7 @@ struct DashboardView: View {
             Text("24-Hour Energy Forecast")
               .font(.headline)
               .saturation(0.7)
-            DailyEnergyForecastView(values: wave, startHour: 0)
+            DailyEnergyForecastView(values: wave, startHour: 0, showWarning: tomorrowForecastWarning)
               .saturation(0.7)
           }
         }
@@ -225,7 +226,8 @@ struct DashboardView: View {
         ThreePartForecastView(
           parts: tomorrowParts,
           dashed: true,
-          desaturate: true)
+          desaturate: true,
+          showWarning: tomorrowForecastWarning)
 
         if let ctx = tomorrowCtx {
           SuggestedPrioritiesView(context: ctx)
@@ -281,12 +283,15 @@ struct DashboardView: View {
       healthEvents: healthList,
       calendarEvents: eventsTomorrow,
       profile: profile)
-    let forecastConf =
-      EnergyForecastModel().forecast(
+    let fc = EnergyForecastModel().forecast(
         for: tomorrow,
         health: healthList,
         events: eventsTomorrow,
-        profile: profile)?.confidenceScore ?? 0
+        profile: profile)
+    let forecastConf = fc?.confidenceScore ?? 0
+    let forecastWarn = fc.map { $0.confidenceScore < 0.4 ||
+                                $0.sourceType == .defaultHeuristic ||
+                                $0.debugInfo != nil } ?? false
 
     let noToday = tSummary.warning == "Insufficient health data"
     let noTomorrow = tmSummary.warning == "Insufficient health data"
@@ -355,6 +360,7 @@ struct DashboardView: View {
       missingTodayData = noToday
       missingTomorrowData = noTomorrow
       tomorrowConfidence = forecastConf
+      tomorrowForecastWarning = forecastWarn
       engine.markRefreshed()  // trigger ring-pulse animation
     }
   }

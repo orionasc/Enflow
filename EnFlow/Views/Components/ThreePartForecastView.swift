@@ -11,6 +11,8 @@ struct ThreePartForecastView: View {
   let parts: EnergyForecastModel.EnergyParts?
   var dashed: Bool = false
   var desaturate: Bool = false
+  /// Display a low-confidence badge
+  var showWarning: Bool = false
 
   private let ringSize: CGFloat = 80
   private let lineWidth: CGFloat = 6
@@ -24,6 +26,16 @@ struct ThreePartForecastView: View {
     }
     .frame(maxWidth: .infinity)
     .saturation(desaturate ? 0.6 : 1.0)
+    .overlay(alignment: .topTrailing) {
+      if showWarning {
+        Image(systemName: "exclamationmark.triangle.fill")
+          .font(.caption2)
+          .foregroundColor(.yellow)
+          .padding(4)
+          .background(.ultraThinMaterial, in: Circle())
+          .help("Limited data today — energy estimates may be less accurate.")
+      }
+    }
   }
 
   @ViewBuilder
