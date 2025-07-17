@@ -2,6 +2,7 @@ import Foundation
 
 /// Provides day-level energy summaries with caching and simulated-data guards.
 struct SummaryProvider {
+    @MainActor
     static func summary(for date: Date,
                         healthEvents: [HealthEvent],
                         calendarEvents: [CalendarEvent],
