@@ -16,6 +16,19 @@ enum ActionUrgencyLevel: String, Codable {
     case low, moderate, high
 }
 
+enum ActionMode: String, CaseIterable, Identifiable {
+    case boost, balance, replan
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .boost:   return "Boost Me"
+        case .balance: return "Balance Me"
+        case .replan:  return "Reschedule Me"
+        }
+    }
+}
+
 struct ActionCard: Identifiable, Codable, Equatable {
     let id: UUID
     let title: String
@@ -47,6 +60,12 @@ struct ActionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            Picker("", selection: $vm.mode) {
+                ForEach(ActionMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
 
             if vm.isLoading {
                 ProgressView().frame(maxWidth: .infinity)
@@ -72,6 +91,9 @@ struct ActionsView: View {
             ExplainSheetView(header: card.title, bullets: [card.rationale], timestamp: Date(), template: nil)
         }
         .task { await vm.load() }
+        .onChange(of: vm.mode) { _ in
+            Task { await vm.load(force: true) }
+        }
         .animation(.easeInOut, value: vm.cards)
     }
 
