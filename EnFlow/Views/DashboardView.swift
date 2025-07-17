@@ -157,10 +157,8 @@ struct DashboardView: View {
         // — Morning / Afternoon / Evening rings —
         ThreePartForecastView(parts: todayParts)
 
-        // — GPT Suggested Priorities —
-        if let ctx = todayCtx {
-          SuggestedPrioritiesView(context: ctx)
-        }
+        // — GPT Actions —
+        ActionsView()
 
         DailyFeedbackCard()
 
@@ -229,9 +227,7 @@ struct DashboardView: View {
           desaturate: true,
           showWarning: tomorrowForecastWarning)
 
-        if let ctx = tomorrowCtx {
-          SuggestedPrioritiesView(context: ctx)
-        }
+        ActionsView()
 
         Spacer(minLength: 60)
       }
