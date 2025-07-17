@@ -26,8 +26,10 @@ final class UnifiedEnergyModel {
                                               calendarEvents: calendarEvents,
                                               profile: profile)
 
-        let startOfToday = calendar.startOfDay(for: Date())
-        let isPast = date < startOfToday
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+        let startOfTarget = calendar.startOfDay(for: date)
+        let isPast = startOfTarget < startOfToday
 
         if isPast && summary.warning != "Insufficient health data" {
             cache.saveWave(summary.hourlyWaveform, for: date)
@@ -73,9 +75,8 @@ final class UnifiedEnergyModel {
             return summary
         }
         cache.saveForecast(forecast)
-        let now = Date()
 
-        if calendar.isDateInToday(date) {
+        if startOfTarget == startOfToday {
             let hr = calendar.component(.hour, from: now)
             let blendWidth = 3
             let end = min(23, hr + blendWidth)
