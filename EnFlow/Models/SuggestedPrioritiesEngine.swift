@@ -42,6 +42,11 @@ enum PriorityTemplate: String, Codable, CaseIterable, Hashable, Identifiable {
     }
 }
 
+enum PriorityUrgencyLevel: String, Codable {
+    case low, moderate, high
+    var label: String { rawValue.capitalized }
+}
+
 struct TemplatePrompt: Identifiable, Hashable, Codable {
     let id       = UUID()
     let template : PriorityTemplate
@@ -53,6 +58,8 @@ struct PriorityResult: Identifiable, Hashable, Codable {
     let template  : PriorityTemplate
     let text      : String              // “Title\nBody”
     var rationale : String   = ""
+    var urgency   : PriorityUrgencyLevel = .moderate
+    var rationaleTags: [String] = []
 
     // Action-state (UI local)
     var isPinned        = false
@@ -68,6 +75,8 @@ struct PriorityResult: Identifiable, Hashable, Codable {
     init(template: PriorityTemplate, text: String) {
         self.template = template
         self.text     = text
+        self.urgency  = .moderate
+        self.rationaleTags = []
     }
 }
 

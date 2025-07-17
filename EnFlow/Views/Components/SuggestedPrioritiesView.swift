@@ -5,6 +5,94 @@
 
 import SwiftUI
 
+// MARK: - Card Subviews -------------------------------------------------------
+
+private struct PriorityCardHeaderView: View {
+    let urgency: PriorityUrgencyLevel
+    var body: some View {
+        HStack {
+            Text(urgency.label)
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(headerBackground)
+                .clipShape(Capsule())
+            Spacer()
+        }
+    }
+
+    private var headerBackground: some View {
+        switch urgency {
+        case .low:       Color.gray.opacity(0.15)
+        case .moderate:  Color.accentColor.opacity(0.2)
+        case .high:      Color.red.opacity(0.25)
+        }
+    }
+}
+
+private struct PriorityCardBodyView: View {
+    let template: PriorityTemplate
+    let title: String
+    let bodyText: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(color(for: template).opacity(0.35))
+                    .frame(width: 34, height: 34)
+                    .blur(radius: 1)
+
+                Image(systemName: template.sfSymbol)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(iconColor(for: template))
+                    .shadow(color: iconColor(for: template).opacity(0.6), radius: 3)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                if !bodyText.isEmpty {
+                    Text(bodyText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func color(for template: PriorityTemplate) -> Color {
+        switch template {
+        case .focus:       return Color.blue
+        case .movement:    return Color.orange
+        case .rest:        return Color.indigo
+        case .planning:    return Color.pink
+        case .mindfulness: return Color.purple
+        }
+    }
+
+    private func iconColor(for template: PriorityTemplate) -> Color { color(for: template) }
+}
+
+private struct PriorityCardTagList: View {
+    let tags: [String]
+    var body: some View {
+        if tags.isEmpty { EmptyView() } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(tags, id: \"self\") { tag in
+                        RationaleChip(text: tag)
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Context passed in from DashboardView to drive GPT suggestions.
 struct SuggestedPriorityContext {
   let overallEnergy: Double  // 0…1
@@ -116,54 +204,23 @@ struct SuggestedPrioritiesView: View {
   private func suggestionCard(for p: PriorityResult) -> some View {
     let parts = p.text.components(separatedBy: .newlines)
     let titleLine = parts.first ?? p.text
-    let bodyLines: String = {
-      if parts.count > 1 { return parts.dropFirst().joined(separator: "\n") }
-      if let idx = p.text.firstIndex(where: { ".:?!".contains($0) }) {
-        return String(p.text[p.text.index(after: idx)...])
-          .trimmingCharacters(in: .whitespaces)
-      }
-      return ""
-    }()
-
+    let bodyLines = parts.dropFirst().joined(separator: " \n")
     let tint = color(for: p.template)
 
-    VStack(alignment: .leading, spacing: 8) {
-      Text("Based on today’s recovery + forecast")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-
-      HStack(alignment: .top, spacing: 12) {
-        ZStack {
-          Circle()
-            .fill(tint.opacity(0.35))
-            .frame(width: 34, height: 34)
-            .blur(radius: 1)
-
-          Image(systemName: p.template.sfSymbol)
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundColor(iconColor(for: p.template))
-            .shadow(color: iconColor(for: p.template).opacity(0.6), radius: 3)
-        }
-        .frame(width: 34, height: 34)
-
-        VStack(alignment: .leading, spacing: 4) {
-          Text(titleLine)
-            .font(.headline)
-            .fontWeight(.semibold)
-          if !bodyLines.isEmpty {
-            Text(bodyLines)
-              .font(.subheadline)
-              .foregroundStyle(.secondary)
-              .fixedSize(horizontal: false, vertical: true)
-          }
-        }
-        Spacer(minLength: 0)
-      }
+    VStack(alignment: .leading, spacing: 12) {
+        PriorityCardHeaderView(urgency: p.urgency)
+        PriorityCardBodyView(template: p.template, title: titleLine, bodyText: bodyLines)
+        PriorityCardTagList(tags: p.rationaleTags)
     }
-    .cardStyle(tint: 65)
+    .cardStyle(tint: p.urgency == .low ? 40 : 65)
     .background(
-      RoundedRectangle(cornerRadius: 16)
-        .fill(tint.opacity(0.15))
+        RoundedRectangle(cornerRadius: 16)
+            .fill(tint.opacity(p.urgency == .low ? 0.1 : 0.15))
+    )
+    .overlay(
+        RoundedRectangle(cornerRadius: 16)
+            .stroke(p.urgency == .high ? tint : .clear, lineWidth: p.urgency == .high ? 2 : 0)
+            .shadow(color: tint.opacity(p.urgency == .high ? 0.8 : 0), radius: p.urgency == .high ? 6 : 0)
     )
   }
 
