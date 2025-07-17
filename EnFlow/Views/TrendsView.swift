@@ -41,6 +41,16 @@ struct TrendsView: View {
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var selectedEventDate: Date? = nil
     @State private var animatePulse = false
+    @State private var showInfo = false
+    private let infoText = """
+    The Trends tab helps you understand how well EnFlow predicts your energy—and how your energy shifts over time. You’ll see two lines: your actual energy (based on real data) and what Sol forecasted for you ahead of time.
+
+    The closer the lines match, the smarter Sol is getting. That accuracy bar? It shows how reliable your energy forecasts have been lately.
+
+    Below that, you’ll find quick insights into emerging patterns and a weekly GPT-generated reflection that highlights recent highs, dips, and behavior connections—like if evening workouts drain you more than they help.
+
+    Come here when you want to zoom out and ask: “Is my energy getting more predictable?” or “What’s the story behind my recent ups and downs?”
+    """
     // Use a vivid blue so the forecast line is clearly distinguished
     private let forecastColor = Color.blue
     /// Fixed colour scale so Charts doesn't override our explicit styles
@@ -150,13 +160,37 @@ struct TrendsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                // Full reload
-                Button(action: { Task { await loadData() } }) {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.yellow)
+                HStack {
+                    Button(action: { Task { await loadData() } }) {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.yellow)
+                    }
+                    .accessibilityLabel("Reload all data and summary")
+
+                    Button(action: { showInfo = true }) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.yellow)
+                    }
+                    .accessibilityLabel("About Trends")
                 }
-                .accessibilityLabel("Reload all data and summary")
             }
+        }
+        .sheet(isPresented: $showInfo) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("About Trends")
+                        .font(.title.bold())
+                        .padding(.bottom, 8)
+                    Text(infoText)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
+            .presentationDetents([.fraction(0.5), .large])
+            .presentationCornerRadius(20)
+            .presentationDragIndicator(.visible)
+            .enflowBackground()
         }
         .navigationDestination(isPresented: Binding(
             get: { selectedEventDate != nil },
