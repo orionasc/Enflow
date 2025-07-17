@@ -17,7 +17,6 @@ struct DayView: View {
   @State private var overallScore: Double? = nil
   @State private var showHeatMap = false
   @State private var now = Date()
-  @State private var forecastSource: DayEnergyForecast.SourceType? = nil
   @State private var forecastInfo: String? = nil
   @State private var showForecastInfo = false
   @State private var forecastWarning = false
@@ -129,7 +128,7 @@ struct DayView: View {
         HStack(spacing: 4) {
           Text("24-Hour Energy Graph")
             .font(.title2.weight(.medium))
-          if forecastSource == .defaultHeuristic && !forecast.isEmpty {
+          if forecastWarning && !forecast.isEmpty {
             Button { showForecastInfo = true } label: {
               Image(systemName: "info.circle")
             }
@@ -146,7 +145,7 @@ struct DayView: View {
             values: forecast,
             startHour: 0,
             highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
-            dotted: isTomorrow || forecastSource == .defaultHeuristic,
+            dotted: isTomorrow || forecastWarning,
             showWarning: forecastWarning
           )
             .frame(height: 220)
@@ -417,30 +416,9 @@ struct DayView: View {
       profile: profile
     )
 
-    if currentDate < startOfToday {
-      let model = EnergyForecastModel()
-      let hist = model.forecast(
-        for: currentDate,
-        health: healthList,
-        events: dayEvents,
-        profile: profile
-      )
-      forecast = hist?.values ?? []
-      forecastSource = hist?.sourceType
-      forecastInfo = hist?.debugInfo
-      if let h = hist {
-        forecastWarning = h.confidenceScore < 0.4 ||
-                          h.sourceType == .defaultHeuristic ||
-                          h.debugInfo != nil
-      } else {
-        forecastWarning = false
-      }
-    } else {
-      forecast = summary.hourlyWaveform
-      forecastSource = nil
-      forecastInfo = nil
-      forecastWarning = false
-    }
+    forecast = summary.hourlyWaveform
+    forecastInfo = summary.warning
+    forecastWarning = summary.confidence < 0.4 || summary.warning != nil
 
     if summary.warning == "Insufficient health data" {
       forecast = []
