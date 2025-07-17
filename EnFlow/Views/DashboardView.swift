@@ -141,15 +141,21 @@ struct DashboardView: View {
 
         }
 
-        // — Daily 7 AM‒7 PM line graph —
+        // — Daily line graph —
         if let wave = todaySummary?.hourlyWaveform, !missingTodayData {
-          let slice = Array(wave[7...19])
+          let profile = UserProfileStore.load()
+          let range = visibleRange(for: profile, default: 7..<19)
+          let slice = energySlice(wave, range: range)
+          let startHour = range.lowerBound % 24
+          var highlight = Calendar.current.component(.hour, from: Date())
+          if range.upperBound > 24 && highlight < startHour { highlight += 24 }
           VStack(alignment: .leading, spacing: 8) {
             Text("Daily Energy Forecast")
                   .font(.headline)
             DailyEnergyForecastView(
               values: slice,
-              highlightHour: Calendar.current.component(.hour, from: Date())
+              startHour: startHour,
+              highlightHour: highlight
             )
           }
         }
@@ -206,11 +212,17 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity)
 
         if let wave = tomorrowSummary?.hourlyWaveform, !missingTomorrowData {
+          let profile = UserProfileStore.load()
+          let range = visibleRange(for: profile, default: 0..<24)
+          let slice = energySlice(wave, range: range)
+          let startHour = range.lowerBound % 24
           VStack(alignment: .leading, spacing: 8) {
             Text("24-Hour Energy Forecast")
               .font(.headline)
               .saturation(0.7)
-            DailyEnergyForecastView(values: wave, startHour: 0, showWarning: tomorrowForecastWarning)
+            DailyEnergyForecastView(values: slice,
+                                    startHour: startHour,
+                                    showWarning: tomorrowForecastWarning)
               .saturation(0.7)
           }
         }

@@ -25,3 +25,41 @@ func projectedSteps(_ steps: Int,
     let projected = Double(steps) / Double(hours) * 24.0
     return Int(projected.rounded())
 }
+
+/// Range of hours visible in energy graphs based on the user's profile.
+/// - Parameters:
+///   - profile: User settings with wake/sleep times. Pass `nil` to always use
+///     the provided default range.
+///   - defaultRange: Fallback range when the profile doesn't specify a custom
+///     window or wake/sleep are equal.
+///   - calendar: Calendar used to extract hour components.
+/// - Returns: A half-open range of integer hours. If the sleep time occurs
+///   before the wake time, the upper bound may exceed 24 so the caller can wrap
+///   indices using `% 24`.
+func visibleRange(for profile: UserProfile?,
+                  default defaultRange: Range<Int>,
+                  calendar: Calendar = .current) -> Range<Int> {
+    guard let p = profile else { return defaultRange }
+
+    let wake = calendar.component(.hour, from: p.typicalWakeTime)
+    let sleep = calendar.component(.hour, from: p.typicalSleepTime)
+
+    // If unset or equal, treat as no custom window
+    guard wake != sleep else { return defaultRange }
+
+    let defWake = calendar.component(.hour, from: UserProfile.default.typicalWakeTime)
+    let defSleep = calendar.component(.hour, from: UserProfile.default.typicalSleepTime)
+    let usingDefaults = wake == defWake && sleep == defSleep
+    guard !usingDefaults else { return defaultRange }
+
+    if sleep > wake { return wake..<sleep }
+    // Cross-midnight (e.g. 23 → 7) wraps past 24
+    return wake..<(sleep + 24)
+}
+
+/// Returns elements from `wave` in the order specified by `range`, wrapping
+/// indices that exceed the array bounds.
+func energySlice(_ wave: [Double], range: Range<Int>) -> [Double] {
+    guard !wave.isEmpty else { return [] }
+    return range.map { wave[$0 % wave.count] }
+}

@@ -90,12 +90,14 @@ struct DailyEnergyForecastView: View {
                     }
                 )
                 
-                if let h = highlightHour, h >= startHour, h < startHour + count {
-                    let idx = h - startHour
-                    let pt = points[idx]
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 8, height: 8)
+                if var h = highlightHour {
+                    if h < startHour { h += 24 }
+                    if h >= startHour && h < startHour + count {
+                        let idx = h - startHour
+                        let pt = points[idx]
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 8, height: 8)
                         .overlay(
                             Circle()
                                 .stroke(Color.white.opacity(0.8), lineWidth: 2)
@@ -112,7 +114,7 @@ struct DailyEnergyForecastView: View {
 
                 ForEach(Array(stride(from: 0, to: count, by: 2)), id: \.self) { idx in
                     let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
-                    Text(hourLabel(startHour + idx))
+                    Text(hourLabel((startHour + idx) % 24))
                         .font(.system(size: 8))
                         .foregroundColor(.secondary)
                         .position(x: x, y: height + 10)
@@ -141,7 +143,7 @@ struct DailyEnergyForecastView: View {
                 if let idx = activeIndex {
                     let point = points[idx]
                     let score = Int(clamped[idx] * 100)
-                    let label = hourLabel(startHour + idx)
+                    let label = hourLabel((startHour + idx) % 24)
 
                     Path { p in
                         p.move(to: point)
