@@ -12,7 +12,29 @@ final class ActionsViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            self.cards = try await fetchActionCards(for: mode)
+            let health = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 1)
+            let todayHealth = health.first
+            let events = await CalendarDataPipeline.shared.fetchEvents(for: Date())
+            let profile = UserProfileStore.load()
+            let summary = SummaryProvider.summary(
+                for: Date(),
+                healthEvents: health,
+                calendarEvents: events,
+                profile: profile
+            )
+
+            let energy = summary.overallEnergyScore / 100
+            let hrv = min(max((todayHealth?.hrv ?? 60) / 120, 0), 1)
+            let sleep = min(max((todayHealth?.sleepEfficiency ?? 70) / 100, 0), 1)
+
+            self.cards = try await generateActions(
+                mode: mode,
+                hour: Calendar.current.component(.hour, from: Date()),
+                energy: energy,
+                hrv: hrv,
+                sleep: sleep,
+                calendar: events
+            )
         } catch {
             self.cards = []
         }

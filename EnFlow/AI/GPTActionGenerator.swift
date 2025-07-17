@@ -25,11 +25,15 @@ func generateActions(
 ) async throws -> [ActionCard] {
     let prompt = buildPrompt(for: mode, hour: hour, energy: energy, hrv: hrv, sleep: sleep, calendar: calendar)
 
-    let responseText = try await OpenAIManager.shared.chat(
-        system: "You are an expert rhythm and recovery assistant.",
-        user: prompt,
+    let responseText = try await OpenAIManager.shared.generateInsight(
+        prompt: "You are an expert rhythm and recovery assistant.\n" + prompt,
+        maxTokens: 180,
         temperature: 0.7
     )
+
+    guard responseText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("[") else {
+        throw URLError(.cannotParseResponse)
+    }
 
     guard let data = responseText.data(using: .utf8) else {
         throw URLError(.badServerResponse)
@@ -61,7 +65,7 @@ Current time: \(hour):00
 Energy score: \(Int(energy * 100))
 HRV score: \(Int(hrv * 100))
 Sleep score: \(Int(sleep * 100))
-Upcoming events: \(calendar.prefix(3).map { $0.title }.joined(separator: ", "))
+Upcoming events: \(calendar.prefix(3).map { $0.eventTitle }.joined(separator: ", "))
 """
 
     let instructions: String
