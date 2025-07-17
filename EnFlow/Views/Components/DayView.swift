@@ -141,22 +141,24 @@ struct DayView: View {
           Text("Energy forecast unavailable – not enough health data for this day")
             .frame(maxWidth: .infinity, minHeight: 220)
             .foregroundColor(.secondary)
-        } else {
-          if let summary {
-            DailyEnergyForecastView(
-              summary: summary,
-              highlightHour: isToday ? calendar.component(.hour, from: now) : nil
-            )
-          } else {
-            DailyEnergyForecastView(
-              values: forecast,
-              startHour: 0,
-              highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
-              dotted: isTomorrow || forecastWarning,
-              showWarning: forecastWarning
-            )
+        } else { Group {
+            if let summary {
+              DailyEnergyForecastView(
+                summary: summary,
+                highlightHour: isToday ? calendar.component(.hour, from: now) : nil
+              )
+            } else {
+              DailyEnergyForecastView(
+                values: forecast,
+                startHour: 0,
+                highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
+                dotted: isTomorrow || forecastWarning,
+                showWarning: forecastWarning
+              )
+            }
           }
-            .frame(height: 220)
+          .frame(height: 220)
+
         }
       }
       .padding()
