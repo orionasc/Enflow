@@ -12,7 +12,7 @@ struct SuggestedPrioritiesInfoView: View {
                         priorityRow(t)
                     }
                     Divider()
-                    Text("Sol combines 3-part energy forecasts with your calendar gaps, sleep quality and HRV trends. A GPT engine ranks templates by fit. Your feedback — pin, snooze or dismiss — tunes future recommendations.")
+                    Text("Sol blends energy forecasts with your schedule, sleep and recovery to surface three quick nudges each day. Cards include an urgency badge and short rationale tags so you know why they matter. Pin, snooze or dismiss to refine future picks.")
                         .font(.body)
                     Button("Update your profile") { showProfileQuiz = true }
                         .buttonStyle(.borderedProminent)
