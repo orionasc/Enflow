@@ -300,6 +300,24 @@ struct DayView: View {
     return max(0, factor)
   }
 
+  private func energy(at date: Date) -> Double? {
+    let hr = calendar.component(.hour, from: date)
+    let minute = calendar.component(.minute, from: date)
+    guard forecast.indices.contains(hr) else { return nil }
+    let base = forecast[hr]
+    let next = forecast.indices.contains(hr + 1) ? forecast[hr + 1] : base
+    return base + (next - base) * Double(minute) / 60.0
+  }
+
+  private func isBoost(event ev: CalendarEvent) -> Bool {
+    guard let before = energy(at: ev.startTime.addingTimeInterval(-1800)),
+          let after = energy(at: ev.endTime.addingTimeInterval(1800)) else {
+      return false
+    }
+    let change = (after - before) * 100
+    return change >= 5
+  }
+
   @ViewBuilder
   private var timeIndicator: some View {
     if isToday {
@@ -347,6 +365,19 @@ struct DayView: View {
               .multilineTextAlignment(.leading)
               .frame(maxWidth: .infinity, alignment: .leading),
             alignment: .topLeading
+          )
+          .overlay(
+            Group {
+              if isBoost(event: ev) {
+                Image(systemName: "bolt.arrow.up.circle.fill")
+                  .foregroundColor(.yellow)
+                  .brightness(0.3)
+                  .saturation(1.8)
+                  .shadow(color: Color.yellow.opacity(0.8), radius: 3)
+                  .padding(4)
+              }
+            },
+            alignment: .topTrailing
           )
           .offset(x: xOffset, y: offsetY)
           .zIndex(1)
