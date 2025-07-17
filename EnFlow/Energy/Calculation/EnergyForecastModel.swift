@@ -54,13 +54,17 @@ final class EnergyForecastModel: ObservableObject {
     profile: UserProfile? = nil
   ) -> DayEnergyForecast? {
 
-    if let cached = ForecastCache.shared.forecast(for: date),
-       let h = health.first(where: { calendar.isDate($0.date, inSameDayAs: date) }),
-       isEnergyEligible(h) {
-      return cached
-    } else if let h = health.first(where: { calendar.isDate($0.date, inSameDayAs: date) }),
-              !isEnergyEligible(h) {
-      ForecastCache.shared.removeForecast(for: date)
+    let dayHealth = health.first { calendar.isDate($0.date, inSameDayAs: date) }
+    let eligible = dayHealth.map { isEnergyEligible($0) } ?? false
+
+    if let cached = ForecastCache.shared.forecast(for: date) {
+      switch cached.sourceType {
+      case .historicalModel:
+        if eligible { return cached }
+      case .defaultHeuristic:
+        if !eligible && !cached.values.isEmpty { return cached }
+        else { ForecastCache.shared.removeForecast(for: date) }
+      }
     }
 
     let history = health.filter { $0.date <= date }
@@ -69,11 +73,28 @@ final class EnergyForecastModel: ObservableObject {
     }
 
     guard isEnergyEligible(hSample) else {
+      let missing = missingRequiredMetrics(hSample)
+      let debugInfo = "missing: \(missing.map { $0.rawValue }.joined(separator: ","))"
       ForecastCache.shared.removeForecast(for: date)
-      return nil
+      return DayEnergyForecast(date: date,
+                               values: [],
+                               score: 0,
+                               confidenceScore: 0,
+                               missingMetrics: missing,
+                               sourceType: .defaultHeuristic,
+                               debugInfo: debugInfo)
     }
 
-    guard let base = computeHistoricalBase(from: history) else { return nil }
+    guard let base = computeHistoricalBase(from: history) else {
+      ForecastCache.shared.removeForecast(for: date)
+      return DayEnergyForecast(date: date,
+                               values: [],
+                               score: 0,
+                               confidenceScore: 0,
+                               missingMetrics: MetricType.allCases,
+                               sourceType: .defaultHeuristic,
+                               debugInfo: "no history")
+    }
 
     var adjustedBase = base
     if let p = profile {

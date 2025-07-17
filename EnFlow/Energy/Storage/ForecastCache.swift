@@ -76,6 +76,10 @@ final class ForecastCache {
     }
 
     func saveForecast(_ forecast: DayEnergyForecast) {
+        guard !(forecast.values.isEmpty && forecast.sourceType == .defaultHeuristic) else {
+            removeForecast(for: forecast.date)
+            return
+        }
         forecasts[key(for: forecast.date)] = forecast
         persist()
     }

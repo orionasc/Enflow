@@ -17,6 +17,9 @@ struct DayView: View {
   @State private var overallScore: Double? = nil
   @State private var showHeatMap = false
   @State private var now = Date()
+  @State private var forecastSource: DayEnergyForecast.SourceType? = nil
+  @State private var forecastInfo: String? = nil
+  @State private var showForecastInfo = false
   private enum Page: Int { case schedule, overview }
   @State private var page: Page = .schedule
 
@@ -122,11 +125,19 @@ struct DayView: View {
         )
 
         ThreePartForecastView(parts: parts)
-        Text("24-Hour Energy Graph")
-          .font(.title2.weight(.medium))
+        HStack(spacing: 4) {
+          Text("24-Hour Energy Graph")
+            .font(.title2.weight(.medium))
+          if forecastSource == .defaultHeuristic && !forecast.isEmpty {
+            Button { showForecastInfo = true } label: {
+              Image(systemName: "info.circle")
+            }
+            .buttonStyle(.embossedInfo)
+          }
+        }
 
         if forecast.isEmpty {
-          Text("No data available")
+          Text("Energy forecast unavailable – not enough health data for this day")
             .frame(maxWidth: .infinity, minHeight: 220)
             .foregroundColor(.secondary)
         } else {
@@ -134,13 +145,18 @@ struct DayView: View {
             values: forecast,
             startHour: 0,
             highlightHour: isToday ? calendar.component(.hour, from: now) : nil,
-            dotted: isTomorrow
+            dotted: isTomorrow || forecastSource == .defaultHeuristic
           )
             .frame(height: 220)
         }
       }
       .padding()
       .padding(.bottom, 30)
+      .alert("Limited Data", isPresented: $showForecastInfo) {
+        Button("OK", role: .cancel) {}
+      } message: {
+        Text(forecastInfo ?? "Forecast generated from default heuristics due to missing health data.")
+      }
 
     }
   }
@@ -161,7 +177,7 @@ struct DayView: View {
         .overlay(timeIndicator, alignment: .topLeading)
         .overlay(eventsLayer, alignment: .topLeading)
       } else {
-        Text("No Data")
+        Text("Energy forecast unavailable – not enough health data for this day")
           .font(.headline)
           .foregroundColor(.secondary)
           .frame(maxWidth: .infinity, minHeight: 100)
@@ -408,8 +424,12 @@ struct DayView: View {
         profile: profile
       )
       forecast = hist?.values ?? []
+      forecastSource = hist?.sourceType
+      forecastInfo = hist?.debugInfo
     } else {
       forecast = summary.hourlyWaveform
+      forecastSource = nil
+      forecastInfo = nil
     }
 
     if summary.warning == "Insufficient health data" {
