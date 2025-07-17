@@ -468,9 +468,9 @@ struct DayView: View {
     forecast = summary.hourlyWaveform
     var message: String? = nil
     if summary.warning == "Insufficient health data" {
-      message = "Today’s forecast is based on fallback logic due to missing health data."
+      message = "Today’s forecast may be incomplete due to missing health data."
     } else if summary.confidence < 0.4 {
-      message = "Limited metrics were available. This forecast may be less accurate."
+      message = "Limited or no data available."
     }
     forecastMessage = message
     forecastWarning = message != nil
