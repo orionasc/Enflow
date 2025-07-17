@@ -111,7 +111,8 @@ final class OpenAIManager {
     func generateInsight(prompt: String,
                          cacheId: String? = nil,
                          maxTokens: Int = 180,
-                         temperature: Double = 0.6) async throws -> String {
+                         temperature: Double = 0.6,
+                         forceRefresh: Bool = false) async throws -> String {
         // First attempt normally (may hit cache)
         var text = try await chatCompletion(
             system: systemPrompt,
@@ -119,7 +120,8 @@ final class OpenAIManager {
             cacheId: cacheId,
             maxTokens: maxTokens,
             temperature: temperature,
-            presencePenalty: 0
+            presencePenalty: 0,
+            forceRefresh: forceRefresh
         )
 
         // If the response looks truncated, retry with a higher token limit
@@ -130,7 +132,8 @@ final class OpenAIManager {
                 cacheId: nil,                 // bypass cached truncated entry
                 maxTokens: max(800, maxTokens),
                 temperature: 0.7,
-                presencePenalty: 0.4
+                presencePenalty: 0.4,
+                forceRefresh: true
             )
 
             // Replace cached value with the complete text
@@ -159,7 +162,8 @@ final class OpenAIManager {
                         cacheId: cacheId,
                         maxTokens: 60,
                         temperature: 0.7,
-                        presencePenalty: 0
+                        presencePenalty: 0,
+                        forceRefresh: false
                     )
                   
                     let txt: String = {
@@ -199,12 +203,14 @@ final class OpenAIManager {
                                 cacheId: String?,
                                 maxTokens: Int,
                                 temperature: Double,
-                                presencePenalty: Double) async throws -> String {
+                                presencePenalty: Double,
+                                forceRefresh: Bool = false) async throws -> String {
 
         let key = cacheId ?? promptHash(system: system, user: user)
 
         // return cached if still fresh
-        if let hit = gptCache[key],
+        if !forceRefresh,
+           let hit = gptCache[key],
            Date().timeIntervalSince(hit.date) < cacheTTL {
             return hit.text
         }

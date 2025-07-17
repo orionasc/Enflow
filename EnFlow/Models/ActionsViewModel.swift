@@ -33,7 +33,8 @@ final class ActionsViewModel: ObservableObject {
                 energy: energy,
                 hrv: hrv,
                 sleep: sleep,
-                calendar: events
+                calendar: events,
+                forceRefresh: force
             )
         } catch {
             self.cards = []
