@@ -3,13 +3,23 @@ import SwiftUI
 struct UserProfileQuizView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var profile: UserProfile = UserProfileStore.load()
+    @State private var lastValidWake: Date = UserProfileStore.load().typicalWakeTime
+    @State private var lastValidSleep: Date = UserProfileStore.load().typicalSleepTime
+    @State private var sleepError: String? = nil
 
     var body: some View {
         NavigationView {
             Form {
                 Section("Sleep") {
                     DatePicker("Usual Wake Time", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
+                        .onChange(of: profile.typicalWakeTime) { handleWakeChange($0) }
                     DatePicker("Usual Bed Time", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
+                        .onChange(of: profile.typicalSleepTime) { handleSleepChange($0) }
+                    if let sleepError {
+                        Text(sleepError)
+                            .font(.footnote)
+                            .foregroundColor(.red)
+                    }
                     Toggle("Use Sleep Aid", isOn: $profile.usesSleepAid)
                     Toggle("Screens Before Bed", isOn: $profile.screensBeforeBed)
                     Toggle("Regular Meals", isOn: $profile.mealsRegular)
@@ -63,5 +73,33 @@ struct UserProfileQuizView: View {
         profile.lastUpdated = Date()
         UserProfileStore.save(profile)
         dismiss()
+    }
+
+    private func validWakeSleep(wake: Date, sleep: Date) -> Bool {
+        var interval = sleep.timeIntervalSince(wake)
+        if interval < 0 { interval += 24 * 3600 }
+        return interval >= 12 * 3600
+    }
+
+    private func handleWakeChange(_ new: Date) {
+        if validWakeSleep(wake: new, sleep: profile.typicalSleepTime) {
+            lastValidWake = new
+            sleepError = nil
+            profile.typicalWakeTime = new
+        } else {
+            profile.typicalWakeTime = lastValidWake
+            sleepError = "Need 12h gap"
+        }
+    }
+
+    private func handleSleepChange(_ new: Date) {
+        if validWakeSleep(wake: profile.typicalWakeTime, sleep: new) {
+            lastValidSleep = new
+            sleepError = nil
+            profile.typicalSleepTime = new
+        } else {
+            profile.typicalSleepTime = lastValidSleep
+            sleepError = "Need 12h gap"
+        }
     }
 }
