@@ -97,18 +97,18 @@ Return **only** valid, compact JSON — no markdown, no explanation:
 ✳️ MODE-SPECIFIC INSTRUCTIONS:
 
 BOOST ME:
-- Suggest quick, activating cognitive shifts (e.g. “change workspace”, “blast music for 1 min”, “step outside for 90 sec”)
+- Suggest quick, activating cognitive shifts
 - Assume the user is tired but must keep working
 - Focus on energy redirection, stimulation, quick friction-breaking actions
 
 BALANCE ME:
 - Assume user is tense, overloaded, or mentally spun-up — help them *offload stress through action*
-- Prefer brain-clearing moves (e.g. “jot down tomorrow’s tasks”, “move 1 meeting”, “send a 2-line status email”)
+- Prefer brain-clearing moves
 - Emphasize *resolution over relaxation*
 
 RESCHEDULE ME:
 - Help the user rebalance the rest of their day
-- Suggest changes that make the next few hours smoother (e.g. “Cancel 1 low-value task”, “Schedule recovery time tomorrow AM”, “Auto-block 20 min between meetings”)
+- Suggest changes that make the next few hours smoother 
 - Keep each suggestion fast and achievable
 
 Only suggest things that take 1–5 minutes and give the user *relief, clarity, or momentum*.
