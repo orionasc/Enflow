@@ -64,6 +64,30 @@ struct TrendsView: View {
         !forecastSummaries.isEmpty && forecastSummaries.count == summaries.count
     }
 
+    private var minDaysRequired: Int {
+        switch period {
+        case .weekly: return 7
+        case .monthly: return 30
+        case .sixWeeks: return 42
+        }
+    }
+
+    private var validSummaryDays: Int {
+        summaries.count
+    }
+
+    private var hasEnoughData: Bool {
+        validSummaryDays >= minDaysRequired
+    }
+
+    private var daysRemaining: Int {
+        max(0, minDaysRequired - validSummaryDays)
+    }
+
+    private var accuracyDisplay: String {
+        hasEnoughData ? "\(Int(accuracy * 100))%" : "--"
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -85,7 +109,23 @@ struct TrendsView: View {
                     .padding(.horizontal)
 
                 // Dual-line chart (Actual = yellow, Forecast = blue)
-                energyChart
+                if hasEnoughData {
+                    energyChart
+                } else {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Not Enough Data Yet")
+                            .font(.headline)
+                            .foregroundColor(.yellow)
+                        Text("Sol needs at least \(minDaysRequired) days of usage to show trends for the \(period.rawValue.lowercased()) view.")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                        Text("You’ve logged \(validSummaryDays) day\(validSummaryDays == 1 ? "" : "s"). \(daysRemaining) more to go!")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                }
 
                 HStack(spacing: 16) {
                     HStack(spacing: 4) {
@@ -122,28 +162,34 @@ struct TrendsView: View {
                 .padding(.vertical, 4)
 
                 // Prediction accuracy bar
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Prediction Accuracy").font(.headline).padding(.horizontal)
-                    HStack {
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color.gray.opacity(0.2)).frame(height: 8)
-                                Capsule().fill(Color.yellow).frame(width: geo.size.width * accuracy, height: 8)
-                            }
-                        }
-                        .frame(height: 8)
+                if hasEnoughData {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Prediction Accuracy")
+                            .font(.headline)
+                            .padding(.horizontal)
 
-                        Text("\(Int(accuracy * 100))%")
-                            .font(.subheadline.bold())
-                            .foregroundColor(.yellow)
-                    }
-                    .padding(.horizontal)
-                }
-                if accuracy == 0 {
-                    Text("Not enough prediction data to make accurate assessment")
-                        .font(.caption)
-                        .foregroundColor(.orange)
+                        HStack {
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Color.gray.opacity(0.2)).frame(height: 8)
+                                    Capsule().fill(Color.yellow).frame(width: geo.size.width * accuracy, height: 8)
+                                }
+                            }
+                            .frame(height: 8)
+
+                            Text(accuracyDisplay)
+                                .font(.subheadline.bold())
+                                .foregroundColor(.yellow)
+                        }
                         .padding(.horizontal)
+
+                        if accuracy == 0 && hasEnoughData {
+                            Text("Not enough prediction data to make accurate assessment")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                                .padding(.horizontal)
+                        }
+                    }
                 }
 
                 // Energy insights
