@@ -32,6 +32,10 @@ struct DayView: View {
     return calendar.isDate(currentDate, inSameDayAs: tomorrow)
   }
 
+  // — Computed: split all-day events from timed ones —
+  private var allDayEvents: [CalendarEvent] { events.filter { $0.isAllDay } }
+  private var timedEvents: [CalendarEvent]  { events.filter { !$0.isAllDay } }
+
   // ───────── Init ───────────────────────────────────────────
   init(date: Date, showBackButton: Bool = false) {
     _currentDate = State(initialValue: date)
@@ -104,6 +108,20 @@ struct DayView: View {
             labeledMiniRing(title: "Morning", value: parts?.morning)
             labeledMiniRing(title: "Afternoon", value: parts?.afternoon)
             labeledMiniRing(title: "Evening", value: parts?.evening)
+          }
+        }
+
+        if !allDayEvents.isEmpty {
+          VStack(alignment: .leading, spacing: 4) {
+            ForEach(allDayEvents) { ev in
+              Text(ev.eventTitle)
+                .font(.caption.bold())
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
           }
         }
 
@@ -350,7 +368,7 @@ struct DayView: View {
   private var eventsLayer: some View {
     GeometryReader { proxy in
       let xOffset: CGFloat = 6 + 4 + 46 + 6
-      ForEach(events) { ev in
+      ForEach(timedEvents) { ev in
         let startHr = calendar.component(.hour, from: ev.startTime)
         let startMin = calendar.component(.minute, from: ev.startTime)
         let offsetY = (rowHeight + 1) * CGFloat(startHr) + rowHeight * CGFloat(startMin) / 60
