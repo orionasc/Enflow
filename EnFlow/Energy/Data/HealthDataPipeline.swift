@@ -213,4 +213,8 @@ final class HealthDataPipeline: ObservableObject {
                                       end: end)
         return Int(count)
     }
+
+    func clearCache() {
+        // No persistent caching implemented; placeholder for future use.
+    }
 }

@@ -100,4 +100,8 @@ final class ForecastCache {
         forecasts.removeAll()
         persist()
     }
+
+    func reset() {
+        clearAllCachedData()
+    }
 }

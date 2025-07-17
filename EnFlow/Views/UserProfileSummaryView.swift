@@ -18,6 +18,12 @@ struct UserProfileSummaryView: View {
     @State private var pulseSol = false
     @State private var showWritingIndicator = false
 
+    // ───────────────────────────────────────────────────────────────
+    // New: restart-experience plumbing
+    @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding = true
+    @State private var showRestartAlert = false
+    // ───────────────────────────────────────────────────────────────
+
     // Validation for wake/sleep times
     @State private var lastValidWake: Date = UserProfileStore.load().typicalWakeTime
     @State private var lastValidSleep: Date = UserProfileStore.load().typicalSleepTime
@@ -272,6 +278,23 @@ struct UserProfileSummaryView: View {
     private var debugSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button("Toggle Developer Info") { withAnimation { showDebug.toggle() } }
+            Button(role: .destructive) {
+                showRestartAlert = true
+            } label: {
+                Label("Restart Experience", systemImage: "arrow.counterclockwise.circle")
+            }
+            .alert("Restart & Clear Data?",
+                   isPresented: $showRestartAlert,
+                   actions: {
+                       Button("Cancel", role: .cancel) { }
+                       Button("Restart", role: .destructive) { performFullReset() }
+                   },
+                   message: {
+                       Text("""
+                       This will erase cached forecasts, profile settings, and mark onboarding as incomplete. The app will quit—re-open it to walk through onboarding again.
+                       """)
+                   }
+            )
             if showDebug {
                 Toggle("Use Simulated Data", isOn: Binding(
                     get: { dataMode.isSimulated() },
@@ -509,6 +532,22 @@ DATA:
         } while attempt < maxAttempts
 
         return result
+    }
+
+    // MARK: – Hard-reset helper
+    private func performFullReset() {
+        ForecastCache.shared.reset()
+        UserProfileStore.resetProfile()
+        CalendarDataPipeline.shared.clearCache()
+        HealthDataPipeline.shared.clearCache()
+
+        didCompleteOnboarding = false
+
+#if os(iOS)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            exit(0)
+        }
+#endif
     }
 }
 
