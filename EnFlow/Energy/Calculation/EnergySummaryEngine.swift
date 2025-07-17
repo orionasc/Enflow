@@ -132,7 +132,7 @@ final class EnergySummaryEngine: ObservableObject {
         let overall = baselineAdjusted(rawOverall, profile: profile)
 
         // 24-h waveform (starts flat, apply event deltas)
-        let wave = hourlyWaveform(base: overall / 100.0, events: cRows)
+        let wave = hourlyWaveform(base: overall / 100.0, events: cRows, start: start, profile: profile)
 
         // Top boosters / drainers
         let boosters = topEvents(from: cRows, positive: true)
@@ -236,7 +236,9 @@ final class EnergySummaryEngine: ObservableObject {
 
     // ───────── Waveform builder ──────────────────────────────────
     private func hourlyWaveform(base: Double,
-                                events: [CalendarEvent]) -> [Double] {
+                                events: [CalendarEvent],
+                                start: Date,
+                                profile: UserProfile?) -> [Double] {
         var wave = circadianBoost.map { max(0, min(1, base + $0)) }
         for ev in events {
             guard let delta = ev.energyDelta else { continue }
@@ -245,6 +247,7 @@ final class EnergySummaryEngine: ObservableObject {
                 wave[hr] = max(0, min(1, wave[hr] + delta))
             }
         }
+        shapeBedWake(for: start, profile: profile, into: &wave)
         return wave
     }
 
@@ -323,4 +326,37 @@ final class EnergySummaryEngine: ObservableObject {
 
         return Array(out.prefix(5))
     }
+}
+
+private func shapeBedWake(for date: Date,
+                          profile: UserProfile?,
+                          calendar: Calendar = .current,
+                          into wave: inout [Double]) {
+    guard let p = profile else { return }
+    let bedHr  = calendar.component(.hour, from: p.typicalSleepTime)
+    let wakeHr = calendar.component(.hour, from: p.typicalWakeTime)
+
+    // ---- Day-specific random-ish magnitude (8–15 %) ----
+    let seed = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
+    let rand = Double((seed &* 1664525 &+ 1013904223) % 1000) / 1000.0
+    let mag  = 0.08 + rand * 0.07          // 0.08 … 0.15
+
+    // ---- Downtick: last 1-3 h before bed ----
+    let downSpan = max(1, Int(1 + rand * 2))  // 1-3 h
+    for i in 0..<downSpan {
+        let h = (bedHr - 1 - i + 24) % 24
+        let factor = mag * Double(i + 1) / Double(downSpan)
+        wave[h] = max(0, wave[h] - factor)
+    }
+
+    // ---- Uptick: first 1-3 h after wake ----
+    let upSpan = max(1, Int(1 + (1 - rand) * 2))  // 1-3 h (inverse of rand)
+    for i in 0..<upSpan {
+        let h = (wakeHr + i) % 24
+        let factor = mag * 0.6 * Double(upSpan - i) / Double(upSpan)
+        wave[h] = min(1, wave[h] + factor)
+    }
+
+    // ---- Hard floor for end-of-day value ----
+    wave[23] = min(wave[23], 0.50)
 }
