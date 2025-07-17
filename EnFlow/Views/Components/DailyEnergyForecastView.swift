@@ -128,8 +128,9 @@ struct DailyEnergyForecastView: View {
                 }
 
 
-                // X-axis hour labels
-                ForEach(Array(stride(from: 0, to: count, by: 2)), id: \.self) { idx in
+                // X-axis hour labels — aim for ≈12 markers maximum
+                let step = max(1, Int(ceil(Double(count) / 12.0)))
+                ForEach(Array(stride(from: 0, to: count, by: step)), id: \.self) { idx in
                     let x = width * CGFloat(idx) / CGFloat(max(count - 1, 1))
                     Text(hourLabel((startHour + idx) % 24))
                         .font(.system(size: 8))
