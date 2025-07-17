@@ -26,8 +26,44 @@ final class UnifiedEnergyModel {
                                               calendarEvents: calendarEvents,
                                               profile: profile)
 
-        if summary.warning == "Insufficient health data" {
+        let startOfToday = calendar.startOfDay(for: Date())
+        let isPast = date < startOfToday
+
+        if isPast && summary.warning != "Insufficient health data" {
+            cache.saveWave(summary.hourlyWaveform, for: date)
+        }
+
+        if isPast && summary.warning == "Insufficient health data" {
             return summary
+        }
+        var blended = summary.hourlyWaveform
+
+        // Past days use real summary only. No forecast blending.
+        if isPast {
+            if let prev = cache.forecast(for: date)?.values {
+                let diffs = zip(prev, summary.hourlyWaveform).map { abs($0 - $1) }
+                let acc = 1.0 - diffs.reduce(0, +) / Double(diffs.count)
+                cache.saveAccuracy(acc, for: date)
+            }
+
+            let avgScore = blended.reduce(0, +) / Double(blended.count) * 100
+
+            return DayEnergySummary(
+                date: summary.date,
+                overallEnergyScore: avgScore.rounded(),
+                mentalEnergy: summary.mentalEnergy,
+                physicalEnergy: summary.physicalEnergy,
+                sleepEfficiency: summary.sleepEfficiency,
+                coverageRatio: summary.coverageRatio,
+                confidence: summary.confidence,
+                warning: summary.warning,
+                debugInfo: summary.debugInfo,
+                hourlyWaveform: blended,
+                topBoosters: summary.topBoosters,
+                topDrainers: summary.topDrainers,
+                explainers: summary.explainers
+
+            )
         }
 
         guard let forecast = forecastModel.forecast(for: date,
@@ -37,8 +73,6 @@ final class UnifiedEnergyModel {
             return summary
         }
         cache.saveForecast(forecast)
-
-        var blended = summary.hourlyWaveform
         let now = Date()
 
         if calendar.isDateInToday(date) {
@@ -53,12 +87,12 @@ final class UnifiedEnergyModel {
                     blended[i] = forecast.values[i]
                 }
             }
-        } else if date > calendar.startOfDay(for: now) {
+        } else if !isPast {
             blended = forecast.values
         }
 
         // compute accuracy for past days if we have forecast stored
-        if date < calendar.startOfDay(for: now), let prev = cache.forecast(for: date)?.values {
+        if isPast, let prev = cache.forecast(for: date)?.values {
             let diffs = zip(prev, summary.hourlyWaveform).map { abs($0 - $1) }
             let acc = 1.0 - diffs.reduce(0, +) / Double(diffs.count)
             cache.saveAccuracy(acc, for: date)

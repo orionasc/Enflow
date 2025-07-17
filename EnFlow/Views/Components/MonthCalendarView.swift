@@ -5,6 +5,7 @@ import SwiftUI
 
 struct MonthCalendarView: View {
     @State private var energyMap: [Date: Double] = [:]
+    @State private var lowConfidenceMap: [Date: Bool] = [:]
     @State private var displayMonth: Date = Calendar.current.startOfDay(for: Date())
     @State private var showMonthlyTrends = false
 
@@ -216,6 +217,14 @@ struct MonthCalendarView: View {
                         lineWidth: 2
                     )
             )
+            .overlay(alignment: .topTrailing) {
+                if lowConfidenceMap[date] == true {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption2)
+                        .foregroundColor(.yellow)
+                        .padding(2)
+                }
+            }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .aspectRatio(1, contentMode: .fit)
@@ -223,6 +232,7 @@ struct MonthCalendarView: View {
 
     private func loadEnergy() async {
         var results: [Date: Double] = [:]
+        var warnings: [Date: Bool] = [:]
 
         let allHealth = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: 60)
         let monthStart = calendar.date(
@@ -248,10 +258,16 @@ struct MonthCalendarView: View {
                                                            profile: profile)
             if summary.warning != "Insufficient health data" {
                 results[date] = summary.overallEnergyScore
+                warnings[date] = summary.confidence < 0.4 || summary.warning != nil || summary.coverageRatio < 0.5
+            } else {
+                warnings[date] = false
             }
         }
 
-        await MainActor.run { energyMap = results }
+        await MainActor.run {
+            energyMap = results
+            lowConfidenceMap = warnings
+        }
     }
 }
 

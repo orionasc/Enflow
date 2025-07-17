@@ -12,6 +12,8 @@ struct DailyEnergyForecastView: View {
     var dotted: Bool = false
     /// Show a low-confidence badge in the corner
     var showWarning: Bool = false
+    /// Dim/stripe the graph when coverage is very low
+    var lowCoverage: Bool = false
     
     @State private var pulse = false
     @State private var activeIndex: Int? = nil
@@ -25,12 +27,24 @@ struct DailyEnergyForecastView: View {
          startHour: Int = 7,
          highlightHour: Int? = nil,
          dotted: Bool = false,
-         showWarning: Bool = false) {
+         showWarning: Bool = false,
+         lowCoverage: Bool = false) {
         self.values = values
         self.startHour = startHour
         self.highlightHour = highlightHour
         self.dotted = dotted
         self.showWarning = showWarning
+        self.lowCoverage = lowCoverage
+    }
+
+    init(summary: DayEnergySummary, highlightHour: Int? = nil) {
+        self.values = summary.hourlyWaveform
+        self.startHour = 0
+        self.highlightHour = highlightHour
+        let warn = summary.warning != nil || summary.confidence < 0.4
+        self.dotted = warn
+        self.showWarning = warn
+        self.lowCoverage = summary.coverageRatio < 0.5
     }
     
     var body: some View {
@@ -50,19 +64,31 @@ struct DailyEnergyForecastView: View {
                 let dash: [CGFloat] = dotted ? [2, 3] : []
                 let stroke = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round, dash: dash)
                 
-                ColorPalette.verticalEnergyGradient
-                    .mask(path.stroke(style: stroke))
-                    .overlay(
-                        ColorPalette.verticalEnergyGradient
-                    .mask(path.stroke(style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round, dash: dash)))
-                            .blur(radius: 3)
-                            .opacity(0.7)
-                    )
-                    .overlay(
-                        ColorPalette.gradient(for: average(clamped) * 100)
-                            .mask(path.stroke(style: stroke))
-                            .blendMode(.overlay)
-                    )
+                Group {
+                    ColorPalette.verticalEnergyGradient
+                        .mask(path.stroke(style: stroke))
+                        .overlay(
+                            ColorPalette.verticalEnergyGradient
+                        .mask(path.stroke(style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round, dash: dash)))
+                                .blur(radius: 3)
+                                .opacity(0.7)
+                        )
+                        .overlay(
+                            ColorPalette.gradient(for: average(clamped) * 100)
+                                .mask(path.stroke(style: stroke))
+                                .blendMode(.overlay)
+                        )
+                }
+                .opacity(lowCoverage ? 0.6 : 1)
+                .overlay(
+                    Group {
+                        if lowCoverage {
+                            DotPatternOverlay(color: .white)
+                                .mask(path.stroke(style: stroke))
+                                .blendMode(.overlay)
+                        }
+                    }
+                )
                 
                 if let h = highlightHour, h >= startHour, h < startHour + count {
                     let idx = h - startHour
