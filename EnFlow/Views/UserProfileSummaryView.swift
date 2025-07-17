@@ -450,6 +450,7 @@ GPT RULES:
 6. DO NOT use markdown, emojis, or bullet points. Output plain text in full sentences.
 7. Be concise but not dry.
 8. YOU MUST COMPLETE THE RESPONSE. DO NOT END MID-THOUGHT OR MID-SENTENCE. Make sure your output is a fully formed response, at least 3–5 paragraphs if data is available. If unsure how to end, wrap with a clean final reflection (e.g., "Let’s see how this evolves over time.")
+9. Speak like an experienced coach. Assume the user already knows their habits, so emphasize interpretation and fresh advice rather than repeating raw details.
 
 DATA:
 - Chronotype: \(profile.chronotype.rawValue)
@@ -493,7 +494,11 @@ DATA:
 
         repeat {
             attempt += 1
-            let rawText = try await OpenAIManager.shared.generateInsight(prompt: prompt)
+            let rawText = try await OpenAIManager.shared.generateInsight(
+                prompt: prompt,
+                maxTokens: 600,
+                temperature: 0.7
+            )
             let cleaned = rawText.replacingOccurrences(of: "\"", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             result = cleaned
 
