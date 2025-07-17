@@ -106,10 +106,10 @@ struct CalendarRootView: View {
                 let h = health.filter { cal.isDate($0.date, inSameDayAs: day) }
                 let e = events.filter { cal.isDate($0.startTime, inSameDayAs: day) }
                 let profile = UserProfileStore.load()
-                let summary = UnifiedEnergyModel.shared.summary(for: day,
-                                                               healthEvents: h,
-                                                               calendarEvents: e,
-                                                               profile: profile)
+                let summary = SummaryProvider.summary(for: day,
+                                                     healthEvents: h,
+                                                     calendarEvents: e,
+                                                     profile: profile)
                 summaries.append(summary)
             }
         }

@@ -374,7 +374,7 @@ struct UserProfileSummaryView: View {
         let model = EnergyForecastModel()
         for i in 0..<7 {
             guard let day = cal.date(byAdding: .day, value: -i, to: cal.startOfDay(for: Date())) else { continue }
-            let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: health, calendarEvents: events, profile: profile)
+            let summary = SummaryProvider.summary(for: day, healthEvents: health, calendarEvents: events, profile: profile)
             if summary.warning != "Insufficient health data" {
                 scores.append(summary.overallEnergyScore)
                 if let part = model.threePartEnergy(for: day, health: health, events: events, profile: profile) {

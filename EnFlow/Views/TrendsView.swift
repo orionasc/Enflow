@@ -242,7 +242,7 @@ struct TrendsView: View {
             let ev = allEvents.filter { cal.isDate($0.startTime, inSameDayAs: day) }
 
             let profile = UserProfileStore.load()
-            let summary = UnifiedEnergyModel.shared.summary(for: day, healthEvents: h, calendarEvents: ev, profile: profile)
+            let summary = SummaryProvider.summary(for: day, healthEvents: h, calendarEvents: ev, profile: profile)
             if summary.warning == "Insufficient health data" {
                 continue
             }

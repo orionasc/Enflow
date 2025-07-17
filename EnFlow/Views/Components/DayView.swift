@@ -419,7 +419,7 @@ struct DayView: View {
     let dayEvents = await CalendarDataPipeline.shared.fetchEvents(for: currentDate)
     let profile = UserProfileStore.load()
 
-    let summary = UnifiedEnergyModel.shared.summary(
+    let summary = SummaryProvider.summary(
       for: currentDate,
       healthEvents: healthList,
       calendarEvents: dayEvents,
