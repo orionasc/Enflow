@@ -18,6 +18,11 @@ struct UserProfileSummaryView: View {
     @State private var pulseSol = false
     @State private var showWritingIndicator = false
 
+    // Validation for wake/sleep times
+    @State private var lastValidWake: Date = UserProfileStore.load().typicalWakeTime
+    @State private var lastValidSleep: Date = UserProfileStore.load().typicalSleepTime
+    @State private var sleepError: String? = nil
+
     // 7-day averages
     @State private var avgScore: Double? = nil
     @State private var avgParts: EnergyForecastModel.EnergyParts? = nil
@@ -131,7 +136,7 @@ struct UserProfileSummaryView: View {
                 Spacer()
                 DatePicker("", selection: $profile.typicalWakeTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
-                    .onChange(of: profile.typicalWakeTime) { _ in save() }
+                    .onChange(of: profile.typicalWakeTime) { handleWakeChange($0) }
             }
             HStack {
                 Text("Bed Time")
@@ -139,7 +144,12 @@ struct UserProfileSummaryView: View {
                 Spacer()
                 DatePicker("", selection: $profile.typicalSleepTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
-                    .onChange(of: profile.typicalSleepTime) { _ in save() }
+                    .onChange(of: profile.typicalSleepTime) { handleSleepChange($0) }
+            }
+            if let sleepError {
+                Text(sleepError)
+                    .font(.footnote)
+                    .foregroundColor(.red)
             }
             HStack(alignment: .center) {
                 Text("Peak Energy")
@@ -350,6 +360,36 @@ struct UserProfileSummaryView: View {
     private func save() {
         profile.lastUpdated = Date()
         UserProfileStore.save(profile)
+    }
+
+    private func validWakeSleep(wake: Date, sleep: Date) -> Bool {
+        var interval = sleep.timeIntervalSince(wake)
+        if interval < 0 { interval += 24 * 3600 }
+        return interval >= 12 * 3600
+    }
+
+    private func handleWakeChange(_ new: Date) {
+        if validWakeSleep(wake: new, sleep: profile.typicalSleepTime) {
+            lastValidWake = new
+            sleepError = nil
+            profile.typicalWakeTime = new
+            save()
+        } else {
+            profile.typicalWakeTime = lastValidWake
+            sleepError = "Need 12h gap"
+        }
+    }
+
+    private func handleSleepChange(_ new: Date) {
+        if validWakeSleep(wake: profile.typicalWakeTime, sleep: new) {
+            lastValidSleep = new
+            sleepError = nil
+            profile.typicalSleepTime = new
+            save()
+        } else {
+            profile.typicalSleepTime = lastValidSleep
+            sleepError = "Need 12h gap"
+        }
     }
 
     private func bestWindow(from parts: EnergyForecastModel.EnergyParts) -> String {
