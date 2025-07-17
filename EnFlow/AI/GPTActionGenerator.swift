@@ -21,14 +21,16 @@ func generateActions(
     energy: Double,
     hrv: Double,
     sleep: Double,
-    calendar: [CalendarEvent]
+    calendar: [CalendarEvent],
+    forceRefresh: Bool = false
 ) async throws -> [ActionCard] {
     let prompt = buildPrompt(for: mode, hour: hour, energy: energy, hrv: hrv, sleep: sleep, calendar: calendar)
 
     let responseText = try await OpenAIManager.shared.generateInsight(
         prompt: "You are an expert rhythm and recovery assistant.\n" + prompt,
         maxTokens: 180,
-        temperature: 0.7
+        temperature: 0.7,
+        forceRefresh: forceRefresh
     )
 
     guard responseText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("[") else {
