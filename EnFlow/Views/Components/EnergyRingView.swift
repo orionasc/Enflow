@@ -56,6 +56,8 @@ struct EnergyRingView: View {
             return "MODERATE"
         case 90..<100:
             return "SUPERCHARGED"
+        case 100:
+            return "RADIANT"
         default:
             return "HIGH"
         }
