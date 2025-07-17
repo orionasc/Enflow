@@ -15,7 +15,7 @@ import SwiftUI
 
 struct OnboardingWalkthroughView: View {
     /// Controls dismissal when "Start Using EnFlow" is tapped.
-    @AppStorage("didCompleteWalkthrough") private var didCompleteWalkthrough = false
+    @AppStorage("didCompleteOnboarding") private var didCompleteOnboarding = false
 
     var body: some View {
         TabView {
@@ -25,7 +25,7 @@ struct OnboardingWalkthroughView: View {
             PageSync()
             PageExpectations()
             PageMeetSol()
-            PageEarlyTester(didCompleteWalkthrough: $didCompleteWalkthrough)
+            PageEarlyTester(didCompleteOnboarding: $didCompleteOnboarding)
         }
         .tabViewStyle(PageTabViewStyle())
         .ignoresSafeArea()  // full‑bleed backgrounds
@@ -249,7 +249,7 @@ private struct PageMeetSol: View {
 }
 
 private struct PageEarlyTester: View {
-    @Binding var didCompleteWalkthrough: Bool
+    @Binding var didCompleteOnboarding: Bool
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red:0.05, green:0.08, blue:0.2, alpha:1)), Color(#colorLiteral(red:0.1, green:0.1, blue:0.12, alpha:1))], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -265,7 +265,7 @@ private struct PageEarlyTester: View {
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white.opacity(0.85))
                     .padding(.horizontal, 32)
-                Button(action: { didCompleteWalkthrough = true }) {
+                Button(action: { didCompleteOnboarding = true }) {
                     Text("Start Using EnFlow")
                         .font(.headline)
                         .padding(.horizontal, 48)

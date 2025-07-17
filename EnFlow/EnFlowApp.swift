@@ -9,7 +9,6 @@ import UIKit
 @main
 struct EnFlowApp: App {
     @AppStorage("didCompleteOnboarding") private var onboarded = false
-    @AppStorage("didCompleteWalkthrough") private var walkthroughDone = false
 
 #if os(iOS)
     init() { setupAppearance() }
@@ -20,10 +19,8 @@ struct EnFlowApp: App {
             Group {
                 if onboarded {
                     MainShellView()
-                } else if walkthroughDone {
-                    OnboardingAndSettingsView()
                 } else {
-                    OnboardingWalkthroughView()
+                    OnboardingAndSettingsView()
                 }
             }
             .preferredColorScheme(.dark)
