@@ -42,6 +42,32 @@
 			);
 			target = 20702B4C2DFA1CE500FBAD08 /* EnFlow */;
 		};
+		D72DC73C2E29FBD100AC88E7 /* Exceptions for "Tests" folder in "EnFlow" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				EnFlowTests/EnergyForecastModelTests.swift,
+				EnFlowTests/EnFlowTests.swift,
+				EnFlowUITests/EnFlowUITests.swift,
+				EnFlowUITests/EnFlowUITestsLaunchTests.swift,
+			);
+			target = 20702B4C2DFA1CE500FBAD08 /* EnFlow */;
+		};
+		D72DC73D2E29FBD100AC88E7 /* Exceptions for "Tests" folder in "EnFlowTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				EnFlowTests/EnergyForecastModelTests.swift,
+				EnFlowTests/EnFlowTests.swift,
+			);
+			target = 20702B5C2DFA1CE800FBAD08 /* EnFlowTests */;
+		};
+		D72DC73E2E29FBD100AC88E7 /* Exceptions for "Tests" folder in "EnFlowUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				EnFlowUITests/EnFlowUITests.swift,
+				EnFlowUITests/EnFlowUITestsLaunchTests.swift,
+			);
+			target = 20702B662DFA1CE800FBAD08 /* EnFlowUITests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -53,14 +79,14 @@
 			path = EnFlow;
 			sourceTree = "<group>";
 		};
-		20702B602DFA1CE800FBAD08 /* EnFlowTests */ = {
+		D72DC7312E29FBB700AC88E7 /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = EnFlowTests;
-			sourceTree = "<group>";
-		};
-		20702B6A2DFA1CE800FBAD08 /* EnFlowUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = EnFlowUITests;
+			exceptions = (
+				D72DC73C2E29FBD100AC88E7 /* Exceptions for "Tests" folder in "EnFlow" target */,
+				D72DC73D2E29FBD100AC88E7 /* Exceptions for "Tests" folder in "EnFlowTests" target */,
+				D72DC73E2E29FBD100AC88E7 /* Exceptions for "Tests" folder in "EnFlowUITests" target */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -103,10 +129,9 @@
 			isa = PBXGroup;
 			children = (
 				20702B4F2DFA1CE500FBAD08 /* EnFlow */,
-				20702B602DFA1CE800FBAD08 /* EnFlowTests */,
-				20702B6A2DFA1CE800FBAD08 /* EnFlowUITests */,
 				20316B2B2E04008700FC3E6D /* Frameworks */,
 				20702B4E2DFA1CE500FBAD08 /* Products */,
+				D72DC7312E29FBB700AC88E7 /* Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -137,6 +162,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				20702B4F2DFA1CE500FBAD08 /* EnFlow */,
+				D72DC7312E29FBB700AC88E7 /* Tests */,
 			);
 			name = EnFlow;
 			packageProductDependencies = (
@@ -160,9 +186,6 @@
 			dependencies = (
 				20702B5F2DFA1CE800FBAD08 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				20702B602DFA1CE800FBAD08 /* EnFlowTests */,
-			);
 			name = EnFlowTests;
 			packageProductDependencies = (
 			);
@@ -182,9 +205,6 @@
 			);
 			dependencies = (
 				20702B692DFA1CE800FBAD08 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				20702B6A2DFA1CE800FBAD08 /* EnFlowUITests */,
 			);
 			name = EnFlowUITests;
 			packageProductDependencies = (
