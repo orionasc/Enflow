@@ -83,13 +83,21 @@ struct WelcomePage: View {
 
                     // Main lightning bolt
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 100, weight: .bold))
+                        .font(.system(size: 200, weight: .bold))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [Color.yellow, Color.blue],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
+                        )
+                        .overlay(
+                            Image(systemName: "bolt")
+                                .font(.system(size: 210, weight: .light))
+                                .foregroundColor(.white)
+                                .blur(radius: 2)
+                                .opacity(0.8)
+                            
                         )
                         .shadow(color: .yellow.opacity(0.6), radius: 20)
                         .scaleEffect(pulse ? 1.05 : 0.95)
@@ -151,8 +159,13 @@ struct EnergyRingDemoPage: View {
         ZStack {
             LinearGradient(colors: [Color.black, Color(#colorLiteral(red: 0.129, green: 0.129, blue: 0.157, alpha: 1))], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
-            VStack(spacing: 40) {
-                Spacer(minLength: 80)
+            VStack(spacing: 30) {
+                Spacer(minLength: 60)
+                
+                Text("Your Energy Score")
+                    .font(.title.bold())
+                    .foregroundColor(.white)
+                
                 EnergyRingView(score: demoScore,  animateFromZero: true, shimmer: demoScore < 95)
                     .frame(width: 200, height: 200)
                     .clipShape(Circle())
@@ -190,10 +203,10 @@ struct EnergyRingDemoPage: View {
                     }
                 }
 
-                Text("Your score is a reflection, not a rule. Energy shifts naturally — use this as a guide, not a judgment.")
+                Text("Your score is a reflection of your current energy. Note that it does not reflect your overall health. Energy levels can fluctuate over time.")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.5))
-                    .padding(.top, 12)
+                    .padding()
 
                 Spacer()
             }
