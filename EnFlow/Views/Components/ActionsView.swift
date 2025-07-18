@@ -141,6 +141,8 @@ struct ActionCardView: View {
         .background(background)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(borderOverlay)
+        .shadow(color: card.category == .boost ? .white.opacity(0.7) : .clear,
+                radius: card.category == .boost ? 4 : 0)
     }
 
     private var background: Color {
