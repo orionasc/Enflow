@@ -4,13 +4,28 @@ struct UserProfile: Codable, Equatable {
     enum Chronotype: String, CaseIterable, Identifiable, Codable {
         case none
         case morning
-        case Afternoon
+        case afternoon
         case evening
         var id: String { rawValue }
 
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            if let value = Chronotype(rawValue: raw.lowercased()) {
+                self = value
+            } else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid chronotype value \(raw)")
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(rawValue)
+        }
+
         /// Options presented to the user. Excludes the `none` case used when
         /// the chronotype is cleared.
-        static var selectableCases: [Chronotype] { [.morning, .Afternoon, .evening] }
+        static var selectableCases: [Chronotype] { [.morning, .afternoon, .evening] }
     }
 
     var caffeineMgPerDay: Int
@@ -44,7 +59,7 @@ extension UserProfile {
             usesSleepAid: false,
             screensBeforeBed: true,
             mealsRegular: true,
-            chronotype: .Afternoon,
+            chronotype: .afternoon,
             lastUpdated: Date(),
             notes: nil
         )
