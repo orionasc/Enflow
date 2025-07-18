@@ -9,6 +9,7 @@
 import Combine
 import Foundation
 import HealthKit
+import EnergyUtils
 
 // MARK: - EnergyForecastModel ---------------------------------------------------
 @MainActor
@@ -126,6 +127,7 @@ final class EnergyForecastModel: ObservableObject {
 
     wave = smooth(wave)
     // Apply user profile's bed/wake adjustments
+    shapeBedWake(for: date, profile: profile, calendar: calendar, into: &wave)
 
 
     let missing = Set(MetricType.allCases).subtracting(hSample.availableMetrics)

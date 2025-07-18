@@ -18,6 +18,7 @@
 
 import Foundation
 import HealthKit
+import EnergyUtils
 
 // MARK: – Day-level output ------------------------------------------------------
 
@@ -248,7 +249,8 @@ final class EnergySummaryEngine: ObservableObject {
             }
         }
         // Apply user profile's bed/wake adjustments
-        
+        shapeBedWake(for: start, profile: profile, calendar: calendar, into: &wave)
+
         return wave
     }
 
