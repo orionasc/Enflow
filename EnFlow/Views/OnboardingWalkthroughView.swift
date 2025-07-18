@@ -23,10 +23,10 @@ struct OnboardingWalkthroughView: View {
     var body: some View {
         TabView(selection: $pageIndex) {
             WelcomePage(mg: mg).tag(0)
-            MeetSolPage().tag(1)
-            EnergyRingDemoPage().tag(2)
-            WaveformDemoPage().tag(3)
-            SyncTipsPage().tag(4)
+            EnergyRingDemoPage().tag(1)
+            WaveformDemoPage().tag(2)
+            SyncTipsPage().tag(3)
+            MeetSolPage().tag(4)
             ExpectationsPage().tag(5)
             EarlyTesterPage(onFinish: completeOnboarding).tag(6)
         }
@@ -46,6 +46,8 @@ struct OnboardingWalkthroughView: View {
 struct WelcomePage: View {
     var mg: Namespace.ID
     @State private var pulse = false
+    @State private var boltPulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         ZStack {
             TimelineView(.animation(minimumInterval: 1/20)) { context in
@@ -90,6 +92,21 @@ struct WelcomePage: View {
                     .foregroundColor(.white.opacity(0.9))
                     .padding(.horizontal)
 
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 28))
+                    .padding(.top, 16)
+                    .foregroundStyle(
+                        LinearGradient(colors: [Color.blue, Color.yellow], startPoint: .top, endPoint: .bottom)
+                    )
+                    .scaleEffect(boltPulse ? 1.05 : 0.95)
+                    .opacity(boltPulse ? 1 : 0.8)
+                    .onAppear {
+                        guard !reduceMotion else { return }
+                        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                            boltPulse = true
+                        }
+                    }
+
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.title)
@@ -106,9 +123,24 @@ struct WelcomePage: View {
 struct EnergyRingDemoPage: View {
     @State private var demoScore: Double = 25
     @State private var index = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let demoTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
-    private let demoScores: [Double] = [25, 65, 95]
+    private struct DemoState {
+        let score: Double
+        let title: String
+        let description: String
+    }
+
+    private let demoStates: [DemoState] = [
+        .init(score: 25, title: "Low Energy", description: "Your body is signaling a need for rest or recovery. It’s a good day for lighter commitments and extra care."),
+        .init(score: 65, title: "Functional", description: "You’re in a steady, usable state — focused enough to move through your day without much friction."),
+        .init(score: 80, title: "High Energy", description: "You’re energized and in rhythm. This is a great time for productivity, engagement, and forward motion."),
+        .init(score: 95, title: "Supercharged", description: "You’re at your peak. Leverage this window for challenging tasks, creative work, or deep focus."),
+        .init(score: 100, title: "Radiant", description: "An exceptional recovery state. Expect mental clarity, resilience, and a strong physical baseline.")
+    ]
+
+    private var demoScores: [Double] { demoStates.map { $0.score } }
 
     var body: some View {
         ZStack {
@@ -116,22 +148,30 @@ struct EnergyRingDemoPage: View {
                 .ignoresSafeArea()
             VStack(spacing: 40) {
                 Spacer(minLength: 80)
-                EnergyRingView(score: demoScore,  animateFromZero: true, shimmer: true)
+                EnergyRingView(score: demoScore,  animateFromZero: true, shimmer: demoScore < 95)
                     .frame(width: 200, height: 200)
                     .clipShape(Circle())
                     .animation(.spring(response: 0.6, dampingFraction: 0.8), value: demoScore)
 
-                Text("Low / Moderate / Supercharged represent how ready your body and mind feel. Watch the ring shift as your energy improves.")
+                let state = demoStates[index]
+                Text(state.title)
+                    .font(.title2.bold())
+                    .foregroundColor(.white)
+                    .transition(.opacity)
+                    .animation(reduceMotion ? nil : .easeInOut, value: index)
+                Text(state.description)
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
+                    .transition(.opacity)
+                    .animation(reduceMotion ? nil : .easeInOut, value: index)
 
                 Text("Tap below to explore different energy states")
                     .foregroundColor(.white.opacity(0.8))
                     .font(.headline)
 
                 HStack(spacing: 16) {
-                    ForEach(demoScores.indices, id: \ .self) { i in
+                    ForEach(demoScores.indices, id: \.self) { i in
                         Circle()
                             .fill(i == index ? Color.yellow : Color.white.opacity(0.3))
                             .frame(width: 14, height: 14)
@@ -144,6 +184,12 @@ struct EnergyRingDemoPage: View {
                             }
                     }
                 }
+
+                Text("Your score is a reflection, not a rule. Energy shifts naturally — use this as a guide, not a judgment.")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.top, 12)
+
                 Spacer()
             }
             .onReceive(demoTimer) { _ in
