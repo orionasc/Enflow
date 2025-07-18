@@ -1,15 +1,12 @@
 import SwiftUI
 
 // MARK: ─────────────────────────────────────────────────────────────
-//  EnFlow Onboarding Walkthrough (full structure + interaction stubs)
+//  EnFlow Onboarding Walkthrough – Cohesive Styling Pass 2025‑07‑18
 //  -----------------------------------------------------------------
-//  • This file REPLACES the prior skeleton. It now declares every page
-//    as its own View struct, wired into a single `TabView` sequence.
-//  • All interactive / animated regions are clearly marked with TODOs.
-//  • Real assets (EnergyRingView, DailyEnergyForecastView, etc.) are
-//    referenced but NOT implemented here — they already exist in the
-//    project.
-//  • Codex / devs should flesh out the TODOs where noted.
+//  • Adds a subtle glowing frame + ambient radial overlay to every
+//    onboarding page for visual unity (tap‑through now fixed).
+//  • Applies page‑specific background tweaks per design brief.
+//  • Introduces a simple Color(hex:) helper for hex literals.
 // -------------------------------------------------------------------
 
 struct OnboardingWalkthroughView: View {
@@ -27,7 +24,7 @@ struct OnboardingWalkthroughView: View {
             WaveformDemoPage().tag(2)
             SyncTipsPage().tag(3)
             MeetSolPage().tag(4)
-            EarlyTesterPage(onFinish: completeOnboarding).tag(6)
+            EarlyTesterPage(onFinish: completeOnboarding).tag(5)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
         .ignoresSafeArea()
@@ -41,14 +38,49 @@ struct OnboardingWalkthroughView: View {
     }
 }
 
-// MARK: ‑‑‑ PAGE 1 — Welcome ‑‑‑
+// MARK: – Shared View Modifiers
+private extension View {
+    /// Subtle glowing frame used on every onboarding page. Now ignores hit‑testing so taps pass through.
+    func onboardingFrame() -> some View {
+        self.overlay(
+            RoundedRectangle(cornerRadius: 32)
+                .strokeBorder(
+                    LinearGradient(colors: [
+                        Color.white.opacity(0.06),
+                        Color.yellow.opacity(0.04)
+                    ], startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: 1.5
+                )
+                .blur(radius: 2)
+                .padding(.horizontal, 20)
+                .allowsHitTesting(false) // ← critical fix
+        )
+    }
+
+    /// Soft radial glow at the top of every page. Hit‑testing disabled to allow underlying gestures.
+    func onboardingAmbientGlow() -> some View {
+        self.overlay(
+            RadialGradient(
+                gradient: Gradient(colors: [Color.white.opacity(0.03), .clear]),
+                center: .top,
+                startRadius: 10,
+                endRadius: 600
+            )
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+        )
+    }
+}
+
+// MARK: – PAGE 1 — Welcome
 struct WelcomePage: View {
     var mg: Namespace.ID
     @State private var pulse = false
-    @State private var boltPulse = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         ZStack {
+            // Existing animated radial background
             TimelineView(.animation(minimumInterval: 1/20)) { context in
                 let t = context.date.timeIntervalSinceReferenceDate / 6
                 let x = 0.5 + 0.1 * cos(t)
@@ -68,12 +100,8 @@ struct WelcomePage: View {
             VStack(spacing: 18) {
                 Spacer()
                 ZStack {
-                    // Glowing bolt background
                     RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color.yellow.opacity(0.6),
-                            Color.clear
-                        ]),
+                        gradient: Gradient(colors: [Color.yellow.opacity(0.6), .clear]),
                         center: .center,
                         startRadius: 10,
                         endRadius: 120
@@ -81,26 +109,15 @@ struct WelcomePage: View {
                     .scaleEffect(pulse ? 2 : 2.6)
                     .opacity(pulse ? 0.8 : 0.6)
 
-                    // Main lightning bolt
                     Image(systemName: "bolt")
                         .font(.system(size: 250, weight: .light))
                         .blur(radius: 3)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.white, Color.white],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-        
-
+                        .foregroundStyle(LinearGradient(colors: [.white, .white], startPoint: .top, endPoint: .bottom))
                         .shadow(color: .yellow.opacity(0.6), radius: 20)
                         .scaleEffect(pulse ? 1.05 : 0.95)
                 }
                 .onAppear {
-                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                        pulse = true
-                    }
+                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { pulse = true }
                 }
 
                 Text("Welcome to EnFlow")
@@ -124,21 +141,20 @@ struct WelcomePage: View {
             }
             .padding(.horizontal)
         }
+        .onboardingFrame()
+        .onboardingAmbientGlow()
     }
 }
 
-// MARK: ‑‑‑ PAGE 2 — Energy Ring Demo ‑‑‑
 struct EnergyRingDemoPage: View {
     @State private var demoScore: Double = 25
     @State private var index = 0
+    @State private var cycleInterval: TimeInterval = 10
+    @State private var demoTimer = Timer.publish(every: 10, on: .main, in: .common).autoconnect()
+    
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private let demoTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
-    private struct DemoState {
-        let score: Double
-        let title: String
-        let description: String
-    }
+    private struct DemoState { let score: Double; let title: String; let description: String }
 
     private let demoStates: [DemoState] = [
         .init(score: 25, title: "Low Energy", description: "Your body is signaling a need for rest or recovery. It’s a good day for lighter commitments and extra care."),
@@ -152,19 +168,21 @@ struct EnergyRingDemoPage: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color.black, Color(#colorLiteral(red: 0.129, green: 0.129, blue: 0.157, alpha: 1))], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [Color(hex: "#0b0c23"), Color(hex: "#1b1036")], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
+
             VStack(spacing: 30) {
                 Spacer(minLength: 60)
-                
+
                 Text("Your Energy Score")
                     .font(.title.bold())
                     .foregroundColor(.white)
-                
-                EnergyRingView(score: demoScore,  animateFromZero: true, shimmer: demoScore < 95)
+
+                EnergyRingView(score: demoScore, animateFromZero: true, shimmer: demoScore < 95)
                     .frame(width: 200, height: 200)
                     .clipShape(Circle())
                     .animation(.spring(response: 0.6, dampingFraction: 0.8), value: demoScore)
+                    .onTapGesture { cycleState() }
 
                 let state = demoStates[index]
                 Text(state.title)
@@ -172,6 +190,7 @@ struct EnergyRingDemoPage: View {
                     .foregroundColor(.white)
                     .transition(.opacity)
                     .animation(reduceMotion ? nil : .easeInOut, value: index)
+
                 Text(state.description)
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -188,13 +207,7 @@ struct EnergyRingDemoPage: View {
                         Circle()
                             .fill(i == index ? Color.yellow : Color.white.opacity(0.3))
                             .frame(width: 14, height: 14)
-                            .onTapGesture {
-                                withAnimation {
-                                    index = i
-                                    demoScore = demoScores[i]
-                                }
-                                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                            }
+                            .onTapGesture { selectState(i) }
                     }
                 }
 
@@ -205,17 +218,37 @@ struct EnergyRingDemoPage: View {
 
                 Spacer()
             }
-            .onReceive(demoTimer) { _ in
-                withAnimation {
-                    index = (index + 1) % demoScores.count
-                    demoScore = demoScores[index]
-                }
-            }
+            .onAppear { restartCycleTimer() }
+            .onReceive(demoTimer) { _ in cycleState() }
         }
+        .onboardingFrame()
+        .onboardingAmbientGlow()
+    }
+
+    private func cycleState() {
+        withAnimation {
+            index = (index + 1) % demoScores.count
+            demoScore = demoScores[index]
+        }
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+    }
+
+    private func selectState(_ i: Int) {
+        withAnimation {
+            index = i
+            demoScore = demoScores[i]
+        }
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        restartCycleTimer()
+    }
+
+    private func restartCycleTimer() {
+        demoTimer = Timer.publish(every: cycleInterval, on: .main, in: .common).autoconnect()
     }
 }
 
-// MARK: ‑‑‑ PAGE 3 — Waveform Demo ‑‑‑
+
+// MARK: – PAGE 3 — Waveform Demo
 struct WaveformDemoPage: View {
     @State private var drawWave = false
 
@@ -230,6 +263,10 @@ struct WaveformDemoPage: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.05, green: 0.08, blue: 0.2, alpha: 1)), Color(#colorLiteral(red: 0.12, green: 0.12, blue: 0.12, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
+
+            // Subtle yellow glow beneath the waveform
+            RadialGradient(gradient: Gradient(colors: [Color.yellow.opacity(0.05), .clear]), center: .center, startRadius: 10, endRadius: 400)
                 .ignoresSafeArea()
 
             VStack(spacing: 28) {
@@ -256,15 +293,18 @@ struct WaveformDemoPage: View {
                 Spacer()
             }
         }
+        .onboardingFrame()
+        .onboardingAmbientGlow()
     }
 }
 
-// MARK: ‑‑‑ PAGE 4 — Sync Tips ‑‑‑
+// MARK: – PAGE 4 — Sync Tips
 struct SyncTipsPage: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.08, green: 0.09, blue: 0.18, alpha: 1)), Color(#colorLiteral(red: 0.04, green: 0.05, blue: 0.1, alpha: 1))], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
+
             VStack(spacing: 24) {
                 Spacer(minLength: 40)
                 Text("How We Sync With You")
@@ -280,6 +320,13 @@ struct SyncTipsPage: View {
                 Spacer()
             }
         }
+        // Soft top‑center glow to unify pages
+        .onboardingFrame()
+        .onboardingAmbientGlow()
+        .overlay(
+            RadialGradient(gradient: Gradient(colors: [Color.white.opacity(0.04), .clear]), center: .top, startRadius: 20, endRadius: 300)
+                .ignoresSafeArea()
+        )
     }
 }
 
@@ -316,20 +363,7 @@ private struct SyncCard: View {
     }
 }
 
-private struct ScreenshotPlaceholder: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(Color.white.opacity(0.1))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.white.opacity(0.2))
-            )
-            .shadow(radius: 8)
-    }
-}
-
-
-// MARK: ‑‑‑ PAGE 6 — Meet Sol ‑‑‑
+// MARK: – PAGE 5 — Meet Sol
 struct MeetSolPage: View {
     @State private var factIndex = 0
     private let facts = [
@@ -340,8 +374,12 @@ struct MeetSolPage: View {
 
     var body: some View {
         ZStack {
+            // Bright yellow base + subtle orange radial fade for depth
             RadialGradient(gradient: Gradient(colors: [Color.yellow, Color.orange]), center: .center, startRadius: 20, endRadius: 500)
                 .ignoresSafeArea()
+            RadialGradient(gradient: Gradient(colors: [Color.orange.opacity(0.2), .clear]), center: .center, startRadius: 10, endRadius: 600)
+                .ignoresSafeArea()
+
             VStack(spacing: 24) {
                 Spacer(minLength: 60)
                 Image(systemName: "sun.max.fill")
@@ -371,10 +409,12 @@ struct MeetSolPage: View {
             }
             .padding(.horizontal)
         }
+        .onboardingFrame()
+        .onboardingAmbientGlow()
     }
 }
 
-// MARK: ‑‑‑ PAGE 7 — Early Tester / CTA ‑‑‑
+// MARK: – PAGE 6 — Early Tester / CTA
 struct EarlyTesterPage: View {
     let onFinish: () -> Void
     @State private var showConfetti = false
@@ -383,6 +423,11 @@ struct EarlyTesterPage: View {
         ZStack {
             LinearGradient(colors: [Color(#colorLiteral(red: 0.15, green: 0.12, blue: 0.32, alpha: 1)), Color(#colorLiteral(red: 0.03, green: 0.04, blue: 0.08, alpha: 1))], startPoint: .topLeading, endPoint: .bottomTrailing)
                 .ignoresSafeArea()
+
+            // Lighten bottom area slightly
+            LinearGradient(colors: [Color.white.opacity(0.02), .clear], startPoint: .bottom, endPoint: .top)
+                .ignoresSafeArea()
+
             VStack(spacing: 28) {
                 Spacer(minLength: 60)
                 Text("You’re an Early Tester ✨")
@@ -423,8 +468,11 @@ struct EarlyTesterPage: View {
 
                 Spacer()
             }
+
             if showConfetti { ConfettiView() }
         }
+        .onboardingFrame()
+        .onboardingAmbientGlow()
         .onDisappear { showConfetti = false }
     }
 }
@@ -444,12 +492,9 @@ private struct ConfettiView: View {
             }
         }
         .ignoresSafeArea()
-        .onAppear {
-            for i in particles.indices {
-                particles[i].animate()
-            }
-        }
+        .onAppear { for i in particles.indices { particles[i].animate() } }
     }
+
     struct Particle: Identifiable {
         let id = UUID()
         var position: CGPoint = .zero
@@ -465,5 +510,33 @@ private struct ConfettiView: View {
                 opacity = 0
             }
         }
+    }
+}
+
+// MARK: – Utilities
+private extension Color {
+    /// Convenience initializer for hex strings like "#1b1036".
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r, g, b, a: UInt64
+        switch hex.count {
+        case 3: // RGB (12‑bit)
+            (r, g, b, a) = ((int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17, 255)
+        case 6: // RGB (24‑bit)
+            (r, g, b, a) = (int >> 16, int >> 8 & 0xFF, int & 0xFF, 255)
+        case 8: // ARGB (32‑bit)
+            (r, g, b, a) = (int >> 24 & 0xFF, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (r, g, b, a) = (1, 1, 1, 1)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }
