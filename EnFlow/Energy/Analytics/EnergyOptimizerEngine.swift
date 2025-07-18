@@ -63,9 +63,3 @@ final class EnergyOptimizerEngine {
     }
 }
 
-// MARK: – Safe-index array access
-private extension Array {
-    subscript(safe idx: Int) -> Element? {
-        indices.contains(idx) ? self[idx] : nil
-    }
-}

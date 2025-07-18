@@ -12,7 +12,7 @@ struct MainShellView: View {
     /// Active tab index
     @State private var selection = 0
     /// Unique IDs to force-reset scroll position when a tab is revisited
-    @State private var tabIDs: [Int: UUID] = [0: UUID(), 1: UUID(), 2: UUID(), 3: UUID()]
+    @State private var tabIDs: [UUID] = Array(repeating: UUID(), count: 4)
     /// Accumulated rotation for the gear icon
     @State private var gearRotation = 0.0
     private let accent = ColorPalette.color(for: 70)
@@ -24,28 +24,28 @@ struct MainShellView: View {
             #if os(iOS)
             TabView(selection: $selection) {
                 NavigationView { DashboardView() }
-                    .id(tabIDs[0]!)
+                    .id(tabIDs[safe: 0] ?? UUID())
                     .tabItem {
                         TabBarLabel(title: "Dashboard", systemImage: "waveform.path.ecg", index: 0, selection: $selection)
                     }
                     .tag(0)
 
                 NavigationView { CalendarRootView() }
-                    .id(tabIDs[1]!)
+                    .id(tabIDs[safe: 1] ?? UUID())
                     .tabItem {
                         TabBarLabel(title: "Calendar", systemImage: "calendar", index: 1, selection: $selection)
                     }
                     .tag(1)
 
                 NavigationView { TrendsView() }
-                    .id(tabIDs[2]!)
+                    .id(tabIDs[safe: 2] ?? UUID())
                     .tabItem {
                         TabBarLabel(title: "Trends", systemImage: "chart.bar.fill", index: 2, selection: $selection)
                     }
                     .tag(2)
 
                 NavigationView { UserProfileSummaryView() }
-                    .id(tabIDs[3]!)
+                    .id(tabIDs[safe: 3] ?? UUID())
                     .tabItem {
                         TabBarLabel(title: "User", systemImage: "person.crop.circle", index: 3, selection: $selection)
                     }
@@ -53,7 +53,7 @@ struct MainShellView: View {
             }
             .onChange(of: selection) { newValue in
                 // Regenerate IDs for non-active tabs so they reset when revisited
-                for index in 0..<4 where index != newValue {
+                for index in tabIDs.indices where index != newValue {
                     tabIDs[index] = UUID()
                 }
             }
