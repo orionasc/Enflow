@@ -77,14 +77,6 @@ final class EnergySummaryEngine: ObservableObject {
     private init() {}
 
     private let calendar = Calendar.current
-    /// Fixed circadian energy curve used to weight hourly scores.
-    private let circadianBoost: [Double] = [
-        -0.05, -0.05, -0.05, -0.04, -0.02,
-        0.02, 0.06, 0.10, 0.12, 0.10,
-        0.08, 0.05, 0.03, 0.00, -0.02,
-        -0.04, -0.03, 0.00, 0.08, 0.12,
-        0.10, 0.05, 0.00, -0.04,
-    ]
 
     @MainActor @Published private(set) var refreshVersion = 0   // ring-pulse
 
