@@ -126,7 +126,7 @@ final class EnergyForecastModel: ObservableObject {
 
     wave = smooth(wave)
     // Apply user profile's bed/wake adjustments
-    shapeBedWake(for: date, profile: profile, into: &wave)
+
 
     let missing = Set(MetricType.allCases).subtracting(hSample.availableMetrics)
     var confidence = 0.2

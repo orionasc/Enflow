@@ -32,17 +32,18 @@ struct SummaryProvider {
 
         if isPast {
             let base = EnergySummaryEngine.shared.summarize(day: date,
-                                                           healthEvents: healthEvents,
-                                                           calendarEvents: calendarEvents,
-                                                           profile: profile)
+                                                            healthEvents: healthEvents,
+                                                            calendarEvents: calendarEvents,
+                                                            profile: profile)
 
-            // Use cached waveform only if it looks valid
-            if let wave = ForecastCache.shared.wave(for: date), wave.count == 24 {
-                return withWave(wave, from: base)
-            }
+            // If the waveform is invalid or incomplete, fill it with a default neutral array
+            let wave = base.hourlyWaveform.count == 24
+                ? base.hourlyWaveform
+                : Array(repeating: 0.5, count: 24)
 
-            ForecastCache.shared.saveWave(base.hourlyWaveform, for: date)
-            return base
+            ForecastCache.shared.saveWave(wave, for: date)
+            return withWave(wave, from: base)
+
         } else {
             var summary = UnifiedEnergyModel.shared.summary(for: date,
                                                             healthEvents: healthEvents,

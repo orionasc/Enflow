@@ -248,7 +248,7 @@ final class EnergySummaryEngine: ObservableObject {
             }
         }
         // Apply user profile's bed/wake adjustments
-        shapeBedWake(for: start, profile: profile, into: &wave)
+        
         return wave
     }
 
