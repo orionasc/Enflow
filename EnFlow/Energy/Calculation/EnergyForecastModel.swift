@@ -282,14 +282,6 @@ final class EnergyForecastModel: ObservableObject {
     return result
   }
 
-  /// Consensus circadian energy curve (dips ≈ 2 am & 3 pm; peaks ≈ 10 am & 6 pm)
-  private let circadianBoost: [Double] = [
-    -0.05, -0.05, -0.05, -0.04, -0.02,  // 0-4
-    0.02, 0.06, 0.10, 0.12, 0.10,  // 5-9
-    0.08, 0.05, 0.03, 0.00, -0.02,  // 10-14
-    -0.04, -0.03, 0.00, 0.08, 0.12,  // 15-19
-    0.10, 0.05, 0.00, -0.04,  // 20-23
-  ]
 
   private func circadian(for profile: UserProfile?) -> [Double] {
     guard let p = profile else { return circadianBoost }

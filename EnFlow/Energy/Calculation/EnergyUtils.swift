@@ -1,5 +1,14 @@
 import Foundation
 
+/// Consensus circadian energy curve used by forecasting and summary engines.
+public let circadianBoost: [Double] = [
+    -0.05, -0.05, -0.05, -0.04, -0.02,
+    0.02, 0.06, 0.10, 0.12, 0.10,
+    0.08, 0.05, 0.03, 0.00, -0.02,
+    -0.04, -0.03, 0.00, 0.08, 0.12,
+    0.10, 0.05, 0.00, -0.04,
+]
+
 /// Utility math functions used across energy models.
 func norm(_ v: Double, _ lo: Double, _ hi: Double) -> Double {
     guard hi > lo else { return 0.5 }
