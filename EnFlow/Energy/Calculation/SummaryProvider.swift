@@ -31,20 +31,18 @@ struct SummaryProvider {
         }
 
         if isPast {
-            // Use cached waveform if available
-            if let wave = ForecastCache.shared.wave(for: date) {
-                let base = EnergySummaryEngine.shared.summarize(day: date,
-                                                                healthEvents: healthEvents,
-                                                                calendarEvents: calendarEvents,
-                                                                profile: profile)
+            let base = EnergySummaryEngine.shared.summarize(day: date,
+                                                           healthEvents: healthEvents,
+                                                           calendarEvents: calendarEvents,
+                                                           profile: profile)
+
+            // Use cached waveform only if it looks valid
+            if let wave = ForecastCache.shared.wave(for: date), wave.count == 24 {
                 return withWave(wave, from: base)
             }
-            let summary = EnergySummaryEngine.shared.summarize(day: date,
-                                                               healthEvents: healthEvents,
-                                                               calendarEvents: calendarEvents,
-                                                               profile: profile)
-            ForecastCache.shared.saveWave(summary.hourlyWaveform, for: date)
-            return summary
+
+            ForecastCache.shared.saveWave(base.hourlyWaveform, for: date)
+            return base
         } else {
             var summary = UnifiedEnergyModel.shared.summary(for: date,
                                                             healthEvents: healthEvents,
