@@ -472,6 +472,7 @@ struct DayView: View {
   // MARK: ─ Data loader ───────────────────────────────────────
   private func load() async {
     let startOfToday = calendar.startOfDay(for: Date())
+    let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
     let diff = calendar.dateComponents([.day], from: currentDate, to: startOfToday).day ?? 0
     let daysBack = max(7, diff + 1)
     let healthList = await HealthDataPipeline.shared.fetchDailyHealthEvents(daysBack: daysBack)
@@ -500,7 +501,8 @@ struct DayView: View {
       forecast = []
     }
 
-    showHeatMap = currentDate <= startOfToday &&
+    showHeatMap = (currentDate <= startOfToday ||
+                   calendar.isDate(currentDate, inSameDayAs: startOfTomorrow)) &&
                  summary.warning != "Insufficient health data"
     if showHeatMap {
       overallScore = summary.overallEnergyScore
