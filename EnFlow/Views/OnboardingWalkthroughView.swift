@@ -27,7 +27,6 @@ struct OnboardingWalkthroughView: View {
             WaveformDemoPage().tag(2)
             SyncTipsPage().tag(3)
             MeetSolPage().tag(4)
-            ExpectationsPage().tag(5)
             EarlyTesterPage(onFinish: completeOnboarding).tag(6)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
@@ -57,7 +56,7 @@ struct WelcomePage: View {
                 RadialGradient(
                     colors: [
                         Color(#colorLiteral(red: 0.984, green: 0.749, blue: 0.141, alpha: 1)),
-                        Color(#colorLiteral(red: 0.925, green: 0.286, blue: 0.6, alpha: 1))
+                        Color(#colorLiteral(red: 0.9098039269, green: 0.4784313738, blue: 0.6431372762, alpha: 1))
                     ],
                     center: .init(x: x, y: y),
                     startRadius: 40,
@@ -66,34 +65,33 @@ struct WelcomePage: View {
                 .ignoresSafeArea()
             }
 
-            VStack(spacing: 28) {
+            VStack(spacing: 18) {
                 Spacer()
                 ZStack {
                     // Glowing bolt background
                     RadialGradient(
                         gradient: Gradient(colors: [
                             Color.yellow.opacity(0.6),
-                            Color.blue.opacity(0.3),
                             Color.clear
                         ]),
                         center: .center,
                         startRadius: 10,
                         endRadius: 120
                     )
-                    .scaleEffect(pulse ? 1.2 : 1)
-                    .opacity(pulse ? 1 : 0.6)
+                    .scaleEffect(pulse ? 2 : 2.6)
+                    .opacity(pulse ? 0.8 : 0.6)
 
                     // Main lightning bolt
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 100, weight: .bold))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.blue, Color.yellow],
+                                colors: [Color.yellow, Color.blue],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
-                        .shadow(color: .yellow.opacity(0.6), radius: 12)
+                        .shadow(color: .yellow.opacity(0.6), radius: 20)
                         .scaleEffect(pulse ? 1.05 : 0.95)
                 }
                 .onAppear {
@@ -113,21 +111,6 @@ struct WelcomePage: View {
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white.opacity(0.9))
                     .padding(.horizontal)
-
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 28))
-                    .padding(.top, 16)
-                    .foregroundStyle(
-                        LinearGradient(colors: [Color.blue, Color.yellow], startPoint: .top, endPoint: .bottom)
-                    )
-                    .scaleEffect(boltPulse ? 1.05 : 0.95)
-                    .opacity(boltPulse ? 1 : 0.8)
-                    .onAppear {
-                        guard !reduceMotion else { return }
-                        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                            boltPulse = true
-                        }
-                    }
 
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -337,53 +320,6 @@ private struct ScreenshotPlaceholder: View {
     }
 }
 
-// MARK: ‑‑‑ PAGE 5 — Expectations ‑‑‑
-struct ExpectationsPage: View {
-    @State private var screenshotIndex = 0
-    private let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(#colorLiteral(red: 0.05, green: 0.08, blue: 0.2, alpha: 1)), Color(#colorLiteral(red: 0.12, green: 0.12, blue: 0.12, alpha: 1))], startPoint: .topLeading, endPoint: .bottom)
-                .ignoresSafeArea()
-            VStack(spacing: 28) {
-                Text("What Can I Expect?")
-                    .font(.title.bold())
-                    .foregroundColor(.yellow)
-
-                Text("EnFlow helps you track energy, surface actionable nudges, and detect patterns across time — all built around your calendar and wearable inputs.")
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.white.opacity(0.9))
-                    .padding(.horizontal)
-
-                TabView(selection: $screenshotIndex) {
-                    ForEach(0..<3) { idx in
-                        ScreenshotPlaceholder().tag(idx)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .frame(height: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 24))
-                .padding(.horizontal)
-                .onReceive(timer) { _ in
-                    withAnimation {
-                        screenshotIndex = (screenshotIndex + 1) % 3
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Forecast your energy", systemImage: "waveform.path.ecg")
-                    Label("Quick action nudges", systemImage: "bolt.circle")
-                    Label("Pattern insights & trends", systemImage: "chart.bar.doc.horizontal")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .labelStyle(.titleAndIcon)
-                Spacer()
-            }
-        }
-    }
-}
 
 // MARK: ‑‑‑ PAGE 6 — Meet Sol ‑‑‑
 struct MeetSolPage: View {
