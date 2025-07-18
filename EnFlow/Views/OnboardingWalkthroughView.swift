@@ -390,7 +390,7 @@ struct EarlyTesterPage: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
 
-                Text("Feel free to explore or visit Settings → Profile to fill out your habits — they help Sol personalize your forecasts.")
+                Text("Feel free to start exploring or visit Settings → Profile to fill out your habits — they help Sol personalize your forecasts.")
                     .font(.footnote)
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
