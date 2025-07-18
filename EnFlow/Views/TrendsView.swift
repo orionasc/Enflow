@@ -29,6 +29,7 @@ enum TrendsPeriod: String, CaseIterable, Identifiable {
 /// TrendsView shows energy trends and an AI-generated weekly JSON summary with full control over reloads and formatting.
 struct TrendsView: View {
     @State var period: TrendsPeriod = .weekly
+    @AppStorage("installDate") private var installDate: Double = Date().timeIntervalSince1970
 
     @State private var summaries: [DayEnergySummary] = []
     @State private var forecastSummaries: [DayEnergySummary] = []
@@ -76,16 +77,21 @@ struct TrendsView: View {
         summaries.count
     }
 
-    private var hasEnoughData: Bool {
-        validSummaryDays >= minDaysRequired
+    private var daysSinceInstall: Int {
+        let install = Date(timeIntervalSince1970: installDate)
+        return Calendar.current.dateComponents([.day], from: install, to: Date()).day ?? 0
     }
 
-    private var daysRemaining: Int {
-        max(0, minDaysRequired - validSummaryDays)
+    private var hasUnlockedCurrentPeriod: Bool {
+        daysSinceInstall >= minDaysRequired
+    }
+
+    private var daysRemainingForPeriod: Int {
+        max(0, minDaysRequired - daysSinceInstall)
     }
 
     private var accuracyDisplay: String {
-        hasEnoughData ? "\(Int(accuracy * 100))%" : "--"
+        hasUnlockedCurrentPeriod ? "\(Int(accuracy * 100))%" : "--"
     }
 
     var body: some View {
@@ -109,19 +115,16 @@ struct TrendsView: View {
                     .padding(.horizontal)
 
                 // Dual-line chart (Actual = yellow, Forecast = blue)
-                if hasEnoughData {
+                if hasUnlockedCurrentPeriod {
                     energyChart
                 } else {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Not Enough Data Yet")
+                        Text("Not Enough Time Yet")
                             .font(.headline)
                             .foregroundColor(.yellow)
-                        Text("Sol needs at least \(minDaysRequired) days of usage to show trends for the \(period.rawValue.lowercased()) view.")
+                        Text("Sol will unlock this view in \(daysRemainingForPeriod) days.")
                             .font(.body)
                             .foregroundColor(.secondary)
-                        Text("You’ve logged \(validSummaryDays) day\(validSummaryDays == 1 ? "" : "s"). \(daysRemaining) more to go!")
-                            .font(.subheadline)
-                            .foregroundColor(.white)
                     }
                     .padding(.horizontal)
                     .padding(.top, 12)
@@ -162,7 +165,7 @@ struct TrendsView: View {
                 .padding(.vertical, 4)
 
                 // Prediction accuracy bar
-                if hasEnoughData {
+                if hasUnlockedCurrentPeriod {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Prediction Accuracy")
                             .font(.headline)
@@ -183,7 +186,7 @@ struct TrendsView: View {
                         }
                         .padding(.horizontal)
 
-                        if accuracy == 0 && hasEnoughData {
+                        if accuracy == 0 && hasUnlockedCurrentPeriod {
                             Text("Not enough prediction data to make accurate assessment")
                                 .font(.caption)
                                 .foregroundColor(.orange)
