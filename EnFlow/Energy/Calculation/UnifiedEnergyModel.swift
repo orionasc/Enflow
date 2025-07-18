@@ -76,11 +76,23 @@ final class UnifiedEnergyModel {
         }
         cache.saveForecast(forecast)
 
+        // Ensure both arrays have 24 values before blending
+        let waveCount = summary.hourlyWaveform.count
+        let forecastCount = forecast.values.count
+        let currentHour = calendar.component(.hour, from: now)
+        if waveCount < 24 || forecastCount < 24 {
+            print("[UnifiedEnergyModel] insufficient data: waveCount=\(waveCount), forecastCount=\(forecastCount), hour=\(currentHour)")
+            return summary
+        }
+
         if startOfTarget == startOfToday {
             let hr = calendar.component(.hour, from: now)
             let blendWidth = 3
             let end = min(23, hr + blendWidth)
             for i in hr..<24 {
+                guard i < summary.hourlyWaveform.count,
+                      i < forecast.values.count,
+                      i < blended.count else { break }
                 if i <= end {
                     let t = Double(i - hr) / Double(blendWidth)
                     blended[i] = (1 - t) * summary.hourlyWaveform[i] + t * forecast.values[i]
