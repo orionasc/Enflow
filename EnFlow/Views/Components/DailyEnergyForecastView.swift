@@ -238,9 +238,8 @@ struct DailyEnergyForecastView: View {
     }
 
     private func hourLabel(_ hour: Int) -> String {
-        var comps = DateComponents(); comps.hour = hour
-        return calendar.date(from: comps)?
-            .formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated))) ?? "\(hour)h"
+        let hr = (hour % 24 + 24) % 24
+        return "\(hr)h"
     }
 
     private func significantPeaksAndTroughs(threshold: Double = 0.15) -> [Int] {
