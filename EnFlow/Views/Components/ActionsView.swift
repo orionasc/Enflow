@@ -141,7 +141,7 @@ struct ActionCardView: View {
         .background(background)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(borderOverlay)
-        .shadow(color: card.category == .boost ? .white.opacity(0.7) : .clear,
+        .shadow(color: card.category == .boost ? .white.opacity(0.3) : .clear,
                 radius: card.category == .boost ? 4 : 0)
     }
 
@@ -155,7 +155,7 @@ struct ActionCardView: View {
 
     private var categoryTint: Color {
         switch card.category {
-        case .boost:   return .orange
+        case .boost:   return .yellow
         case .balance: return .blue
         case .replan:  return .purple
         }
