@@ -343,7 +343,7 @@ struct MeetSolPage: View {
                 Text("Meet Sol")
                     .font(.largeTitle.bold())
                     .foregroundColor(.white)
-                Text("Sol is your adaptive energy assistant.")
+                Text("Sol is the adaptive energy model that helps you sleep better, recover faster, and perform at your best.")
                     .foregroundColor(.white.opacity(0.9))
                 Text("In future updates, Sol will become interactive — a chatbot that understands your needs and can even help you reschedule, adjust plans, or nudge you toward better recovery.")
                     .font(.callout)
@@ -384,13 +384,13 @@ struct EarlyTesterPage: View {
                     .foregroundColor(.white.opacity(0.9))
                     .padding(.horizontal)
 
-                Text("The accuracy of your forecasts depends on how often you wear your wearable. You don’t have to wear it to sleep — but we highly recommend wearing it consistently for at least a week to train Sol well.")
+                Text("The accuracy of your forecasts depends on how often you use your wearable health device. While encouraged, you don’t have to wear it to sleep — but the more health data you provide the better our forecasts will be.")
                     .font(.footnote)
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.yellow.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
 
-                Text("After you explore, first visit Settings → Profile to fill out your habits — it helps Sol personalize your forecasts.")
+                Text("Feel free to explore or visit Settings → Profile to fill out your habits — they help Sol personalize your forecasts.")
                     .font(.footnote)
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -401,7 +401,7 @@ struct EarlyTesterPage: View {
                     UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) { onFinish() }
                 } label: {
-                    Text("Start Using EnFlow")
+                    Text("Start Using Enflow")
                         .padding(.horizontal, 48).padding(.vertical, 14)
                         .background(Capsule().fill(Color.yellow))
                         .foregroundColor(.black)
