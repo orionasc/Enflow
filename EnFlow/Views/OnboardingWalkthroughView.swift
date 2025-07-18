@@ -68,17 +68,39 @@ struct WelcomePage: View {
 
             VStack(spacing: 28) {
                 Spacer()
-                Image(systemName: "sun.max.fill")
-                    .font(.system(size: 120))
-                    .foregroundColor(.yellow)
-                    .scaleEffect(pulse ? 1.1 : 0.9)
-                    .opacity(pulse ? 1 : 0.7)
-                    .matchedGeometryEffect(id: "sun", in: mg)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                            pulse = true
-                        }
+                ZStack {
+                    // Glowing bolt background
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Color.yellow.opacity(0.6),
+                            Color.blue.opacity(0.3),
+                            Color.clear
+                        ]),
+                        center: .center,
+                        startRadius: 10,
+                        endRadius: 120
+                    )
+                    .scaleEffect(pulse ? 1.2 : 1)
+                    .opacity(pulse ? 1 : 0.6)
+
+                    // Main lightning bolt
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 100, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.blue, Color.yellow],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: .yellow.opacity(0.6), radius: 12)
+                        .scaleEffect(pulse ? 1.05 : 0.95)
+                }
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                        pulse = true
                     }
+                }
 
                 Text("Welcome to EnFlow")
                     .font(.largeTitle.bold())
