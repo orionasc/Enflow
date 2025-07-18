@@ -395,7 +395,10 @@ struct DashboardView: View {
   private func freeBlocks(from events: [CalendarEvent], for day: Date) -> [DateInterval] {
     let cal = Calendar.current
     let startDay = cal.startOfDay(for: day)
-    let endDay = cal.date(byAdding: .day, value: 1, to: startDay)!
+    guard let endDay = cal.date(byAdding: .day, value: 1, to: startDay) else {
+      // If we can't compute the end of the day, there can be no free blocks.
+      return []
+    }
 
     let sorted = events.sorted(by: { $0.startTime < $1.startTime })
     var cursor = startDay
