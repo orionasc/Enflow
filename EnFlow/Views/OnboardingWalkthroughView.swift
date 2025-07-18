@@ -82,23 +82,18 @@ struct WelcomePage: View {
                     .opacity(pulse ? 0.8 : 0.6)
 
                     // Main lightning bolt
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 200, weight: .bold))
+                    Image(systemName: "bolt")
+                        .font(.system(size: 250, weight: .light))
+                        .blur(radius: 3)
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.yellow, Color.blue],
+                                colors: [Color.white, Color.white],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
-                        .overlay(
-                            Image(systemName: "bolt")
-                                .font(.system(size: 210, weight: .light))
-                                .foregroundColor(.white)
-                                .blur(radius: 2)
-                                .opacity(0.8)
-                            
-                        )
+        
+
                         .shadow(color: .yellow.opacity(0.6), radius: 20)
                         .scaleEffect(pulse ? 1.05 : 0.95)
                 }
