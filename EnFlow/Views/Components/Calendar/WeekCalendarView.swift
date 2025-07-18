@@ -69,7 +69,6 @@ struct WeekCalendarView: View {
                                     // Score now matches DayView
                                     energyChip(score: dayScores[day])
                                         .saturation(isTomorrow ? 0.7 : 1)
-                                        .overlay(isTomorrow ? DotPatternOverlay(color: .white).opacity(0.4) : nil)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(6)
