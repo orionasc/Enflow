@@ -56,6 +56,9 @@ struct WeekCalendarView: View {
                                     value: day,
                                     to: startOfWeek
                                 )!
+                                let tomorrow = calendar.date(byAdding: .day, value: 1,
+                                                             to: calendar.startOfDay(for: now))!
+                                let isTomorrow = calendar.isDate(date, inSameDayAs: tomorrow)
                                 VStack(spacing: 4) {
                                     Text(shortWeekday(from: date))
                                         .font(.caption)
@@ -65,6 +68,8 @@ struct WeekCalendarView: View {
                                         .foregroundColor(.white)
                                     // Score now matches DayView
                                     energyChip(score: dayScores[day])
+                                        .saturation(isTomorrow ? 0.7 : 1)
+                                        .overlay(isTomorrow ? DotPatternOverlay(color: .white).opacity(0.4) : nil)
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(6)
@@ -98,6 +103,9 @@ struct WeekCalendarView: View {
                                                          ? (energyMatrix[day][hIndex + 1] ?? 0) * 100
                                                          : energyPct)
                                     let date          = calendar.date(byAdding: .day, value: day, to: startOfWeek)!
+                                    let tomorrow = calendar.date(byAdding: .day, value: 1,
+                                                                 to: calendar.startOfDay(for: now))!
+                                    let isTomorrow = calendar.isDate(date, inSameDayAs: tomorrow)
 
                                     ZStack(alignment: .topLeading) {
                                         // Smooth vertical blend when we have data
@@ -109,6 +117,10 @@ struct WeekCalendarView: View {
                                                 ]),
                                                 startPoint: .top,
                                                 endPoint: .bottom
+                                            )
+                                            .saturation(isTomorrow ? 0.7 : 1)
+                                            .overlay(
+                                                isTomorrow ? DotPatternOverlay(color: .white).opacity(0.25) : nil
                                             )
                                         } else {
                                             Color.clear
@@ -281,12 +293,26 @@ struct WeekCalendarView: View {
             )
 
         let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+        events = allEvents
 
         for d in 0..<7 {
             if let day = calendar.date(byAdding: .day, value: d, to: startOfWeek) {
-                if day > today {
+                if day > tomorrow {
                     matrix[d] = Array(repeating: nil, count: hours.count)
                     scores[d] = nil
+                } else if day == tomorrow {
+                    let profile = UserProfileStore.load()
+                    let summary = SummaryProvider.summary(for: day,
+                                                          healthEvents: health,
+                                                          calendarEvents: allEvents,
+                                                          profile: profile)
+                    if summary.warning != "Insufficient health data" {
+                        let wave = summary.hourlyWaveform
+                        matrix[d] = Array(wave[4...23])
+                        scores[d] = summary.overallEnergyScore
+                    }
+                    continue
                 } else {
                     let dayHealth = health.filter { calendar.isDate($0.date, inSameDayAs: day) }
                    let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: day) }

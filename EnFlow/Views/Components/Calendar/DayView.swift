@@ -104,6 +104,7 @@ struct DayView: View {
             size: 150,
             warningMessage: forecastMessage
           )
+          .saturation(isTomorrow ? 0.7 : 1)
           VStack(alignment: .center, spacing: 12) {
             labeledMiniRing(title: "Morning", value: parts?.morning)
             labeledMiniRing(title: "Afternoon", value: parts?.afternoon)
@@ -179,6 +180,7 @@ struct DayView: View {
                   warningMessage: msg,
                   lowCoverage: summary.coverageRatio < 0.5
                 )
+                .saturation(isTomorrow ? 0.7 : 1)
               } else {
                 DailyEnergyForecastView(
                   values: slice,
@@ -187,6 +189,7 @@ struct DayView: View {
                   dotted: isTomorrow || forecastWarning,
                   warningMessage: forecastMessage
                 )
+                .saturation(isTomorrow ? 0.7 : 1)
               }
             }
             .frame(height: 220)

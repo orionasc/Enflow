@@ -154,9 +154,16 @@ struct MonthCalendarView: View {
     private func tile(for date: Date) -> some View {
         let isCurrent = calendar.isDate(date, equalTo: displayMonth, toGranularity: .month)
         let energy    = energyMap[date]
+        let today = calendar.startOfDay(for: Date())
+        let isTomorrow = calendar.isDate(date, inSameDayAs: calendar.date(byAdding: .day, value: 1, to: today)!)
 
         ZStack {
-            if isCurrent {
+            if isTomorrow {
+                ColorPalette.color(for: energy ?? 50)
+                    .opacity(0.25)
+                    .saturation(0.7)
+                    .overlay(DotPatternOverlay(color: .white).opacity(0.25))
+            } else if isCurrent {
                 if let energy {
                     ColorPalette.color(for: energy)
                         .opacity(0.25)
@@ -238,8 +245,21 @@ struct MonthCalendarView: View {
         )
 
         let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
 
        for date in monthDates where calendar.isDate(date, equalTo: displayMonth, toGranularity: .month) {
+           if date == tomorrow {
+               let profile = UserProfileStore.load()
+               let summary = SummaryProvider.summary(for: date,
+                                                    healthEvents: allHealth,
+                                                    calendarEvents: allEvents,
+                                                    profile: profile)
+               if summary.warning != "Insufficient health data" {
+                   results[date] = summary.overallEnergyScore
+               }
+               warnings[date] = true
+               continue
+           }
            if date > today { continue }
            let dayHealth = allHealth.filter { calendar.isDate($0.date, inSameDayAs: date) }
            let dayEvents = allEvents.filter { calendar.isDate($0.startTime, inSameDayAs: date) }
