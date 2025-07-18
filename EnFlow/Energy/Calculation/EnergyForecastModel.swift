@@ -9,7 +9,6 @@
 import Combine
 import Foundation
 import HealthKit
-import EnergyUtils
 
 // MARK: - EnergyForecastModel ---------------------------------------------------
 @MainActor

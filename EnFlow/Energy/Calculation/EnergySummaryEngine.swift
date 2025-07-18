@@ -18,7 +18,6 @@
 
 import Foundation
 import HealthKit
-import EnergyUtils
 
 // MARK: – Day-level output ------------------------------------------------------
 
