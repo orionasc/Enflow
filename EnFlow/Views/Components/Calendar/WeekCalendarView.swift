@@ -300,7 +300,7 @@ struct WeekCalendarView: View {
                         scores[d] = nil
                     } else {
                         let wave = summary.hourlyWaveform.count == 24 ? summary.hourlyWaveform : Array(repeating: 0.5, count: 24)
-                        matrix[d] = Array(wave[4...23])
+                        matrix[d] = energySlice(wave, range: 4..<24)
                         scores[d] = summary.overallEnergyScore
                     }
                     events = allEvents

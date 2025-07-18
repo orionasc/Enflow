@@ -319,11 +319,14 @@ struct DashboardView: View {
 
     // 3-part slices
     func slices(from wave: [Double]) -> EnergyForecastModel.EnergyParts {
-      func avg(_ s: ArraySlice<Double>) -> Double { s.reduce(0, +) / Double(s.count) * 100 }
+      func avg(_ range: Range<Int>) -> Double {
+        let vals = energySlice(wave, range: range)
+        return vals.reduce(0, +) / Double(vals.count) * 100
+      }
       return EnergyForecastModel.EnergyParts(
-        morning: avg(wave[6..<12]),
-        afternoon: avg(wave[12..<18]),
-        evening: avg(wave[18..<24])
+        morning: avg(6..<12),
+        afternoon: avg(12..<18),
+        evening: avg(18..<24)
       )
     }
     let tParts = slices(from: tSummary.hourlyWaveform)
