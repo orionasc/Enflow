@@ -1,8 +1,14 @@
 import Foundation
 
-/// Caches forecasted hourly values and prediction accuracy by day.
+/// Thread-safe cache of hourly forecasts and accuracy values keyed by day.
+/// Access is serialized through a private queue so reads and writes may occur
+/// from any thread without additional synchronization.
 final class ForecastCache {
     static let shared = ForecastCache()
+
+    /// Serializes all read/write access to cached values.
+    private let queue = DispatchQueue(label: "ForecastCache.serial")
+
     private init() {
         load()
     }
@@ -16,18 +22,20 @@ final class ForecastCache {
     private var forecasts: [String:DayEnergyForecast] = [:]
 
     private func load() {
-        let d = UserDefaults.standard
-        if let wData = d.data(forKey: waveKey),
-           let obj = try? JSONDecoder().decode([String:[Double]].self, from: wData) {
-            waves = obj
-        }
-        if let aData = d.data(forKey: accKey),
-           let obj = try? JSONDecoder().decode([String:Double].self, from: aData) {
-            accuracy = obj
-        }
-        if let fData = d.data(forKey: forecastKey),
-           let obj = try? JSONDecoder().decode([String:DayEnergyForecast].self, from: fData) {
-            forecasts = obj
+        queue.sync {
+            let d = UserDefaults.standard
+            if let wData = d.data(forKey: waveKey),
+               let obj = try? JSONDecoder().decode([String:[Double]].self, from: wData) {
+                waves = obj
+            }
+            if let aData = d.data(forKey: accKey),
+               let obj = try? JSONDecoder().decode([String:Double].self, from: aData) {
+                accuracy = obj
+            }
+            if let fData = d.data(forKey: forecastKey),
+               let obj = try? JSONDecoder().decode([String:DayEnergyForecast].self, from: fData) {
+                forecasts = obj
+            }
         }
     }
 
@@ -49,56 +57,69 @@ final class ForecastCache {
     }
 
     func wave(for date: Date) -> [Double]? {
-        waves[key(for: date)]
+        queue.sync { waves[key(for: date)] }
     }
 
     func saveWave(_ wave: [Double], for date: Date) {
-        waves[key(for: date)] = wave
-        persist()
+        queue.sync {
+            waves[key(for: date)] = wave
+            persist()
+        }
     }
 
     func saveAccuracy(_ value: Double, for date: Date) {
-        accuracy[key(for: date)] = value
-        persist()
+        queue.sync {
+            accuracy[key(for: date)] = value
+            persist()
+        }
     }
 
     func accuracy(for date: Date) -> Double? {
-        accuracy[key(for: date)]
+        queue.sync { accuracy[key(for: date)] }
     }
 
     func forecast(for date: Date) -> DayEnergyForecast? {
-        forecasts[key(for: date)]
+        queue.sync { forecasts[key(for: date)] }
     }
 
     func removeForecast(for date: Date) {
-        forecasts.removeValue(forKey: key(for: date))
-        persist()
+        queue.sync {
+            forecasts.removeValue(forKey: key(for: date))
+            persist()
+        }
     }
 
     func saveForecast(_ forecast: DayEnergyForecast) {
-        guard !(forecast.values.isEmpty && forecast.sourceType == .defaultHeuristic) else {
-            removeForecast(for: forecast.date)
-            return
+        queue.sync {
+            guard !(forecast.values.isEmpty && forecast.sourceType == .defaultHeuristic) else {
+                forecasts.removeValue(forKey: key(for: forecast.date))
+                persist()
+                return
+            }
+            forecasts[key(for: forecast.date)] = forecast
+            persist()
         }
-        forecasts[key(for: forecast.date)] = forecast
-        persist()
     }
 
     /// Average accuracy over the last N days if available.
     func recentAccuracy(days: Int) -> Double? {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        let dates = (0..<days).compactMap { cal.date(byAdding: .day, value: -$0, to: today) }
-        let vals = dates.compactMap { accuracy[key(for: $0)] }
-        guard !vals.isEmpty else { return nil }
-        return vals.reduce(0, +) / Double(vals.count)
+        queue.sync {
+            let cal = Calendar.current
+            let today = cal.startOfDay(for: Date())
+            let dates = (0..<days).compactMap { cal.date(byAdding: .day, value: -$0, to: today) }
+            let vals = dates.compactMap { accuracy[key(for: $0)] }
+            guard !vals.isEmpty else { return nil }
+            return vals.reduce(0, +) / Double(vals.count)
+        }
     }
 
     func clearAllCachedData() {
-        waves.removeAll()
-        accuracy.removeAll()
-        forecasts.removeAll()
-        persist()
+        queue.sync {
+            waves.removeAll()
+            accuracy.removeAll()
+            forecasts.removeAll()
+            persist()
+        }
     }
 
     func reset() {
