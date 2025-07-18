@@ -278,6 +278,7 @@ struct UserProfileSummaryView: View {
     private var debugSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button("Toggle Developer Info") { withAnimation { showDebug.toggle() } }
+            #if DEBUG
             Button(role: .destructive) {
                 showRestartAlert = true
             } label: {
@@ -291,10 +292,11 @@ struct UserProfileSummaryView: View {
                    },
                    message: {
                        Text("""
-                       This will erase cached forecasts, profile settings, and mark onboarding as incomplete. The app will quit—re-open it to walk through onboarding again.
+                       This will erase cached forecasts and profile settings then return to onboarding.
                        """)
                    }
             )
+            #endif
             if showDebug {
                 Toggle("Use Simulated Data", isOn: Binding(
                     get: { dataMode.isSimulated() },
@@ -541,13 +543,9 @@ DATA:
         CalendarDataPipeline.shared.clearCache()
         HealthDataPipeline.shared.clearCache()
 
-        didCompleteOnboarding = false
-
-#if os(iOS)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            exit(0)
+        withAnimation {
+            didCompleteOnboarding = false
         }
-#endif
     }
 }
 
