@@ -204,14 +204,19 @@ struct OnboardingAndSettingsView: View {
     }
 
     private func updateHealthGranted() {
-        //  same read type as in HealthDataPipeline
-        let readTypes: Set<HKObjectType> = [
-            .quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            .quantityType(forIdentifier: .restingHeartRate)!,
-            .quantityType(forIdentifier: .heartRate)!,
-            .quantityType(forIdentifier: .activeEnergyBurned)!,
-            .quantityType(forIdentifier: .stepCount)!
+        //  same read types as in HealthDataPipeline. Some identifiers may be
+        //  nil on older iOS versions where those metrics don't exist yet.
+        let identifiers: [HKQuantityTypeIdentifier] = [
+            .heartRateVariabilitySDNN,
+            .restingHeartRate,
+            .heartRate,
+            .activeEnergyBurned,
+            .stepCount
         ]
+
+        let readTypes = Set(identifiers.compactMap {
+            HKObjectType.quantityType(forIdentifier: $0)
+        })
 
         HKHealthStore().getRequestStatusForAuthorization(toShare: [], read: readTypes) { status, _ in
         
